@@ -61,7 +61,12 @@ export type ToolPriorityList = ToolDefinitionBase & {
   items: ToolPriorityListItem[];
 };
 
-export type ToolDefinition = ToolPriorityList | ToolDefinitionBase;
+export type ToolStaticText = ToolDefinitionBase & {
+  toolType: "static_text";
+  body: string;
+};
+
+export type ToolDefinition = ToolPriorityList | ToolStaticText | ToolDefinitionBase;
 
 /** Summary (used for Events list) */
 export type EventCatalogItemFull = {

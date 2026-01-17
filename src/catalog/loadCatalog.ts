@@ -8,6 +8,7 @@ import type {
   ToolDefinition,
   ToolPriorityList,
   ToolRef,
+  ToolStaticText,
 } from "./types";
 import { parseXmlString, getAttr, getAttrInt } from "./parseXml";
 
@@ -87,6 +88,19 @@ function parseToolDefinition(doc: Document): ToolDefinition | null {
       items,
     };
 
+    return tool;
+  }
+
+  if (toolType === "static_text") {
+    const bodyEl = toolEl.getElementsByTagName("body")[0];
+    const body = bodyEl ? collectParagraphText(bodyEl) : "";
+    const tool: ToolStaticText = {
+      toolId,
+      toolType: "static_text",
+      title,
+      description,
+      body,
+    };
     return tool;
   }
 

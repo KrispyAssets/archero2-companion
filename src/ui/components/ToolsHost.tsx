@@ -1,4 +1,13 @@
-import type { ToolDefinition, ToolPriorityList } from "../../catalog/types";
+import type { ToolDefinition, ToolPriorityList, ToolStaticText } from "../../catalog/types";
+
+function renderBodyText(body: string) {
+  if (!body) return null;
+  return body.split(/\n{2,}/).map((paragraph, index) => (
+    <p key={`${index}-${paragraph.slice(0, 12)}`} style={{ margin: "8px 0" }}>
+      {paragraph}
+    </p>
+  ));
+}
 
 function PriorityListToolView({ tool }: { tool: ToolPriorityList }) {
   return (
@@ -17,12 +26,25 @@ function PriorityListToolView({ tool }: { tool: ToolPriorityList }) {
   );
 }
 
+function StaticTextToolView({ tool }: { tool: ToolStaticText }) {
+  return (
+    <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 12, background: "#fff" }}>
+      <div style={{ fontWeight: 800 }}>{tool.title}</div>
+      {tool.description ? <p style={{ marginTop: 6 }}>{tool.description}</p> : null}
+      <div style={{ marginTop: 8 }}>{renderBodyText(tool.body)}</div>
+    </div>
+  );
+}
+
 export default function ToolsHost({ tools }: { tools: ToolDefinition[] }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       {tools.map((tool) => {
         if (tool.toolType === "priority_list") {
           return <PriorityListToolView key={tool.toolId} tool={tool} />;
+        }
+        if (tool.toolType === "static_text") {
+          return <StaticTextToolView key={tool.toolId} tool={tool} />;
         }
 
         return (
