@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import "./tabs.css";
 
 export type TabDef = {
@@ -8,11 +8,30 @@ export type TabDef = {
   content: React.ReactNode;
 };
 
-export default function Tabs({ tabs }: { tabs: TabDef[] }) {
+export default function Tabs({
+  tabs,
+  initialActiveId,
+  activeId,
+  onActiveIdChange,
+}: {
+  tabs: TabDef[];
+  initialActiveId?: string;
+  activeId?: string;
+  onActiveIdChange?: (id: string) => void;
+}) {
   const visibleTabs = tabs.filter((t) => !t.hidden);
-  const [activeId, setActiveId] = React.useState(visibleTabs[0]?.id ?? "");
+  const [internalActiveId, setInternalActiveId] = React.useState(initialActiveId ?? visibleTabs[0]?.id ?? "");
+  const isControlled = activeId !== undefined;
+  const currentActiveId = isControlled ? activeId : internalActiveId;
 
-  const active = visibleTabs.find((t) => t.id === activeId) ?? visibleTabs[0];
+  const active = visibleTabs.find((t) => t.id === currentActiveId) ?? visibleTabs[0];
+
+  useEffect(() => {
+    if (isControlled) return;
+    if (initialActiveId && initialActiveId !== internalActiveId) {
+      setInternalActiveId(initialActiveId);
+    }
+  }, [initialActiveId, internalActiveId, isControlled]);
 
   return (
     <div>
@@ -20,11 +39,14 @@ export default function Tabs({ tabs }: { tabs: TabDef[] }) {
         {visibleTabs.map((t) => (
           <button
             key={t.id}
-            className={`tabButton ${t.id === activeId ? "active" : ""}`}
-            onClick={() => setActiveId(t.id)}
+            className={`tabButton ${t.id === currentActiveId ? "active" : ""}`}
+            onClick={() => {
+              if (!isControlled) setInternalActiveId(t.id);
+              onActiveIdChange?.(t.id);
+            }}
             type="button"
             role="tab"
-            aria-selected={t.id === activeId}
+            aria-selected={t.id === currentActiveId}
           >
             {t.label}
           </button>

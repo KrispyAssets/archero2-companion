@@ -58,11 +58,13 @@ export default function TasksTracker(props: { eventId: string; eventVersion: num
         return (
           <div
             key={t.taskId}
+            id={`task-${t.taskId}`}
             style={{
               border: "1px solid #e5e7eb",
               borderRadius: 12,
               padding: 12,
               background: "#fff",
+              scrollMarginTop: 90,
             }}
           >
             <div style={{ fontWeight: 800, marginBottom: 6 }}>{formatRequirement(t)}</div>

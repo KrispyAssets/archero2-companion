@@ -2,15 +2,16 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import AppShell from "../ui/AppShell";
 import { loadAllEventsFull, loadCatalogIndex } from "../catalog/loadCatalog";
-import type { EventCatalogFull, FaqItem, GuideSection } from "../catalog/types";
+import type { EventCatalogFull, FaqItem, GuideSection, TaskDefinition } from "../catalog/types";
 
 type SearchItem = {
   id: string;
   eventId: string;
   eventTitle: string;
-  kind: "event" | "guide" | "faq";
+  kind: "event" | "guide" | "faq" | "task";
   title: string;
   content: string;
+  anchor?: string;
 };
 
 type SearchState =
@@ -26,6 +27,14 @@ function flattenGuideSections(sections: GuideSection[], out: GuideSection[] = []
     }
   }
   return out;
+}
+
+function formatRequirement(task: TaskDefinition): string {
+  return `${task.requirementAction} ${task.requirementTargetValue} ${task.requirementObject} (${task.requirementScope})`;
+}
+
+function formatReward(task: TaskDefinition): string {
+  return `Reward: ${task.rewardAmount} ${task.rewardType}`;
 }
 
 function buildSearchItems(events: EventCatalogFull[]): SearchItem[] {
@@ -51,6 +60,7 @@ function buildSearchItems(events: EventCatalogFull[]): SearchItem[] {
         kind: "guide",
         title: section.title,
         content: [section.title, section.body].join(" ").trim(),
+        anchor: `guide-${section.sectionId}`,
       });
     }
 
@@ -62,6 +72,21 @@ function buildSearchItems(events: EventCatalogFull[]): SearchItem[] {
         kind: "faq",
         title: faq.question,
         content: [faq.question, faq.answer, ...(faq.tags ?? [])].join(" ").trim(),
+        anchor: `faq-${faq.faqId}`,
+      });
+    }
+
+    for (const task of event.tasks) {
+      const requirement = formatRequirement(task);
+      const reward = formatReward(task);
+      items.push({
+        id: `task:${eventId}:${task.taskId}`,
+        eventId,
+        eventTitle: event.title,
+        kind: "task",
+        title: requirement,
+        content: [requirement, reward].join(" ").trim(),
+        anchor: `task-${task.taskId}`,
       });
     }
   }
@@ -84,6 +109,35 @@ function getSnippet(item: SearchItem, query: string): string {
   if (idx === -1) return item.content.slice(0, 160);
   const start = Math.max(0, idx - 60);
   return item.content.slice(start, start + 180);
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function highlightText(text: string, query: string): React.ReactNode {
+  const tokens = query
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (!tokens.length) return text;
+
+  const pattern = tokens.map((token) => escapeRegExp(token)).join("|");
+  const regex = new RegExp(`(${pattern})`, "ig");
+  const parts = text.split(regex);
+  const tokenSet = new Set(tokens);
+
+  return parts.map((part, index) => {
+    if (tokenSet.has(part.toLowerCase())) {
+      return (
+        <mark key={`${index}-${part}`} style={{ background: "#fde68a" }}>
+          {part}
+        </mark>
+      );
+    }
+    return <span key={`${index}-${part}`}>{part}</span>;
+  });
 }
 
 export default function SearchPage() {
@@ -121,7 +175,7 @@ export default function SearchPage() {
   return (
     <AppShell>
       <h1>Search</h1>
-      <p>Search across event titles, guides, and FAQs.</p>
+      <p>Search across event titles, guides, FAQs, and tasks.</p>
 
       {state.status === "loading" ? <p>Building search index…</p> : null}
       {state.status === "error" ? <p style={{ color: "crimson" }}>Error: {state.error}</p> : null}
@@ -143,10 +197,12 @@ export default function SearchPage() {
                 <div style={{ fontSize: 12, textTransform: "uppercase", color: "#6b7280" }}>
                   {item.kind} • {item.eventTitle}
                 </div>
-                <div style={{ fontWeight: 700, marginTop: 4 }}>{item.title}</div>
-                <div style={{ fontSize: 13, color: "#4b5563", marginTop: 6 }}>{getSnippet(item, query)}…</div>
+                <div style={{ fontWeight: 700, marginTop: 4 }}>{highlightText(item.title, query)}</div>
+                <div style={{ fontSize: 13, color: "#4b5563", marginTop: 6 }}>{highlightText(getSnippet(item, query), query)}…</div>
                 <div style={{ marginTop: 8 }}>
-                  <Link to={`/event/${encodeURIComponent(item.eventId)}`}>Open event</Link>
+                  <Link to={`/event/${encodeURIComponent(item.eventId)}${item.anchor ? `#${encodeURIComponent(item.anchor)}` : ""}`}>
+                    Open event
+                  </Link>
                 </div>
               </div>
             ))}

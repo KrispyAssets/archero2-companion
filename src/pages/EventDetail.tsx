@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import AppShell from "../ui/AppShell";
 import Tabs from "../ui/Tabs";
@@ -7,6 +7,21 @@ import ToolsHost from "../ui/components/ToolsHost";
 import { useEventCatalog } from "../catalog/useEventCatalog";
 import { useToolsCatalog } from "../catalog/useToolsCatalog";
 import type { FaqItem, GuideSection } from "../catalog/types";
+
+function getGuideAnchorId(sectionId: string): string {
+  return `guide-${sectionId}`;
+}
+
+function getFaqAnchorId(faqId: string): string {
+  return `faq-${faqId}`;
+}
+
+function getTabForAnchor(anchorId: string): string | null {
+  if (anchorId.startsWith("guide-")) return "guide";
+  if (anchorId.startsWith("faq-")) return "faq";
+  if (anchorId.startsWith("task-")) return "tasks";
+  return null;
+}
 
 function renderBodyText(body: string) {
   if (!body) return null;
@@ -17,15 +32,48 @@ function renderBodyText(body: string) {
   ));
 }
 
-function GuideSectionView({ section }: { section: GuideSection }) {
+function sectionContainsAnchor(section: GuideSection, anchorId: string): boolean {
+  if (getGuideAnchorId(section.sectionId) === anchorId) return true;
+  return section.subsections?.some((child) => sectionContainsAnchor(child, anchorId)) ?? false;
+}
+
+function GuideSectionView({
+  section,
+  activeAnchor,
+  copiedAnchor,
+  onCopyLink,
+}: {
+  section: GuideSection;
+  activeAnchor: string;
+  copiedAnchor: string;
+  onCopyLink: (anchorId: string) => void;
+}) {
+  const anchorId = getGuideAnchorId(section.sectionId);
+  const isOpen = activeAnchor ? sectionContainsAnchor(section, activeAnchor) : false;
   return (
-    <details style={{ border: "1px solid #e5e7eb", borderRadius: 10, padding: "8px 12px", background: "#fff" }}>
+    <details
+      id={anchorId}
+      open={isOpen || undefined}
+      style={{ border: "1px solid #e5e7eb", borderRadius: 10, padding: "8px 12px", background: "#fff", scrollMarginTop: 90 }}
+    >
       <summary style={{ cursor: "pointer", fontWeight: 700 }}>{section.title}</summary>
+      <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
+        <button type="button" onClick={() => onCopyLink(anchorId)}>
+          Copy link
+        </button>
+        {copiedAnchor === anchorId ? <span style={{ fontSize: 12, color: "#6b7280" }}>Copied</span> : null}
+      </div>
       <div style={{ marginTop: 8 }}>{renderBodyText(section.body)}</div>
       {section.subsections && section.subsections.length > 0 ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
           {section.subsections.map((child) => (
-            <GuideSectionView key={child.sectionId} section={child} />
+            <GuideSectionView
+              key={child.sectionId}
+              section={child}
+              activeAnchor={activeAnchor}
+              copiedAnchor={copiedAnchor}
+              onCopyLink={onCopyLink}
+            />
           ))}
         </div>
       ) : null}
@@ -45,6 +93,10 @@ function filterFaqItems(items: FaqItem[], query: string): FaqItem[] {
 export default function EventDetail() {
   const { eventId } = useParams();
   const [faqQuery, setFaqQuery] = useState("");
+  const [activeAnchor, setActiveAnchor] = useState("");
+  const [activeTabId, setActiveTabId] = useState("tasks");
+  const [copiedAnchor, setCopiedAnchor] = useState("");
+  const copyTimerRef = useRef<number | null>(null);
 
   const decodedEventId = useMemo(() => {
     try {
@@ -58,6 +110,72 @@ export default function EventDetail() {
   const toolState = useToolsCatalog(
     eventState.status === "ready" ? eventState.event.toolRefs.map((ref) => ref.toolId) : []
   );
+
+  useEffect(() => {
+    function syncHash() {
+      const hash = window.location.hash.replace(/^#/, "");
+      try {
+        setActiveAnchor(decodeURIComponent(hash));
+      } catch {
+        setActiveAnchor(hash);
+      }
+    }
+
+    syncHash();
+    window.addEventListener("hashchange", syncHash);
+    return () => {
+      window.removeEventListener("hashchange", syncHash);
+    };
+  }, [decodedEventId]);
+
+  useEffect(() => {
+    const nextTab = getTabForAnchor(activeAnchor);
+    if (nextTab) {
+      setActiveTabId(nextTab);
+    }
+  }, [activeAnchor]);
+
+  useEffect(() => {
+    setActiveTabId("tasks");
+    setActiveAnchor("");
+    setFaqQuery("");
+  }, [decodedEventId]);
+
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current !== null) {
+        window.clearTimeout(copyTimerRef.current);
+      }
+    };
+  }, []);
+
+  async function copyAnchorLink(anchorId: string) {
+    const hash = `#${encodeURIComponent(anchorId)}`;
+    if (window.location.hash !== hash) {
+      window.location.hash = hash;
+    }
+    const url = `${window.location.origin}${window.location.pathname}${window.location.search}${hash}`;
+
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+      } else {
+        const el = document.createElement("textarea");
+        el.value = url;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand("copy");
+        el.remove();
+      }
+      setCopiedAnchor(anchorId);
+      if (copyTimerRef.current !== null) {
+        window.clearTimeout(copyTimerRef.current);
+      }
+      copyTimerRef.current = window.setTimeout(() => setCopiedAnchor(""), 2000);
+    } catch {
+      setCopiedAnchor("");
+    }
+  }
 
   if (eventState.status === "idle" || eventState.status === "loading") {
     return (
@@ -92,7 +210,13 @@ export default function EventDetail() {
       content: ev.guideSections.length ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {ev.guideSections.map((section) => (
-            <GuideSectionView key={section.sectionId} section={section} />
+            <GuideSectionView
+              key={section.sectionId}
+              section={section}
+              activeAnchor={activeAnchor}
+              copiedAnchor={copiedAnchor}
+              onCopyLink={copyAnchorLink}
+            />
           ))}
         </div>
       ) : (
@@ -114,8 +238,21 @@ export default function EventDetail() {
           {filteredFaq.length ? (
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {filteredFaq.map((item) => (
-                <details key={item.faqId} style={{ border: "1px solid #e5e7eb", borderRadius: 10, padding: "8px 12px", background: "#fff" }}>
+                <details
+                  key={item.faqId}
+                  id={getFaqAnchorId(item.faqId)}
+                  open={getFaqAnchorId(item.faqId) === activeAnchor || undefined}
+                  style={{ border: "1px solid #e5e7eb", borderRadius: 10, padding: "8px 12px", background: "#fff", scrollMarginTop: 90 }}
+                >
                   <summary style={{ cursor: "pointer", fontWeight: 700 }}>{item.question}</summary>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
+                    <button type="button" onClick={() => copyAnchorLink(getFaqAnchorId(item.faqId))}>
+                      Copy link
+                    </button>
+                    {copiedAnchor === getFaqAnchorId(item.faqId) ? (
+                      <span style={{ fontSize: 12, color: "#6b7280" }}>Copied</span>
+                    ) : null}
+                  </div>
                   <div style={{ marginTop: 8 }}>{renderBodyText(item.answer)}</div>
                   {item.tags && item.tags.length > 0 ? (
                     <div style={{ marginTop: 8, fontSize: 12, color: "#6b7280" }}>Tags: {item.tags.join(", ")}</div>
@@ -154,7 +291,7 @@ export default function EventDetail() {
       {ev.subtitle ? <p>{ev.subtitle}</p> : null}
       {ev.lastVerifiedDate ? <p style={{ fontSize: 13 }}>Last verified: {ev.lastVerifiedDate}</p> : null}
 
-      <Tabs tabs={tabs} />
+      <Tabs tabs={tabs} activeId={activeTabId} onActiveIdChange={setActiveTabId} />
     </AppShell>
   );
 }
