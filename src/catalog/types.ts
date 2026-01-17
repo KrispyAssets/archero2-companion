@@ -26,6 +26,20 @@ export type TaskDefinition = {
   rewardAmount: number;
 };
 
+export type GuideSection = {
+  sectionId: string;
+  title: string;
+  body: string;
+  subsections?: GuideSection[];
+};
+
+export type FaqItem = {
+  faqId: string;
+  question: string;
+  answer: string;
+  tags?: string[];
+};
+
 /** Summary (used for Events list) */
 export type EventCatalogItemFull = {
   eventId: string;
@@ -39,5 +53,6 @@ export type EventCatalogItemFull = {
 /** Full (used for Event Detail) */
 export type EventCatalogFull = EventCatalogItemFull & {
   tasks: TaskDefinition[];
-  // Later: guide sections, faq items, tool refs
+  guideSections: GuideSection[];
+  faqItems: FaqItem[];
 };

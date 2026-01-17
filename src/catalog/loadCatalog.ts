@@ -1,4 +1,4 @@
-import type { CatalogIndex, EventCatalogItemFull, EventCatalogFull, TaskDefinition } from "./types";
+import type { CatalogIndex, EventCatalogItemFull, EventCatalogFull, FaqItem, GuideSection, TaskDefinition } from "./types";
 import { parseXmlString, getAttr, getAttrInt } from "./parseXml";
 
 async function fetchText(path: string): Promise<string> {
@@ -7,6 +7,48 @@ async function fetchText(path: string): Promise<string> {
     throw new Error(`Failed to fetch ${path}: ${res.status} ${res.statusText}`);
   }
   return await res.text();
+}
+
+function getDirectChildElements(el: Element, tagName: string): Element[] {
+  return Array.from(el.childNodes)
+    .filter((node) => node.nodeType === 1)
+    .map((node) => node as Element)
+    .filter((child) => child.tagName === tagName);
+}
+
+function collectParagraphText(el: Element): string {
+  const paragraphs = getDirectChildElements(el, "p").map((p) => p.textContent?.trim() ?? "").filter((p) => p.length > 0);
+  if (paragraphs.length > 0) return paragraphs.join("\n\n");
+  const directText = Array.from(el.childNodes)
+    .filter((node) => node.nodeType === 3)
+    .map((node) => node.textContent?.trim() ?? "")
+    .filter((text) => text.length > 0);
+  return directText.join("\n\n");
+}
+
+function parseGuideSection(sectionEl: Element): GuideSection {
+  const subsections = getDirectChildElements(sectionEl, "section").map((child) => parseGuideSection(child));
+  const body = collectParagraphText(sectionEl);
+  return {
+    sectionId: getAttr(sectionEl, "section_id"),
+    title: getAttr(sectionEl, "title"),
+    body,
+    subsections: subsections.length > 0 ? subsections : undefined,
+  };
+}
+
+function parseFaqItem(itemEl: Element): FaqItem {
+  const tagsAttr = itemEl.getAttribute("tags");
+  const tags = tagsAttr ? tagsAttr.split(",").map((t) => t.trim()).filter((t) => t.length > 0) : undefined;
+  const answerEl = itemEl.getElementsByTagName("answer")[0];
+  const answer = answerEl ? collectParagraphText(answerEl) : "";
+
+  return {
+    faqId: getAttr(itemEl, "faq_id"),
+    question: getAttr(itemEl, "question"),
+    answer,
+    tags,
+  };
 }
 
 export async function loadCatalogIndex(): Promise<CatalogIndex> {
@@ -102,6 +144,9 @@ export async function loadEventById(eventPaths: string[], eventId: string): Prom
       }))
       .sort((a, b) => a.displayOrder - b.displayOrder);
 
+    const guideSections = guideEl ? getDirectChildElements(guideEl, "section").map((section) => parseGuideSection(section)) : [];
+    const faqItems = faqEl ? getDirectChildElements(faqEl, "item").map((item) => parseFaqItem(item)) : [];
+
     const guideSectionCount = guideEl ? guideEl.getElementsByTagName("section").length : 0;
     const faqCount = faqEl ? faqEl.getElementsByTagName("item").length : 0;
     const toolCount = toolsEl ? toolsEl.getElementsByTagName("tool_ref").length : 0;
@@ -119,6 +164,8 @@ export async function loadEventById(eventPaths: string[], eventId: string): Prom
         toolCount,
       },
       tasks,
+      guideSections,
+      faqItems,
     };
 
     return fullEvent;

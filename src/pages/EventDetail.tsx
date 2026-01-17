@@ -1,12 +1,48 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import AppShell from "../ui/AppShell";
 import Tabs from "../ui/Tabs";
 import TasksTracker from "../ui/components/TasksTracker";
 import { useEventCatalog } from "../catalog/useEventCatalog";
+import type { FaqItem, GuideSection } from "../catalog/types";
+
+function renderBodyText(body: string) {
+  if (!body) return null;
+  return body.split(/\n{2,}/).map((paragraph, index) => (
+    <p key={`${index}-${paragraph.slice(0, 12)}`} style={{ margin: "8px 0" }}>
+      {paragraph}
+    </p>
+  ));
+}
+
+function GuideSectionView({ section }: { section: GuideSection }) {
+  return (
+    <details style={{ border: "1px solid #e5e7eb", borderRadius: 10, padding: "8px 12px", background: "#fff" }}>
+      <summary style={{ cursor: "pointer", fontWeight: 700 }}>{section.title}</summary>
+      <div style={{ marginTop: 8 }}>{renderBodyText(section.body)}</div>
+      {section.subsections && section.subsections.length > 0 ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
+          {section.subsections.map((child) => (
+            <GuideSectionView key={child.sectionId} section={child} />
+          ))}
+        </div>
+      ) : null}
+    </details>
+  );
+}
+
+function filterFaqItems(items: FaqItem[], query: string): FaqItem[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return items;
+  return items.filter((item) => {
+    const haystack = [item.question, item.answer, ...(item.tags ?? [])].join(" ").toLowerCase();
+    return haystack.includes(q);
+  });
+}
 
 export default function EventDetail() {
   const { eventId } = useParams();
+  const [faqQuery, setFaqQuery] = useState("");
 
   const decodedEventId = useMemo(() => {
     try {
@@ -37,6 +73,7 @@ export default function EventDetail() {
   }
 
   const ev = eventState.event;
+  const filteredFaq = filterFaqItems(ev.faqItems, faqQuery);
 
   const tabs = [
     {
@@ -47,12 +84,47 @@ export default function EventDetail() {
     {
       id: "guide",
       label: `Guide (${ev.sections.guideSectionCount})`,
-      content: <p>Guide playbook will be implemented next.</p>,
+      content: ev.guideSections.length ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {ev.guideSections.map((section) => (
+            <GuideSectionView key={section.sectionId} section={section} />
+          ))}
+        </div>
+      ) : (
+        <p>No guide sections yet.</p>
+      ),
     },
     {
       id: "faq",
       label: `FAQ (${ev.sections.faqCount})`,
-      content: <p>FAQ list will be implemented next.</p>,
+      content: ev.faqItems.length ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <input
+            type="text"
+            value={faqQuery}
+            onChange={(e) => setFaqQuery(e.target.value)}
+            placeholder="Search FAQ..."
+            style={{ maxWidth: 420 }}
+          />
+          {filteredFaq.length ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {filteredFaq.map((item) => (
+                <details key={item.faqId} style={{ border: "1px solid #e5e7eb", borderRadius: 10, padding: "8px 12px", background: "#fff" }}>
+                  <summary style={{ cursor: "pointer", fontWeight: 700 }}>{item.question}</summary>
+                  <div style={{ marginTop: 8 }}>{renderBodyText(item.answer)}</div>
+                  {item.tags && item.tags.length > 0 ? (
+                    <div style={{ marginTop: 8, fontSize: 12, color: "#6b7280" }}>Tags: {item.tags.join(", ")}</div>
+                  ) : null}
+                </details>
+              ))}
+            </div>
+          ) : (
+            <p>No FAQ entries match your search.</p>
+          )}
+        </div>
+      ) : (
+        <p>No FAQ entries yet.</p>
+      ),
     },
     {
       id: "tools",
