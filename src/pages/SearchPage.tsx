@@ -11,6 +11,7 @@ type SearchItem = {
   kind: "event" | "guide" | "faq" | "task";
   title: string;
   content: string;
+  description: string;
   anchor?: string;
 };
 
@@ -42,13 +43,15 @@ function buildSearchItems(events: EventCatalogFull[]): SearchItem[] {
 
   for (const event of events) {
     const eventId = event.eventId;
+    const subtitle = event.subtitle ?? "";
     items.push({
       id: `event:${eventId}`,
       eventId,
       eventTitle: event.title,
       kind: "event",
       title: event.title,
-      content: [event.title, event.subtitle ?? ""].join(" ").trim(),
+      content: [event.title, subtitle].join(" ").trim(),
+      description: subtitle,
     });
 
     const guideSections = flattenGuideSections(event.guideSections);
@@ -60,6 +63,7 @@ function buildSearchItems(events: EventCatalogFull[]): SearchItem[] {
         kind: "guide",
         title: section.title,
         content: [section.title, section.body].join(" ").trim(),
+        description: section.body,
         anchor: `guide-${section.sectionId}`,
       });
     }
@@ -72,6 +76,7 @@ function buildSearchItems(events: EventCatalogFull[]): SearchItem[] {
         kind: "faq",
         title: faq.question,
         content: [faq.question, faq.answer, ...(faq.tags ?? [])].join(" ").trim(),
+        description: [faq.answer, ...(faq.tags ?? [])].join(" ").trim(),
         anchor: `faq-${faq.faqId}`,
       });
     }
@@ -86,6 +91,7 @@ function buildSearchItems(events: EventCatalogFull[]): SearchItem[] {
         kind: "task",
         title: requirement,
         content: [requirement, reward].join(" ").trim(),
+        description: reward,
         anchor: `task-${task.taskId}`,
       });
     }
@@ -103,12 +109,13 @@ function matchQuery(item: SearchItem, query: string): boolean {
 }
 
 function getSnippet(item: SearchItem, query: string): string {
+  const source = item.description || item.content;
   const normalized = query.trim().toLowerCase();
-  if (!normalized) return item.content.slice(0, 160);
-  const idx = item.content.toLowerCase().indexOf(normalized);
-  if (idx === -1) return item.content.slice(0, 160);
+  if (!normalized) return source.slice(0, 160);
+  const idx = source.toLowerCase().indexOf(normalized);
+  if (idx === -1) return source.slice(0, 160);
   const start = Math.max(0, idx - 60);
-  return item.content.slice(start, start + 180);
+  return source.slice(start, start + 180);
 }
 
 function escapeRegExp(value: string): string {
@@ -140,9 +147,37 @@ function highlightText(text: string, query: string): React.ReactNode {
   });
 }
 
+function getKindLabel(kind: SearchItem["kind"]): string {
+  switch (kind) {
+    case "event":
+      return "Event";
+    case "guide":
+      return "Guide";
+    case "faq":
+      return "FAQ";
+    case "task":
+      return "Task";
+  }
+}
+
+function getActionLabel(kind: SearchItem["kind"]): string {
+  switch (kind) {
+    case "event":
+      return "Open Event";
+    case "guide":
+      return "Open Guide Section";
+    case "faq":
+      return "Open FAQ";
+    case "task":
+      return "Go to Task";
+  }
+}
+
 export default function SearchPage() {
   const [query, setQuery] = useState("");
   const [state, setState] = useState<SearchState>({ status: "loading" });
+  const minQueryLength = 3;
+  const hasQuery = query.trim().length >= minQueryLength;
 
   useEffect(() => {
     let cancelled = false;
@@ -169,8 +204,9 @@ export default function SearchPage() {
 
   const filtered = useMemo(() => {
     if (state.status !== "ready") return [];
+    if (!hasQuery) return [];
     return state.items.filter((item) => matchQuery(item, query));
-  }, [state, query]);
+  }, [state, query, hasQuery]);
 
   return (
     <AppShell>
@@ -189,25 +225,33 @@ export default function SearchPage() {
             placeholder="Search events, guides, FAQs…"
             style={{ maxWidth: 520 }}
           />
-          <div style={{ fontSize: 13, color: "#6b7280" }}>{filtered.length} result(s)</div>
+          {!hasQuery ? <div style={{ fontSize: 13, color: "#6b7280" }}>Type at least {minQueryLength} characters to search.</div> : null}
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {filtered.map((item) => (
-              <div key={item.id} style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 12, background: "#fff" }}>
+          {hasQuery ? (
+            <>
+              <div style={{ fontSize: 13, color: "#6b7280" }}>{filtered.length} result(s)</div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {filtered.map((item) => (
+                  <div key={item.id} style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 12, background: "#fff" }}>
                 <div style={{ fontSize: 12, textTransform: "uppercase", color: "#6b7280" }}>
-                  {item.kind} • {item.eventTitle}
+                  {item.eventTitle} • {getKindLabel(item.kind)}
                 </div>
                 <div style={{ fontWeight: 700, marginTop: 4 }}>{highlightText(item.title, query)}</div>
-                <div style={{ fontSize: 13, color: "#4b5563", marginTop: 6 }}>{highlightText(getSnippet(item, query), query)}…</div>
+                <div style={{ fontSize: 13, color: "#4b5563", marginTop: 6 }}>
+                  {highlightText(getSnippet(item, query), query)}…
+                </div>
                 <div style={{ marginTop: 8 }}>
                   <Link to={`/event/${encodeURIComponent(item.eventId)}${item.anchor ? `#${encodeURIComponent(item.anchor)}` : ""}`}>
-                    Open event
+                    {getActionLabel(item.kind)}
                   </Link>
                 </div>
               </div>
             ))}
-            {!filtered.length ? <p>No results found.</p> : null}
-          </div>
+                {!filtered.length ? <p>No results found.</p> : null}
+              </div>
+            </>
+          ) : null}
         </div>
       ) : null}
     </AppShell>

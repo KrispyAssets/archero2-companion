@@ -69,6 +69,9 @@ function GuideSectionView({
     <details id={anchorId} style={{ border: "1px solid #e5e7eb", borderRadius: 10, padding: "8px 12px", background: "#fff", scrollMarginTop: 90 }}>
       <summary style={{ cursor: "pointer", fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
         <span style={{ flex: 1 }}>{section.title}</span>
+        <span style={{ fontSize: 12, color: "#6b7280", minWidth: 52, textAlign: "right" }}>
+          {copiedAnchor === anchorId ? "Copied" : ""}
+        </span>
         <button
           type="button"
           onClick={() => onCopyLink(anchorId)}
@@ -77,7 +80,6 @@ function GuideSectionView({
         >
           <LinkIcon />
         </button>
-        {copiedAnchor === anchorId ? <span style={{ fontSize: 12, color: "#6b7280" }}>Copied</span> : null}
       </summary>
       <div style={{ marginTop: 8 }}>{renderBodyText(section.body)}</div>
       {section.subsections && section.subsections.length > 0 ? (
@@ -281,6 +283,9 @@ export default function EventDetail() {
                 >
                   <summary style={{ cursor: "pointer", fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
                     <span style={{ flex: 1 }}>{item.question}</span>
+                    <span style={{ fontSize: 12, color: "#6b7280", minWidth: 52, textAlign: "right" }}>
+                      {copiedAnchor === getFaqAnchorId(item.faqId) ? "Copied" : ""}
+                    </span>
                     <button
                       type="button"
                       onClick={() => copyAnchorLink(getFaqAnchorId(item.faqId))}
@@ -289,7 +294,6 @@ export default function EventDetail() {
                     >
                       <LinkIcon />
                     </button>
-                    {copiedAnchor === getFaqAnchorId(item.faqId) ? <span style={{ fontSize: 12, color: "#6b7280" }}>Copied</span> : null}
                   </summary>
                   <div style={{ marginTop: 8 }}>{renderBodyText(item.answer)}</div>
                   {item.tags && item.tags.length > 0 ? (
