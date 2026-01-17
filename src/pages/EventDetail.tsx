@@ -113,6 +113,7 @@ export default function EventDetail() {
   const [copiedAnchor, setCopiedAnchor] = useState("");
   const copyTimerRef = useRef<number | null>(null);
   const scrollRetryRef = useRef<number | null>(null);
+  const lastHandledAnchorRef = useRef<string>("");
 
   const decodedEventId = useMemo(() => {
     try {
@@ -152,6 +153,8 @@ export default function EventDetail() {
   useEffect(() => {
     if (eventState.status !== "ready") return;
     if (!activeAnchor) return;
+    if (lastHandledAnchorRef.current === activeAnchor) return;
+    lastHandledAnchorRef.current = activeAnchor;
     const anchorEl = document.getElementById(activeAnchor);
     let parent = anchorEl?.parentElement ?? null;
     while (parent) {
@@ -184,7 +187,7 @@ export default function EventDetail() {
         window.cancelAnimationFrame(scrollRetryRef.current);
       }
     };
-  }, [eventState.status, activeAnchor, activeTabId]);
+  }, [eventState.status, activeAnchor]);
 
   useEffect(() => {
     const hash = window.location.hash.replace(/^#/, "");
