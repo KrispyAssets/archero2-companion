@@ -1,0 +1,28 @@
+.tabsRow {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 8px 0 12px;
+}
+
+.tabButton {
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-weight: 700;
+  color: #374151;
+  white-space: nowrap;
+}
+
+.tabButton.active {
+  border-color: #111827;
+  color: #111827;
+}
+
+.tabPanel {
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 12px;
+}

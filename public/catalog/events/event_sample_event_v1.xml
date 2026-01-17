@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<event
+  event_id="archero2.event.sample_event.v1"
+  event_version="1"
+  title="Sample Event"
+  subtitle="This is a placeholder event for testing."
+  last_verified_date="2026-01-17">
+
+  <tasks>
+  <task
+    task_id="spend_gems_total_tier_1"
+    display_order="100"
+    requirement_action="spend"
+    requirement_object="gems"
+    requirement_scope="total"
+    requirement_target_value="2000"
+    reward_type="lures"
+    reward_amount="5"
+  />
+  <task
+    task_id="open_mythstone_chests_total_tier_1"
+    display_order="200"
+    requirement_action="open"
+    requirement_object="mythstone_chests"
+    requirement_scope="total"
+    requirement_target_value="20"
+    reward_type="lures"
+    reward_amount="5"
+  />
+</tasks>
+
+  <guide />
+  <faq />
+  <tools />
+
+</event>
