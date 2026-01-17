@@ -21,6 +21,12 @@ type RootState = {
   events: Record<string, EventProgressState>; // eventKey -> state
 };
 
+type ExportPayloadV1 = {
+  schemaVersion: 1;
+  events: Record<string, EventProgressState>;
+  preferences?: Record<string, unknown>;
+};
+
 function makeEventKey(eventId: string, eventVersion: number): string {
   return `${eventId}::v${eventVersion}`;
 }
@@ -40,6 +46,99 @@ function loadRootState(): RootState {
 
 function saveRootState(state: RootState): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function encodeBase64(input: string): string {
+  const bytes = new TextEncoder().encode(input);
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary);
+}
+
+function decodeBase64(input: string): string {
+  const binary = atob(input);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
+}
+
+function parseEventKey(key: string): { eventId: string; eventVersion: number } | null {
+  const match = key.match(/^(.*)::v(\d+)$/);
+  if (!match) return null;
+  return { eventId: match[1], eventVersion: Number(match[2]) };
+}
+
+function normalizeEventState(key: string, raw: unknown): EventProgressState | null {
+  if (!raw || typeof raw !== "object") return null;
+  const candidate = raw as Partial<EventProgressState>;
+
+  const parsedKey = parseEventKey(key);
+  const eventId = typeof candidate.eventId === "string" ? candidate.eventId : parsedKey?.eventId;
+  const eventVersion =
+    typeof candidate.eventVersion === "number" && Number.isFinite(candidate.eventVersion) ? candidate.eventVersion : parsedKey?.eventVersion;
+
+  if (!eventId || typeof eventVersion !== "number") return null;
+
+  const tasks: Record<string, TaskState> = {};
+  if (candidate.tasks && typeof candidate.tasks === "object") {
+    for (const [taskId, taskRaw] of Object.entries(candidate.tasks)) {
+      if (!taskRaw || typeof taskRaw !== "object") continue;
+      const task = taskRaw as Partial<TaskState>;
+      const progressValue =
+        typeof task.progressValue === "number" && Number.isFinite(task.progressValue) ? Math.max(0, task.progressValue) : 0;
+      const flagsRaw = task.flags ?? {};
+      const flags = {
+        isCompleted: Boolean((flagsRaw as TaskFlags).isCompleted),
+        isClaimed: Boolean((flagsRaw as TaskFlags).isClaimed),
+      };
+      tasks[taskId] = { progressValue, flags };
+    }
+  }
+
+  return { eventId, eventVersion, tasks };
+}
+
+export function exportSaveCode(): string {
+  const root = loadRootState();
+  const payload: ExportPayloadV1 = {
+    schemaVersion: 1,
+    events: root.events,
+    preferences: {},
+  };
+  const json = JSON.stringify(payload);
+  return encodeBase64(json);
+}
+
+export function importSaveCode(code: string): { ok: true } | { ok: false; error: string } {
+  let decoded = "";
+  try {
+    decoded = decodeBase64(code.trim());
+  } catch {
+    return { ok: false, error: "Invalid code (base64 decode failed)." };
+  }
+
+  let parsed: ExportPayloadV1;
+  try {
+    parsed = JSON.parse(decoded) as ExportPayloadV1;
+  } catch {
+    return { ok: false, error: "Invalid code (JSON parse failed)." };
+  }
+
+  if (!parsed || parsed.schemaVersion !== 1) {
+    return { ok: false, error: "Unsupported schema version." };
+  }
+
+  const nextRoot: RootState = { schemaVersion: 1, events: {} };
+  if (parsed.events && typeof parsed.events === "object") {
+    for (const [key, value] of Object.entries(parsed.events)) {
+      const normalized = normalizeEventState(key, value);
+      if (!normalized) continue;
+      nextRoot.events[makeEventKey(normalized.eventId, normalized.eventVersion)] = normalized;
+    }
+  }
+
+  saveRootState(nextRoot);
+  return { ok: true };
 }
 
 export function getEventProgressState(eventId: string, eventVersion: number): EventProgressState {
