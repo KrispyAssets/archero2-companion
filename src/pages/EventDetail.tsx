@@ -16,6 +16,29 @@ function getFaqAnchorId(faqId: string): string {
   return `faq-${faqId}`;
 }
 
+function LinkIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path
+        d="M9.2 14.8a3.5 3.5 0 0 1 0-4.95l3.65-3.65a3.5 3.5 0 0 1 4.95 4.95l-1.6 1.6"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M14.8 9.2a3.5 3.5 0 0 1 0 4.95l-3.65 3.65a3.5 3.5 0 0 1-4.95-4.95l1.6-1.6"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 function getTabForAnchor(anchorId: string): string | null {
   if (anchorId.startsWith("guide-")) return "guide";
   if (anchorId.startsWith("faq-")) return "faq";
@@ -32,48 +55,35 @@ function renderBodyText(body: string) {
   ));
 }
 
-function sectionContainsAnchor(section: GuideSection, anchorId: string): boolean {
-  if (getGuideAnchorId(section.sectionId) === anchorId) return true;
-  return section.subsections?.some((child) => sectionContainsAnchor(child, anchorId)) ?? false;
-}
-
 function GuideSectionView({
   section,
-  activeAnchor,
   copiedAnchor,
   onCopyLink,
 }: {
   section: GuideSection;
-  activeAnchor: string;
   copiedAnchor: string;
   onCopyLink: (anchorId: string) => void;
 }) {
   const anchorId = getGuideAnchorId(section.sectionId);
-  const isOpen = activeAnchor ? sectionContainsAnchor(section, activeAnchor) : false;
   return (
-    <details
-      id={anchorId}
-      open={isOpen || undefined}
-      style={{ border: "1px solid #e5e7eb", borderRadius: 10, padding: "8px 12px", background: "#fff", scrollMarginTop: 90 }}
-    >
-      <summary style={{ cursor: "pointer", fontWeight: 700 }}>{section.title}</summary>
-      <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
-        <button type="button" onClick={() => onCopyLink(anchorId)}>
-          Copy link
+    <details id={anchorId} style={{ border: "1px solid #e5e7eb", borderRadius: 10, padding: "8px 12px", background: "#fff", scrollMarginTop: 90 }}>
+      <summary style={{ cursor: "pointer", fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ flex: 1 }}>{section.title}</span>
+        <button
+          type="button"
+          onClick={() => onCopyLink(anchorId)}
+          aria-label="Copy link to section"
+          style={{ background: "transparent", border: "none", padding: 0, display: "flex", alignItems: "center", cursor: "pointer" }}
+        >
+          <LinkIcon />
         </button>
         {copiedAnchor === anchorId ? <span style={{ fontSize: 12, color: "#6b7280" }}>Copied</span> : null}
-      </div>
+      </summary>
       <div style={{ marginTop: 8 }}>{renderBodyText(section.body)}</div>
       {section.subsections && section.subsections.length > 0 ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
           {section.subsections.map((child) => (
-            <GuideSectionView
-              key={child.sectionId}
-              section={child}
-              activeAnchor={activeAnchor}
-              copiedAnchor={copiedAnchor}
-              onCopyLink={onCopyLink}
-            />
+            <GuideSectionView key={child.sectionId} section={child} copiedAnchor={copiedAnchor} onCopyLink={onCopyLink} />
           ))}
         </div>
       ) : null}
@@ -108,9 +118,7 @@ export default function EventDetail() {
   }, [eventId]);
 
   const eventState = useEventCatalog(decodedEventId);
-  const toolState = useToolsCatalog(
-    eventState.status === "ready" ? eventState.event.toolRefs.map((ref) => ref.toolId) : []
-  );
+  const toolState = useToolsCatalog(eventState.status === "ready" ? eventState.event.toolRefs.map((ref) => ref.toolId) : []);
 
   useEffect(() => {
     function syncHash() {
@@ -139,6 +147,17 @@ export default function EventDetail() {
   useEffect(() => {
     if (eventState.status !== "ready") return;
     if (!activeAnchor) return;
+    const anchorEl = document.getElementById(activeAnchor);
+    let parent = anchorEl?.parentElement ?? null;
+    while (parent) {
+      if (parent.tagName === "DETAILS") {
+        (parent as HTMLDetailsElement).open = true;
+      }
+      parent = parent.parentElement;
+    }
+    if (anchorEl && anchorEl.tagName === "DETAILS") {
+      (anchorEl as HTMLDetailsElement).open = true;
+    }
     let attempts = 0;
 
     function tryScroll() {
@@ -239,13 +258,7 @@ export default function EventDetail() {
       content: ev.guideSections.length ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {ev.guideSections.map((section) => (
-            <GuideSectionView
-              key={section.sectionId}
-              section={section}
-              activeAnchor={activeAnchor}
-              copiedAnchor={copiedAnchor}
-              onCopyLink={copyAnchorLink}
-            />
+            <GuideSectionView key={section.sectionId} section={section} copiedAnchor={copiedAnchor} onCopyLink={copyAnchorLink} />
           ))}
         </div>
       ) : (
@@ -257,31 +270,27 @@ export default function EventDetail() {
       label: `FAQ (${ev.sections.faqCount})`,
       content: ev.faqItems.length ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <input
-            type="text"
-            value={faqQuery}
-            onChange={(e) => setFaqQuery(e.target.value)}
-            placeholder="Search FAQ..."
-            style={{ maxWidth: 420 }}
-          />
+          <input type="text" value={faqQuery} onChange={(e) => setFaqQuery(e.target.value)} placeholder="Search FAQ..." style={{ maxWidth: 420 }} />
           {filteredFaq.length ? (
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {filteredFaq.map((item) => (
                 <details
                   key={item.faqId}
                   id={getFaqAnchorId(item.faqId)}
-                  open={getFaqAnchorId(item.faqId) === activeAnchor || undefined}
                   style={{ border: "1px solid #e5e7eb", borderRadius: 10, padding: "8px 12px", background: "#fff", scrollMarginTop: 90 }}
                 >
-                  <summary style={{ cursor: "pointer", fontWeight: 700 }}>{item.question}</summary>
-                  <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
-                    <button type="button" onClick={() => copyAnchorLink(getFaqAnchorId(item.faqId))}>
-                      Copy link
+                  <summary style={{ cursor: "pointer", fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ flex: 1 }}>{item.question}</span>
+                    <button
+                      type="button"
+                      onClick={() => copyAnchorLink(getFaqAnchorId(item.faqId))}
+                      aria-label="Copy link to FAQ"
+                      style={{ background: "transparent", border: "none", padding: 0, display: "flex", alignItems: "center", cursor: "pointer" }}
+                    >
+                      <LinkIcon />
                     </button>
-                    {copiedAnchor === getFaqAnchorId(item.faqId) ? (
-                      <span style={{ fontSize: 12, color: "#6b7280" }}>Copied</span>
-                    ) : null}
-                  </div>
+                    {copiedAnchor === getFaqAnchorId(item.faqId) ? <span style={{ fontSize: 12, color: "#6b7280" }}>Copied</span> : null}
+                  </summary>
                   <div style={{ marginTop: 8 }}>{renderBodyText(item.answer)}</div>
                   {item.tags && item.tags.length > 0 ? (
                     <div style={{ marginTop: 8, fontSize: 12, color: "#6b7280" }}>Tags: {item.tags.join(", ")}</div>
