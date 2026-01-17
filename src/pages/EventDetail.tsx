@@ -67,7 +67,10 @@ function GuideSectionView({
   const anchorId = getGuideAnchorId(section.sectionId);
   return (
     <details id={anchorId} style={{ border: "1px solid #e5e7eb", borderRadius: 10, padding: "8px 12px", background: "#fff", scrollMarginTop: 90 }}>
-      <summary style={{ cursor: "pointer", fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
+      <summary className="detailsSummary" style={{ cursor: "pointer", fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
+        <span aria-hidden="true" className="detailsChevron">
+          ▸
+        </span>
         <span style={{ flex: 1 }}>{section.title}</span>
         <span style={{ fontSize: 12, color: "#6b7280", minWidth: 52, textAlign: "right" }}>
           {copiedAnchor === anchorId ? "Copied" : ""}
@@ -281,7 +284,10 @@ export default function EventDetail() {
                   id={getFaqAnchorId(item.faqId)}
                   style={{ border: "1px solid #e5e7eb", borderRadius: 10, padding: "8px 12px", background: "#fff", scrollMarginTop: 90 }}
                 >
-                  <summary style={{ cursor: "pointer", fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
+                  <summary className="detailsSummary" style={{ cursor: "pointer", fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
+                    <span aria-hidden="true" className="detailsChevron">
+                      ▸
+                    </span>
                     <span style={{ flex: 1 }}>{item.question}</span>
                     <span style={{ fontSize: 12, color: "#6b7280", minWidth: 52, textAlign: "right" }}>
                       {copiedAnchor === getFaqAnchorId(item.faqId) ? "Copied" : ""}
@@ -332,6 +338,22 @@ export default function EventDetail() {
       <h1>{ev.title}</h1>
       {ev.subtitle ? <p>{ev.subtitle}</p> : null}
       {ev.lastVerifiedDate ? <p style={{ fontSize: 13 }}>Last verified: {ev.lastVerifiedDate}</p> : null}
+
+      <style>{`
+        .detailsSummary {
+          list-style: none;
+        }
+        .detailsSummary::-webkit-details-marker {
+          display: none;
+        }
+        .detailsChevron {
+          display: inline-flex;
+          transition: transform 0.15s ease;
+        }
+        details[open] > summary .detailsChevron {
+          transform: rotate(90deg);
+        }
+      `}</style>
 
       <Tabs tabs={tabs} activeId={activeTabId} onActiveIdChange={setActiveTabId} />
     </AppShell>
