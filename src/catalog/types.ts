@@ -38,7 +38,16 @@ export type GuideContentBlockImage = {
   caption?: string;
 };
 
-export type GuideContentBlock = GuideContentBlockParagraph | GuideContentBlockImage;
+export type GuideContentBlockImageRow = {
+  type: "image_row";
+  images: Array<{
+    src: string;
+    alt?: string;
+    caption?: string;
+  }>;
+};
+
+export type GuideContentBlock = GuideContentBlockParagraph | GuideContentBlockImage | GuideContentBlockImageRow;
 
 export type GuideSection = {
   sectionId: string;

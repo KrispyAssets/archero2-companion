@@ -43,9 +43,14 @@ function getGuideSearchText(blocks: GuideContentBlock[]): string {
   for (const block of blocks) {
     if (block.type === "paragraph") {
       textParts.push(block.text);
-    } else {
+    } else if (block.type === "image") {
       if (block.alt) textParts.push(block.alt);
       if (block.caption) textParts.push(block.caption);
+    } else if (block.type === "image_row") {
+      for (const image of block.images) {
+        if (image.alt) textParts.push(image.alt);
+        if (image.caption) textParts.push(image.caption);
+      }
     }
   }
   return textParts.join(" ").trim();

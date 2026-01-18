@@ -60,6 +60,16 @@ function parseGuideSection(sectionEl: Element): GuideSection {
       const alt = el.getAttribute("alt") ?? undefined;
       const caption = el.getAttribute("caption") ?? undefined;
       blocks.push({ type: "image", src, alt, caption });
+      continue;
+    }
+    if (el.tagName === "image_row") {
+      const imageEls = getDirectChildElements(el, "image");
+      const images = imageEls.map((imageEl) => ({
+        src: getAttr(imageEl, "src"),
+        alt: imageEl.getAttribute("alt") ?? undefined,
+        caption: imageEl.getAttribute("caption") ?? undefined,
+      }));
+      blocks.push({ type: "image_row", images });
     }
   }
 

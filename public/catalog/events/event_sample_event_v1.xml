@@ -40,11 +40,23 @@
     <section section_id="resource_tips" title="Resource Tips">
       <p>Save premium currency for the highest value rewards.</p>
       <p>Prioritize upgrades that improve your main damage dealer first.</p>
-      <image
-        src="catalog/shared/fishing/images/current_lake_tension/zone_1-1.png"
-        alt="Lake 1 rare tension pattern (current lake)"
-        caption="Example tension pattern image for the current lake."
-      />
+      <image_row>
+        <image
+          src="catalog/shared/fishing/images/current_lake_tension/zone_1-1.png"
+          alt="Lake 1 rare tension pattern (current lake)"
+          caption="Rare"
+        />
+        <image
+          src="catalog/shared/fishing/images/current_lake_tension/zone_1-2.png"
+          alt="Lake 1 epic tension pattern (current lake)"
+          caption="Epic"
+        />
+        <image
+          src="catalog/shared/fishing/images/current_lake_tension/zone_1-3.png"
+          alt="Lake 1 legendary tension pattern (current lake)"
+          caption="Legendary"
+        />
+      </image_row>
     </section>
   </guide>
   <faq>
