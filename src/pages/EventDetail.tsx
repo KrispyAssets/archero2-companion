@@ -100,14 +100,19 @@ function renderGuideBlocks(blocks: GuideContentBlock[]) {
     }
 
     return (
-      <div
-        key={`row-${index}`}
-        style={{ display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "center", margin: "12px 0" }}
-      >
+      <div key={`row-${index}`} style={{ display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "center", margin: "12px 0" }}>
         {block.images.map((image, imageIndex) => (
           <figure
             key={`row-${index}-${image.src}-${imageIndex}`}
-            style={{ margin: 0, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", flex: "1 1 180px", maxWidth: 240 }}
+            style={{
+              margin: 0,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              textAlign: "center",
+              flex: "1 1 180px",
+              maxWidth: 240,
+            }}
           >
             <img
               src={resolveImageSrc(image.src)}
@@ -180,9 +185,7 @@ function GuideSectionView({
           ▸
         </span>
         <span style={{ flex: 1 }}>{section.title}</span>
-        <span style={{ fontSize: 12, color: "#6b7280", minWidth: 52, textAlign: "right" }}>
-          {copiedAnchor === anchorId ? "Copied" : ""}
-        </span>
+        <span style={{ fontSize: 12, color: "#6b7280", minWidth: 52, textAlign: "right" }}>{copiedAnchor === anchorId ? "Copied" : ""}</span>
         <button
           type="button"
           onClick={() => onCopyLink(anchorId)}
@@ -221,6 +224,12 @@ export default function EventDetail() {
   const [copiedAnchor, setCopiedAnchor] = useState("");
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [lightboxScale, setLightboxScale] = useState(1);
+  const [tasksOpen, setTasksOpen] = useState(false);
+  const [tasksSheetOffset, setTasksSheetOffset] = useState(0);
+  const [tasksSheetDragging, setTasksSheetDragging] = useState(false);
+  const tasksSheetStartRef = useRef<number | null>(null);
+  const tasksSheetStartOffsetRef = useRef(0);
+  const tasksSheetCloseTimerRef = useRef<number | null>(null);
   const touchStartXRef = useRef<number | null>(null);
   const touchDeltaXRef = useRef(0);
   const pinchStartDistanceRef = useRef<number | null>(null);
@@ -239,10 +248,7 @@ export default function EventDetail() {
 
   const eventState = useEventCatalog(decodedEventId);
   const toolState = useToolsCatalog(eventState.status === "ready" ? eventState.event.toolRefs.map((ref) => ref.toolId) : []);
-  const guideImages = useMemo(
-    () => (eventState.status === "ready" ? collectGuideImages(eventState.event.guideSections) : []),
-    [eventState]
-  );
+  const guideImages = useMemo(() => (eventState.status === "ready" ? collectGuideImages(eventState.event.guideSections) : []), [eventState]);
 
   useEffect(() => {
     function syncHash() {
@@ -345,6 +351,21 @@ export default function EventDetail() {
     setLightboxScale(1);
   }
 
+  function closeTasksSheet() {
+    const height = Math.round(window.innerHeight * 0.8);
+    setTasksSheetOffset(height);
+    setTasksSheetDragging(false);
+    tasksSheetStartRef.current = null;
+    tasksSheetStartOffsetRef.current = 0;
+    if (tasksSheetCloseTimerRef.current !== null) {
+      window.clearTimeout(tasksSheetCloseTimerRef.current);
+    }
+    tasksSheetCloseTimerRef.current = window.setTimeout(() => {
+      setTasksOpen(false);
+      setTasksSheetOffset(0);
+    }, 240);
+  }
+
   useEffect(() => {
     const hash = window.location.hash.replace(/^#/, "");
     const nextAnchor = hash ? decodeURIComponent(hash) : "";
@@ -358,8 +379,20 @@ export default function EventDetail() {
       if (copyTimerRef.current !== null) {
         window.clearTimeout(copyTimerRef.current);
       }
+      if (tasksSheetCloseTimerRef.current !== null) {
+        window.clearTimeout(tasksSheetCloseTimerRef.current);
+      }
     };
   }, []);
+
+  useEffect(() => {
+    if (!tasksOpen) return;
+    const height = Math.round(window.innerHeight * 0.8);
+    setTasksSheetOffset(height);
+    window.requestAnimationFrame(() => {
+      setTasksSheetOffset(0);
+    });
+  }, [tasksOpen]);
 
   async function copyAnchorLink(anchorId: string) {
     const hash = `#${encodeURIComponent(anchorId)}`;
@@ -414,6 +447,7 @@ export default function EventDetail() {
     {
       id: "tasks",
       label: `Tasks (${ev.sections.taskCount})`,
+      hidden: true,
       content: <TasksTracker eventId={ev.eventId} eventVersion={ev.eventVersion} tasks={ev.tasks} />,
     },
     {
@@ -494,7 +528,12 @@ export default function EventDetail() {
 
   return (
     <AppShell>
-      <h1>{ev.title}</h1>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+        <h1>{ev.title}</h1>
+        <button type="button" onClick={() => setTasksOpen(true)}>
+          Tasks
+        </button>
+      </div>
       {ev.subtitle ? <p>{ev.subtitle}</p> : null}
       {ev.lastVerifiedDate ? <p style={{ fontSize: 13 }}>Last verified: {ev.lastVerifiedDate}</p> : null}
 
@@ -543,6 +582,51 @@ export default function EventDetail() {
           padding: 8px 12px;
           cursor: pointer;
           z-index: 51;
+        }
+        .tasksModalOverlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(15, 23, 42, 0.7);
+          display: flex;
+          align-items: flex-end;
+          justify-content: center;
+          z-index: 60;
+          overflow: hidden;
+        }
+        .tasksModal {
+          width: 100%;
+          height: 80vh;
+          overflow: auto;
+          background: #fff;
+          border-radius: 16px 16px 0 0;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+          padding: 12px 16px 16px;
+          transform: translateY(var(--tasks-sheet-offset, 0px));
+          transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+          touch-action: none;
+        }
+        .tasksModal.dragging {
+          transition: none;
+        }
+        .tasksModalHandle {
+          width: 88px;
+          height: 10px;
+          border-radius: 999px;
+          background: #d1d5db;
+          margin: 4px auto 8px;
+        }
+        .tasksModalHeader {
+          display: grid;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 12px;
+        }
+        .tasksModalClose {
+          border: 1px solid #e5e7eb;
+          background: #fff;
+          border-radius: 999px;
+          padding: 6px 10px;
+          cursor: pointer;
         }
       `}</style>
 
@@ -607,15 +691,74 @@ export default function EventDetail() {
               style={{ transform: `scale(${lightboxScale})` }}
             />
             {guideImages[lightboxIndex]?.caption ? (
-              <div style={{ color: "#e2e8f0", marginTop: 12, fontSize: 13, textAlign: "center" }}>
-                {guideImages[lightboxIndex]?.caption}
-              </div>
+              <div style={{ color: "#e2e8f0", marginTop: 12, fontSize: 13, textAlign: "center" }}>{guideImages[lightboxIndex]?.caption}</div>
             ) : null}
           </div>
           <button type="button" className="lightboxClose" onClick={closeLightbox}>
             Close
           </button>
         </>
+      ) : null}
+
+      {tasksOpen ? (
+        <div
+          className="tasksModalOverlay"
+          role="dialog"
+          aria-modal="true"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeTasksSheet();
+          }}
+        >
+          <div
+            className={`tasksModal${tasksSheetDragging ? " dragging" : ""}`}
+            style={{ ["--tasks-sheet-offset" as string]: `${tasksSheetOffset}px` }}
+          >
+            <div
+              className="tasksModalHandle"
+              role="button"
+              tabIndex={0}
+              aria-label="Drag to close tasks panel"
+              onPointerDown={(e) => {
+                e.preventDefault();
+                e.currentTarget.setPointerCapture(e.pointerId);
+                tasksSheetStartRef.current = e.clientY;
+                tasksSheetStartOffsetRef.current = tasksSheetOffset;
+                setTasksSheetDragging(true);
+              }}
+              onPointerMove={(e) => {
+                if (!tasksSheetDragging || tasksSheetStartRef.current === null) return;
+                const height = Math.round(window.innerHeight * 0.8);
+                const nextOffset = Math.max(
+                  0,
+                  Math.min(height, tasksSheetStartOffsetRef.current + (e.clientY - tasksSheetStartRef.current))
+                );
+                setTasksSheetOffset(nextOffset);
+              }}
+              onPointerUp={() => {
+                if (!tasksSheetDragging) return;
+                setTasksSheetDragging(false);
+                if (tasksSheetOffset > Math.round(window.innerHeight * 0.8 * 0.35)) {
+                  closeTasksSheet();
+                } else {
+                  setTasksSheetOffset(0);
+                }
+              }}
+              onPointerCancel={() => {
+                setTasksSheetDragging(false);
+                setTasksSheetOffset(0);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") closeTasksSheet();
+              }}
+            />
+            <div className="tasksModalHeader" style={{ gridTemplateColumns: "1fr auto 1fr" }}>
+              <div />
+              <div style={{ fontWeight: 800, fontSize: 18, textAlign: "center" }}>Task Tracker</div>
+              <div />
+            </div>
+            <TasksTracker eventId={ev.eventId} eventVersion={ev.eventVersion} tasks={ev.tasks} />
+          </div>
+        </div>
       ) : null}
     </AppShell>
   );

@@ -56,13 +56,15 @@ export default function TasksTracker(props: { eventId: string; eventVersion: num
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ display: "flex", gap: 12, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
-        <div style={{ fontWeight: 700 }}>
-          {totals.earned} lures earned | {totals.remaining} lures remaining
+      <div style={{ display: "flex", justifyContent: "center" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ fontWeight: 700 }}>
+            {totals.earned} Lures Earned | {totals.remaining} Lures Remaining
+          </div>
+          <button type="button" onClick={clearAll}>
+            Clear
+          </button>
         </div>
-        <button type="button" onClick={clearAll}>
-          Clear
-        </button>
       </div>
 
       {groups.map((group) => {
