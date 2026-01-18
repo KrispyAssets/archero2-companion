@@ -535,7 +535,7 @@ export default function EventDetail() {
     <AppShell>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
         <h1>{ev.title}</h1>
-        <button type="button" onClick={openTasksSheet}>
+        <button type="button" className="secondary" onClick={openTasksSheet}>
           Tasks
         </button>
       </div>

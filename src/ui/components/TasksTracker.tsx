@@ -61,7 +61,7 @@ export default function TasksTracker(props: { eventId: string; eventVersion: num
           <div style={{ fontWeight: 700 }}>
             {totals.earned} Lures Earned | {totals.remaining} Lures Remaining
           </div>
-          <button type="button" onClick={clearAll}>
+          <button type="button" className="secondary" onClick={clearAll}>
             Clear
           </button>
         </div>
@@ -102,34 +102,52 @@ export default function TasksTracker(props: { eventId: string; eventVersion: num
             </div>
 
             <div style={{ marginTop: 10 }}>
-              <input
-                type="number"
-                inputMode="numeric"
-                min={0}
-                max={maxValue}
-                value={inputValue}
-                onChange={(e) => {
-                  const raw = e.target.value;
-                  setInputValues((prev) => ({ ...prev, [group.groupId]: raw }));
-                  if (raw === "") return;
-                  setProgress(group.groupId, Number(raw || 0), maxValue);
-                }}
-                onBlur={() => {
-                  const raw = inputValues[group.groupId];
-                  if (raw === undefined || raw === "") {
-                    upsertTaskState(eventId, eventVersion, group.groupId, (prev) => ({
-                      progressValue: 0,
-                      flags: { ...prev.flags, isCompleted: false },
-                    }));
-                    setInputValues((prev) => ({ ...prev, [group.groupId]: "" }));
-                    setTick((x) => x + 1);
-                    return;
-                  }
-                  setProgress(group.groupId, Number(raw || 0), maxValue);
-                }}
-                style={{ width: "100%", maxWidth: 220 }}
-                placeholder={placeholder}
-              />
+              <div style={{ display: "flex", alignItems: "center", gap: 6, maxWidth: 260 }}>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={inputValue}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/[^\d]/g, "");
+                    setInputValues((prev) => ({ ...prev, [group.groupId]: raw }));
+                    if (raw === "") return;
+                    setProgress(group.groupId, Number(raw || 0), maxValue);
+                  }}
+                  onBlur={() => {
+                    const raw = inputValues[group.groupId];
+                    if (raw === undefined || raw === "") {
+                      upsertTaskState(eventId, eventVersion, group.groupId, (prev) => ({
+                        progressValue: 0,
+                        flags: { ...prev.flags, isCompleted: false },
+                      }));
+                      setInputValues((prev) => ({ ...prev, [group.groupId]: "" }));
+                      setTick((x) => x + 1);
+                      return;
+                    }
+                    setProgress(group.groupId, Number(raw || 0), maxValue);
+                  }}
+                  style={{ width: "100%", maxWidth: 200 }}
+                  placeholder={placeholder}
+                />
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  <button
+                    type="button"
+                    className="spinner-button"
+                    onClick={() => setProgress(group.groupId, state.progressValue + 1, maxValue)}
+                    aria-label="Increase"
+                  >
+                    ▲
+                  </button>
+                  <button
+                    type="button"
+                    className="spinner-button"
+                    onClick={() => setProgress(group.groupId, state.progressValue - 1, maxValue)}
+                    aria-label="Decrease"
+                  >
+                    ▼
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginTop: 10 }}>
@@ -151,7 +169,7 @@ export default function TasksTracker(props: { eventId: string; eventVersion: num
                     }}
                     style={{
                       border: completed ? "1px solid var(--success)" : "1px solid var(--border)",
-                      background: completed ? "var(--success-contrast)" : "var(--surface)",
+                      background: completed ? "var(--success-contrast)" : "var(--surface-2)",
                       color: completed ? "var(--success)" : "var(--text)",
                       padding: "6px 10px",
                       borderRadius: 10,
