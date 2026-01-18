@@ -237,3 +237,23 @@ button:focus-visible {
 .spinner-button:hover {
   color: var(--text);
 }
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-strong) var(--surface-2);
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--accent-strong);
+  border-radius: 999px;
+  border: 2px solid var(--surface-2);
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--surface-2);
+}
