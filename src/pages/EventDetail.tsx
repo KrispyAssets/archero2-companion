@@ -18,7 +18,7 @@ function getFaqAnchorId(faqId: string): string {
 
 function LinkIcon() {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
       <path
         d="M9.2 14.8a3.5 3.5 0 0 1 0-4.95l3.65-3.65a3.5 3.5 0 0 1 4.95 4.95l-1.6 1.6"
         fill="none"
@@ -73,17 +73,94 @@ function renderGuideBlocks(blocks: GuideContentBlock[]) {
         </p>
       );
     }
+    if (block.type === "image") {
+      return (
+        <figure
+          key={`img-${index}-${block.src}`}
+          style={{ margin: "12px 0", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}
+        >
+          <img
+            src={resolveImageSrc(block.src)}
+            alt={block.alt ?? ""}
+            style={{
+              maxWidth: "100%",
+              maxHeight: 420,
+              width: "100%",
+              objectFit: "contain",
+              borderRadius: 10,
+              border: "1px solid #e5e7eb",
+              display: "block",
+              cursor: "zoom-in",
+            }}
+            data-zoom-src={resolveImageSrc(block.src)}
+          />
+          {block.caption ? <figcaption style={{ fontSize: 12, color: "#6b7280", marginTop: 6 }}>{block.caption}</figcaption> : null}
+        </figure>
+      );
+    }
+
     return (
-      <figure key={`img-${index}-${block.src}`} style={{ margin: "12px 0" }}>
-        <img
-          src={resolveImageSrc(block.src)}
-          alt={block.alt ?? ""}
-          style={{ maxWidth: "100%", borderRadius: 10, border: "1px solid #e5e7eb", display: "block" }}
-        />
-        {block.caption ? <figcaption style={{ fontSize: 12, color: "#6b7280", marginTop: 6 }}>{block.caption}</figcaption> : null}
-      </figure>
+      <div
+        key={`row-${index}`}
+        style={{ display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "center", margin: "12px 0" }}
+      >
+        {block.images.map((image, imageIndex) => (
+          <figure
+            key={`row-${index}-${image.src}-${imageIndex}`}
+            style={{ margin: 0, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", flex: "1 1 180px", maxWidth: 240 }}
+          >
+            <img
+              src={resolveImageSrc(image.src)}
+              alt={image.alt ?? ""}
+              style={{
+                width: "100%",
+                maxHeight: 260,
+                objectFit: "contain",
+                borderRadius: 10,
+                border: "1px solid #e5e7eb",
+                display: "block",
+                cursor: "zoom-in",
+              }}
+              data-zoom-src={resolveImageSrc(image.src)}
+            />
+            {image.caption ? <figcaption style={{ fontSize: 12, color: "#6b7280", marginTop: 6 }}>{image.caption}</figcaption> : null}
+          </figure>
+        ))}
+      </div>
     );
   });
+}
+
+type GuideImageItem = {
+  src: string;
+  alt: string;
+  caption?: string;
+};
+
+function collectGuideImages(sections: GuideSection[], out: GuideImageItem[] = []): GuideImageItem[] {
+  for (const section of sections) {
+    for (const block of section.blocks) {
+      if (block.type === "image") {
+        out.push({
+          src: resolveImageSrc(block.src),
+          alt: block.alt ?? "",
+          caption: block.caption,
+        });
+      } else if (block.type === "image_row") {
+        for (const image of block.images) {
+          out.push({
+            src: resolveImageSrc(image.src),
+            alt: image.alt ?? "",
+            caption: image.caption,
+          });
+        }
+      }
+    }
+    if (section.subsections?.length) {
+      collectGuideImages(section.subsections, out);
+    }
+  }
+  return out;
 }
 
 function GuideSectionView({
@@ -142,6 +219,12 @@ export default function EventDetail() {
   const [activeAnchor, setActiveAnchor] = useState("");
   const [activeTabId, setActiveTabId] = useState("tasks");
   const [copiedAnchor, setCopiedAnchor] = useState("");
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [lightboxScale, setLightboxScale] = useState(1);
+  const touchStartXRef = useRef<number | null>(null);
+  const touchDeltaXRef = useRef(0);
+  const pinchStartDistanceRef = useRef<number | null>(null);
+  const pinchStartScaleRef = useRef(1);
   const copyTimerRef = useRef<number | null>(null);
   const scrollRetryRef = useRef<number | null>(null);
   const lastHandledAnchorRef = useRef<string>("");
@@ -156,6 +239,10 @@ export default function EventDetail() {
 
   const eventState = useEventCatalog(decodedEventId);
   const toolState = useToolsCatalog(eventState.status === "ready" ? eventState.event.toolRefs.map((ref) => ref.toolId) : []);
+  const guideImages = useMemo(
+    () => (eventState.status === "ready" ? collectGuideImages(eventState.event.guideSections) : []),
+    [eventState]
+  );
 
   useEffect(() => {
     function syncHash() {
@@ -219,6 +306,44 @@ export default function EventDetail() {
       }
     };
   }, [eventState.status, activeAnchor]);
+
+  function handleGuideImageClick(e: React.MouseEvent) {
+    const target = e.target as HTMLElement | null;
+    if (!target) return;
+    const img = target.closest("img");
+    if (!img) return;
+    const zoomSrc = img.getAttribute("data-zoom-src");
+    if (!zoomSrc) return;
+    e.preventDefault();
+    const index = guideImages.findIndex((item) => item.src === zoomSrc);
+    setLightboxIndex(index >= 0 ? index : 0);
+    setLightboxScale(1);
+    touchStartXRef.current = null;
+    touchDeltaXRef.current = 0;
+    pinchStartDistanceRef.current = null;
+    pinchStartScaleRef.current = 1;
+  }
+
+  function closeLightbox() {
+    setLightboxIndex(null);
+    setLightboxScale(1);
+  }
+
+  function clampScale(value: number) {
+    return Math.min(3, Math.max(1, value));
+  }
+
+  function showPrev() {
+    if (lightboxIndex === null || !guideImages.length) return;
+    setLightboxIndex((lightboxIndex - 1 + guideImages.length) % guideImages.length);
+    setLightboxScale(1);
+  }
+
+  function showNext() {
+    if (lightboxIndex === null || !guideImages.length) return;
+    setLightboxIndex((lightboxIndex + 1) % guideImages.length);
+    setLightboxScale(1);
+  }
 
   useEffect(() => {
     const hash = window.location.hash.replace(/^#/, "");
@@ -295,7 +420,7 @@ export default function EventDetail() {
       id: "guide",
       label: `Guide (${ev.sections.guideSectionCount})`,
       content: ev.guideSections.length ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }} onClick={handleGuideImageClick}>
           {ev.guideSections.map((section) => (
             <GuideSectionView key={section.sectionId} section={section} copiedAnchor={copiedAnchor} onCopyLink={copyAnchorLink} />
           ))}
@@ -387,9 +512,111 @@ export default function EventDetail() {
         details[open] > summary .detailsChevron {
           transform: rotate(90deg);
         }
+        .lightboxOverlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(15, 23, 42, 0.8);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-direction: column;
+          padding: 24px;
+          z-index: 50;
+          touch-action: none;
+        }
+        .lightboxImage {
+          max-width: min(1200px, 96vw);
+          max-height: 90vh;
+          border-radius: 12px;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+          background: #0f172a;
+        }
+        .lightboxClose {
+          position: fixed;
+          top: 16px;
+          right: 16px;
+          background: rgba(15, 23, 42, 0.75);
+          color: #fff;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          border-radius: 999px;
+          padding: 8px 12px;
+          cursor: pointer;
+          z-index: 51;
+        }
       `}</style>
 
       <Tabs tabs={tabs} activeId={activeTabId} onActiveIdChange={setActiveTabId} />
+
+      {lightboxIndex !== null ? (
+        <>
+          <div
+            className="lightboxOverlay"
+            role="button"
+            tabIndex={0}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) closeLightbox();
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") closeLightbox();
+              if (e.key === "ArrowLeft") showPrev();
+              if (e.key === "ArrowRight") showNext();
+              if (e.key === "Enter" || e.key === " ") {
+                if (e.target === e.currentTarget) closeLightbox();
+              }
+            }}
+            onTouchStart={(e) => {
+              if (e.touches.length === 1) {
+                touchStartXRef.current = e.touches[0].clientX;
+                touchDeltaXRef.current = 0;
+              } else if (e.touches.length === 2) {
+                const dx = e.touches[0].clientX - e.touches[1].clientX;
+                const dy = e.touches[0].clientY - e.touches[1].clientY;
+                pinchStartDistanceRef.current = Math.hypot(dx, dy);
+                pinchStartScaleRef.current = lightboxScale;
+              }
+            }}
+            onTouchMove={(e) => {
+              if (e.touches.length === 2 && pinchStartDistanceRef.current) {
+                const dx = e.touches[0].clientX - e.touches[1].clientX;
+                const dy = e.touches[0].clientY - e.touches[1].clientY;
+                const distance = Math.hypot(dx, dy);
+                const nextScale = clampScale((distance / pinchStartDistanceRef.current) * pinchStartScaleRef.current);
+                setLightboxScale(nextScale);
+              } else if (e.touches.length === 1 && touchStartXRef.current !== null && lightboxScale === 1) {
+                touchDeltaXRef.current = e.touches[0].clientX - touchStartXRef.current;
+              }
+            }}
+            onTouchEnd={() => {
+              if (touchStartXRef.current !== null && lightboxScale === 1) {
+                const delta = touchDeltaXRef.current;
+                if (Math.abs(delta) > 60) {
+                  if (delta > 0) showPrev();
+                  else showNext();
+                }
+              }
+              touchStartXRef.current = null;
+              touchDeltaXRef.current = 0;
+              pinchStartDistanceRef.current = null;
+            }}
+          >
+            <img
+              src={guideImages[lightboxIndex]?.src}
+              alt={guideImages[lightboxIndex]?.alt ?? ""}
+              className="lightboxImage"
+              style={{ transform: `scale(${lightboxScale})` }}
+            />
+            {guideImages[lightboxIndex]?.caption ? (
+              <div style={{ color: "#e2e8f0", marginTop: 12, fontSize: 13, textAlign: "center" }}>
+                {guideImages[lightboxIndex]?.caption}
+              </div>
+            ) : null}
+          </div>
+          <button type="button" className="lightboxClose" onClick={closeLightbox}>
+            Close
+          </button>
+        </>
+      ) : null}
     </AppShell>
   );
 }
