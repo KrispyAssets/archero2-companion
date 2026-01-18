@@ -25,6 +25,18 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     localStorage.setItem(MODE_STORAGE_KEY, mode);
   }, [themeId, mode]);
 
+  useEffect(() => {
+    function handlePointerDown(event: PointerEvent) {
+      const active = document.activeElement;
+      if (!(active instanceof HTMLSelectElement)) return;
+      if (event.target instanceof Node && active.contains(event.target)) return;
+      active.blur();
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, []);
+
   return (
     <div className="app">
       <header className="appHeader">
@@ -43,14 +55,27 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               </Link>
             </nav>
             <div className="themeControls">
-              <select value={themeId} onChange={(e) => setThemeId(e.target.value)} aria-label="Theme">
+              <select
+                value={themeId}
+                onChange={(e) => {
+                  setThemeId(e.target.value);
+                  window.setTimeout(() => e.currentTarget.blur(), 0);
+                }}
+                aria-label="Theme"
+              >
                 {THEME_OPTIONS.map((option) => (
                   <option key={option.id} value={option.id}>
                     {option.label}
                   </option>
                 ))}
               </select>
-              <button type="button" onClick={() => setMode((prev) => (prev === "light" ? "dark" : "light"))}>
+              <button
+                type="button"
+                onClick={(e) => {
+                  setMode((prev) => (prev === "light" ? "dark" : "light"));
+                  e.currentTarget.blur();
+                }}
+              >
                 {mode === "light" ? "Dark" : "Light"}
               </button>
             </div>
