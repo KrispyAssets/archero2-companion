@@ -614,6 +614,10 @@ export default function EventDetail() {
         }
         .tasksModal.dragging {
           transition: none;
+          user-select: none;
+        }
+        .tasksModal.dragging * {
+          user-select: none;
         }
         .tasksModalHandle {
           width: 88px;
