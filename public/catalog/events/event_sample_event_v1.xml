@@ -7,27 +7,68 @@
   last_verified_date="2026-01-17">
 
   <tasks>
-  <task
-    task_id="spend_gems_total_tier_1"
-    display_order="100"
-    requirement_action="spend"
-    requirement_object="gems"
-    requirement_scope="total"
-    requirement_target_value="2000"
-    reward_type="lures"
-    reward_amount="5"
-  />
-  <task
-    task_id="open_mythstone_chests_total_tier_1"
-    display_order="200"
-    requirement_action="open"
-    requirement_object="mythstone_chests"
-    requirement_scope="total"
-    requirement_target_value="20"
-    reward_type="lures"
-    reward_amount="5"
-  />
-</tasks>
+    <task task_id="login_days_total_tier_1" display_order="100" requirement_action="login" requirement_object="days" requirement_scope="total" requirement_target_value="1" reward_type="lures" reward_amount="5" />
+    <task task_id="login_days_total_tier_2" display_order="110" requirement_action="login" requirement_object="days" requirement_scope="total" requirement_target_value="2" reward_type="lures" reward_amount="5" />
+    <task task_id="login_days_total_tier_3" display_order="120" requirement_action="login" requirement_object="days" requirement_scope="total" requirement_target_value="3" reward_type="lures" reward_amount="5" />
+    <task task_id="login_days_total_tier_4" display_order="130" requirement_action="login" requirement_object="days" requirement_scope="total" requirement_target_value="4" reward_type="lures" reward_amount="5" />
+    <task task_id="login_days_total_tier_5" display_order="140" requirement_action="login" requirement_object="days" requirement_scope="total" requirement_target_value="5" reward_type="lures" reward_amount="5" />
+
+    <task task_id="fight_seal_battle_total_tier_1" display_order="200" requirement_action="fight" requirement_object="seal_battle" requirement_scope="total" requirement_target_value="2" reward_type="lures" reward_amount="5" />
+    <task task_id="fight_seal_battle_total_tier_2" display_order="210" requirement_action="fight" requirement_object="seal_battle" requirement_scope="total" requirement_target_value="4" reward_type="lures" reward_amount="5" />
+    <task task_id="fight_seal_battle_total_tier_3" display_order="220" requirement_action="fight" requirement_object="seal_battle" requirement_scope="total" requirement_target_value="6" reward_type="lures" reward_amount="5" />
+    <task task_id="fight_seal_battle_total_tier_4" display_order="230" requirement_action="fight" requirement_object="seal_battle" requirement_scope="total" requirement_target_value="8" reward_type="lures" reward_amount="5" />
+    <task task_id="fight_seal_battle_total_tier_5" display_order="240" requirement_action="fight" requirement_object="seal_battle" requirement_scope="total" requirement_target_value="10" reward_type="lures" reward_amount="5" />
+
+    <task task_id="claim_afk_total_tier_1" display_order="300" requirement_action="claim" requirement_object="afk" requirement_scope="total" requirement_target_value="3" reward_type="lures" reward_amount="3" />
+    <task task_id="claim_afk_total_tier_2" display_order="310" requirement_action="claim" requirement_object="afk" requirement_scope="total" requirement_target_value="5" reward_type="lures" reward_amount="3" />
+    <task task_id="claim_afk_total_tier_3" display_order="320" requirement_action="claim" requirement_object="afk" requirement_scope="total" requirement_target_value="10" reward_type="lures" reward_amount="3" />
+    <task task_id="claim_afk_total_tier_4" display_order="330" requirement_action="claim" requirement_object="afk" requirement_scope="total" requirement_target_value="15" reward_type="lures" reward_amount="3" />
+    <task task_id="claim_afk_total_tier_5" display_order="340" requirement_action="claim" requirement_object="afk" requirement_scope="total" requirement_target_value="20" reward_type="lures" reward_amount="3" />
+
+    <task task_id="use_gems_total_tier_1" display_order="400" requirement_action="use" requirement_object="gems" requirement_scope="total" requirement_target_value="200" reward_type="lures" reward_amount="5" />
+    <task task_id="use_gems_total_tier_2" display_order="410" requirement_action="use" requirement_object="gems" requirement_scope="total" requirement_target_value="500" reward_type="lures" reward_amount="5" />
+    <task task_id="use_gems_total_tier_3" display_order="420" requirement_action="use" requirement_object="gems" requirement_scope="total" requirement_target_value="1000" reward_type="lures" reward_amount="5" />
+    <task task_id="use_gems_total_tier_4" display_order="430" requirement_action="use" requirement_object="gems" requirement_scope="total" requirement_target_value="3000" reward_type="lures" reward_amount="5" />
+    <task task_id="use_gems_total_tier_5" display_order="440" requirement_action="use" requirement_object="gems" requirement_scope="total" requirement_target_value="5000" reward_type="lures" reward_amount="5" />
+
+    <task task_id="use_keys_total_tier_1" display_order="500" requirement_action="use" requirement_object="keys" requirement_scope="total" requirement_target_value="10" reward_type="lures" reward_amount="5" />
+    <task task_id="use_keys_total_tier_2" display_order="510" requirement_action="use" requirement_object="keys" requirement_scope="total" requirement_target_value="20" reward_type="lures" reward_amount="5" />
+    <task task_id="use_keys_total_tier_3" display_order="520" requirement_action="use" requirement_object="keys" requirement_scope="total" requirement_target_value="30" reward_type="lures" reward_amount="5" />
+    <task task_id="use_keys_total_tier_4" display_order="530" requirement_action="use" requirement_object="keys" requirement_scope="total" requirement_target_value="40" reward_type="lures" reward_amount="5" />
+    <task task_id="use_keys_total_tier_5" display_order="540" requirement_action="use" requirement_object="keys" requirement_scope="total" requirement_target_value="50" reward_type="lures" reward_amount="5" />
+
+    <task task_id="use_shovels_total_tier_1" display_order="600" requirement_action="use" requirement_object="shovels" requirement_scope="total" requirement_target_value="5" reward_type="lures" reward_amount="5" />
+    <task task_id="use_shovels_total_tier_2" display_order="610" requirement_action="use" requirement_object="shovels" requirement_scope="total" requirement_target_value="10" reward_type="lures" reward_amount="5" />
+    <task task_id="use_shovels_total_tier_3" display_order="620" requirement_action="use" requirement_object="shovels" requirement_scope="total" requirement_target_value="15" reward_type="lures" reward_amount="5" />
+    <task task_id="use_shovels_total_tier_4" display_order="630" requirement_action="use" requirement_object="shovels" requirement_scope="total" requirement_target_value="20" reward_type="lures" reward_amount="5" />
+    <task task_id="use_shovels_total_tier_5" display_order="640" requirement_action="use" requirement_object="shovels" requirement_scope="total" requirement_target_value="30" reward_type="lures" reward_amount="5" />
+    <task task_id="use_shovels_total_tier_6" display_order="650" requirement_action="use" requirement_object="shovels" requirement_scope="total" requirement_target_value="40" reward_type="lures" reward_amount="5" />
+    <task task_id="use_shovels_total_tier_7" display_order="660" requirement_action="use" requirement_object="shovels" requirement_scope="total" requirement_target_value="50" reward_type="lures" reward_amount="5" />
+    <task task_id="use_shovels_total_tier_8" display_order="670" requirement_action="use" requirement_object="shovels" requirement_scope="total" requirement_target_value="60" reward_type="lures" reward_amount="5" />
+    <task task_id="use_shovels_total_tier_9" display_order="680" requirement_action="use" requirement_object="shovels" requirement_scope="total" requirement_target_value="70" reward_type="lures" reward_amount="5" />
+    <task task_id="use_shovels_total_tier_10" display_order="690" requirement_action="use" requirement_object="shovels" requirement_scope="total" requirement_target_value="80" reward_type="lures" reward_amount="5" />
+
+    <task task_id="fight_gold_cave_total_tier_1" display_order="700" requirement_action="fight" requirement_object="gold_cave" requirement_scope="total" requirement_target_value="2" reward_type="lures" reward_amount="5" />
+    <task task_id="fight_gold_cave_total_tier_2" display_order="710" requirement_action="fight" requirement_object="gold_cave" requirement_scope="total" requirement_target_value="4" reward_type="lures" reward_amount="5" />
+    <task task_id="fight_gold_cave_total_tier_3" display_order="720" requirement_action="fight" requirement_object="gold_cave" requirement_scope="total" requirement_target_value="8" reward_type="lures" reward_amount="5" />
+    <task task_id="fight_gold_cave_total_tier_4" display_order="730" requirement_action="fight" requirement_object="gold_cave" requirement_scope="total" requirement_target_value="10" reward_type="lures" reward_amount="5" />
+
+    <task task_id="kill_minions_total_tier_1" display_order="800" requirement_action="kill" requirement_object="minions" requirement_scope="total" requirement_target_value="500" reward_type="lures" reward_amount="5" />
+    <task task_id="kill_minions_total_tier_2" display_order="810" requirement_action="kill" requirement_object="minions" requirement_scope="total" requirement_target_value="1000" reward_type="lures" reward_amount="5" />
+    <task task_id="kill_minions_total_tier_3" display_order="820" requirement_action="kill" requirement_object="minions" requirement_scope="total" requirement_target_value="1500" reward_type="lures" reward_amount="5" />
+    <task task_id="kill_minions_total_tier_4" display_order="830" requirement_action="kill" requirement_object="minions" requirement_scope="total" requirement_target_value="2000" reward_type="lures" reward_amount="5" />
+    <task task_id="kill_minions_total_tier_5" display_order="840" requirement_action="kill" requirement_object="minions" requirement_scope="total" requirement_target_value="3000" reward_type="lures" reward_amount="5" />
+
+    <task task_id="kill_bosses_total_tier_1" display_order="900" requirement_action="kill" requirement_object="bosses" requirement_scope="total" requirement_target_value="5" reward_type="lures" reward_amount="3" />
+    <task task_id="kill_bosses_total_tier_2" display_order="910" requirement_action="kill" requirement_object="bosses" requirement_scope="total" requirement_target_value="10" reward_type="lures" reward_amount="3" />
+    <task task_id="kill_bosses_total_tier_3" display_order="920" requirement_action="kill" requirement_object="bosses" requirement_scope="total" requirement_target_value="20" reward_type="lures" reward_amount="3" />
+    <task task_id="kill_bosses_total_tier_4" display_order="930" requirement_action="kill" requirement_object="bosses" requirement_scope="total" requirement_target_value="30" reward_type="lures" reward_amount="3" />
+
+    <task task_id="fight_arena_total_tier_1" display_order="1000" requirement_action="fight" requirement_object="arena" requirement_scope="total" requirement_target_value="5" reward_type="lures" reward_amount="5" />
+    <task task_id="fight_arena_total_tier_2" display_order="1010" requirement_action="fight" requirement_object="arena" requirement_scope="total" requirement_target_value="10" reward_type="lures" reward_amount="5" />
+    <task task_id="fight_arena_total_tier_3" display_order="1020" requirement_action="fight" requirement_object="arena" requirement_scope="total" requirement_target_value="15" reward_type="lures" reward_amount="5" />
+    <task task_id="fight_arena_total_tier_4" display_order="1030" requirement_action="fight" requirement_object="arena" requirement_scope="total" requirement_target_value="20" reward_type="lures" reward_amount="5" />
+  </tasks>
 
   <guide>
     <section section_id="overview" title="Fishing Guide Overview">
@@ -58,44 +99,6 @@
       </section>
     </section>
 
-    <section section_id="what_to_buy" title="What to Buy">
-      <p>Always buy the lures available for silver tickets. They are worth more than they cost every time.</p>
-      <p>Buying etched runes for your main builds is the main reason to play this event. Top etched runes include Arrow of Echoes, Elemental Crit, Meteor Split, and Potion Spring.</p>
-      <p>Buying all the blessed runes is recommended. Progress toward unlocking all etched rune slots is always welcome.</p>
-      <p>Mythic artifacts are a decent option once you have the etched runes you want.</p>
-      <p>Do not buy keys unless you are playing for free. It is better to spend gems on keys directly.</p>
-      <p>It costs roughly 37 keys worth of gems to buy one S tier gear. Not recommended unless it is a personal choice.</p>
-    </section>
-
-    <section section_id="event_task_rewards" title="Event Task Rewards">
-      <p>Login for 1, 2, 3, 4, 5 days: 5 lures per rank.</p>
-      <p>Seal Battle fight 2, 4, 6, 8, 10 times: 5 lures per rank.</p>
-      <p>Claim AFK every 3, 5, 10, 15, 20 times: 3 lures per rank.</p>
-      <p>Use gems: 200, 500, 1000, 3000, 5000 gems: 5 lures per rank.</p>
-      <p>Use keys: 10, 20, 30, 40, 50 keys: 5 lures per rank.</p>
-      <p>Use shovels: 5, 10, 15, 20, 30, 40, 50, 60, 70, 80 shovels: 5 lures per rank.</p>
-      <p>Gold Cave fight 2, 4, 8, 10 times: 5 lures per rank.</p>
-      <p>Kill minions: 500, 1000, 1500, 2000, 3000 minions: 5 lures per rank.</p>
-      <p>Kill bosses: 5, 10, 20, 30 bosses: 3 lures per rank.</p>
-      <p>Arena: fight 5, 10, 15, 20 times: 5 lures per rank.</p>
-    </section>
-
-    <section section_id="rank_rewards" title="Rank Rewards">
-      <p>Your goal is to gain as much weight as possible early while keeping enough lures for later days.</p>
-      <p>Below 50kg: first place gains 100 gems.</p>
-      <p>Between 50kg-230kg: first place gains 200 gems.</p>
-      <p>Between 230kg-500kg: first place gains 300 gems.</p>
-      <p>Between 500kg-1000kg: first place gains 400 gems.</p>
-      <p>Above 1000kg: first place gains 500 gems.</p>
-    </section>
-
-    <section section_id="helpful_info" title="Helpful Side Info">
-      <p>Fish per pool: 1 legendary, 3 big epics, 6 small epics, 5 large rares, 10 medium rares, 15 small rares.</p>
-      <p>On average you gain 390 silver tickets per lure in the final lake.</p>
-      <p>On average you gain 4.7 kg per lure in the final lake.</p>
-      <p>On average you gain 83 tickets per kg in the final lake.</p>
-    </section>
-
     <section section_id="how_lakes_work" title="How the Lakes Work">
       <p>Fishing may seem random at first, but it is not. You can predict fish pools and plan your lures.</p>
       <p>In the first three lakes the fish pool is the same; in the final lake the pool is doubled.</p>
@@ -110,62 +113,58 @@
         <p>Spend many gems to maximize silver tickets.</p>
         <p>Expect to spend 20-30k gems. Move through lakes using as few lures as possible.</p>
         <p>Estimated gains: 110k-130k silver tickets and 16 golden tickets or more.</p>
+        <section section_id="lakehouse_option_1" title="Lake 1: Lakehouse (Option 1)">
+          <p>You will be fishing for 2 or 3 legendary fish.</p>
+          <p>Fish a full pool of 40 first, then start on 2x.</p>
+          <p>Catch all epics and legendaries; snap lines if only rares are on the line.</p>
+          <p>Goal: catch the 2nd legendary and move to Lake 2 quickly.</p>
+          <p>If you catch the legendary early, catch the remaining fish to reach Lake 2.</p>
+        </section>
+        <section section_id="sunset_coast_option_1" title="Lake 2: Sunset Coast (Option 1)">
+          <p>You will be getting 3 legendary fish.</p>
+          <p>Fish two full pools of 40. After 80 fish, switch to 2x multiplier.</p>
+          <p>Catch all epics and the legendary; snap all solely rare fish.</p>
+          <p>After catching the legendary, catch all fish until you reach Lake 3.</p>
+        </section>
+        <section section_id="oceanic_abyss_option_1" title="Lake 3: Oceanic Abyss (Option 1)">
+          <p>You will be getting 3 or 4 legendary fish. Fish two full pools of 40 first.</p>
+          <p>Start on 2x multiplier, catch all epics and legendaries, and snap lines if only rares appear.</p>
+          <p>Goal: catch the 3rd legendary and move to the final lake quickly.</p>
+          <p>If you catch the legendary early, catch the remaining fish to reach the final lake.</p>
+        </section>
+        <section section_id="polar_glacier_option_1" title="Final Lake: Polar Glacier (Option 1)">
+          <p>This lake doubles the pool to 80 fish, creating a copy of every fish.</p>
+          <p>Minimum of 242 lures to reach 16 gold tickets.</p>
+          <p>Pull on 10x until you have spent what you want, tracking every 80 fish.</p>
+          <p>On your last pool of 80, use final line breaks to collect all epics and legendaries.</p>
+        </section>
       </section>
       <section section_id="option_2_overview" title="Option 2: Maximize Golden Tickets">
         <p>Spend fewer gems to maximize golden tickets.</p>
         <p>Expect to spend 5-15k gems. You will gain fewer silver tickets but fewer gems are required to reach 16 golden tickets.</p>
         <p>Estimated gains: 70k-90k silver tickets and 16 golden tickets.</p>
-      </section>
-    </section>
-
-    <section section_id="lakehouse_plan" title="Lake 1: Lakehouse">
-      <p>You will be fishing for 2 or 3 legendary fish.</p>
-      <p>Fish a full pool of 40 first, then choose one option.</p>
-      <section section_id="lakehouse_option_1" title="Option 1 (Higher Silver Tickets)">
-        <p>Start on 2x. Catch all epics and legendaries; snap lines if only rares are on the line.</p>
-        <p>Goal: catch the 2nd legendary and move to Lake 2 quickly.</p>
-        <p>If you catch the legendary early, catch the remaining fish to reach Lake 2.</p>
-      </section>
-      <section section_id="lakehouse_option_2" title="Option 2 (Higher Golden Tickets)">
-        <p>Gather a second full pool of 40 to push into Lake 2, then go back to Lake 1.</p>
-        <p>Pull on 1x and snap all lines except for the legendary fish.</p>
-        <p>Once you have the 3rd legendary on Lake 1, move to Lake 2.</p>
-        <p>If you are over 75 snapped lines and you have not caught the legendary, switch to Option 1.</p>
-      </section>
-    </section>
-
-    <section section_id="sunset_coast_plan" title="Lake 2: Sunset Coast">
-      <p>You will be getting 3 legendary fish.</p>
-      <p>Fish two full pools of 40. After 80 fish, switch to 2x multiplier.</p>
-      <p>Catch all epics and the legendary; snap all solely rare fish.</p>
-      <p>After catching the legendary, catch all fish until you reach Lake 3.</p>
-      <p>If you are low on line snaps (more than 50 used) after Lake 1, skip this step and catch on 10x until Lake 3.</p>
-    </section>
-
-    <section section_id="oceanic_abyss_plan" title="Lake 3: Oceanic Abyss">
-      <p>You will be getting 3 or 4 legendary fish. Fish two full pools of 40 first, then choose one option.</p>
-      <section section_id="oceanic_option_1" title="Option 1 (Higher Silver Tickets)">
-        <p>Start on 2x multiplier, catch all epics and legendaries, and snap lines if only rares appear.</p>
-        <p>Goal: catch the 3rd legendary and move to the final lake quickly.</p>
-        <p>If you catch the legendary early, catch the remaining fish to reach the final lake.</p>
-      </section>
-      <section section_id="oceanic_option_2" title="Option 2 (Higher Golden Tickets)">
-        <p>Gather a third full pool of 40 to push into the final lake, then go back to Lake 3.</p>
-        <p>Pull on 1x and snap all lines except for the legendary fish.</p>
-        <p>Once you have the 4th legendary fish, move to the final lake.</p>
-      </section>
-    </section>
-
-    <section section_id="polar_glacier_plan" title="Final Lake: Polar Glacier">
-      <p>This lake doubles the pool to 80 fish, creating a copy of every fish.</p>
-      <section section_id="polar_option_1" title="Option 1 (Higher Silver Tickets)">
-        <p>Minimum of 242 lures to reach 16 gold tickets.</p>
-        <p>Pull on 10x until you have spent what you want, tracking every 80 fish.</p>
-        <p>On your last pool of 80, use final line breaks to collect all epics and legendaries.</p>
-      </section>
-      <section section_id="polar_option_2" title="Option 2 (Higher Golden Tickets)">
-        <p>Minimum of 162 lures to reach 16 gold tickets.</p>
-        <p>Pull two full pools of 80, then use all line breaks left to try for the final two legendaries.</p>
+        <section section_id="lakehouse_option_2" title="Lake 1: Lakehouse (Option 2)">
+          <p>Gather a second full pool of 40 to push into Lake 2, then go back to Lake 1.</p>
+          <p>Pull on 1x and snap all lines except for the legendary fish.</p>
+          <p>Once you have the 3rd legendary on Lake 1, move to Lake 2.</p>
+          <p>If you are over 75 snapped lines and you have not caught the legendary, switch to Option 1.</p>
+        </section>
+        <section section_id="sunset_coast_option_2" title="Lake 2: Sunset Coast (Option 2)">
+          <p>If you are low on line snaps (more than 50 used) after Lake 1, skip this step.</p>
+          <p>Otherwise fish two full pools of 40, then switch to 2x multiplier.</p>
+          <p>Catch all epics and the legendary; snap all solely rare fish.</p>
+          <p>After catching the legendary, catch all fish until you reach Lake 3.</p>
+        </section>
+        <section section_id="oceanic_abyss_option_2" title="Lake 3: Oceanic Abyss (Option 2)">
+          <p>Gather a third full pool of 40 to push into the final lake, then go back to Lake 3.</p>
+          <p>Pull on 1x and snap all lines except for the legendary fish.</p>
+          <p>Once you have the 4th legendary fish, move to the final lake.</p>
+        </section>
+        <section section_id="polar_glacier_option_2" title="Final Lake: Polar Glacier (Option 2)">
+          <p>This lake doubles the pool to 80 fish, creating a copy of every fish.</p>
+          <p>Minimum of 162 lures to reach 16 gold tickets.</p>
+          <p>Pull two full pools of 80, then use all line breaks left to try for the final two legendaries.</p>
+        </section>
       </section>
     </section>
 
@@ -191,14 +190,32 @@
     </section>
   </guide>
   <faq>
-    <item faq_id="faq_what_is_event" question="What is this event?">
+    <item faq_id="faq_what_to_buy" question="What should I buy in the event shop?">
       <answer>
-        <p>This is a sample event used to demonstrate the companion app features.</p>
+        <p>Always buy the lures available for silver tickets. They are worth more than they cost every time.</p>
+        <p>Buying etched runes for your main builds is the main reason to play this event. Top etched runes include Arrow of Echoes, Elemental Crit, Meteor Split, and Potion Spring.</p>
+        <p>Buying all the blessed runes is recommended. Progress toward unlocking all etched rune slots is always welcome.</p>
+        <p>Mythic artifacts are a decent option once you have the etched runes you want.</p>
+        <p>Do not buy keys unless you are playing for free. It is better to spend gems on keys directly.</p>
+        <p>It costs roughly 37 keys worth of gems to buy one S tier gear. Not recommended unless it is a personal choice.</p>
       </answer>
     </item>
-    <item faq_id="faq_how_to_track" question="How do I track my progress?">
+    <item faq_id="faq_rank_rewards" question="What are the rank rewards?">
       <answer>
-        <p>Use the Tasks tab to update progress and mark tasks as completed or claimed.</p>
+        <p>Your goal is to gain as much weight as possible early while keeping enough lures for later days.</p>
+        <p>Below 50kg: first place gains 100 gems.</p>
+        <p>Between 50kg-230kg: first place gains 200 gems.</p>
+        <p>Between 230kg-500kg: first place gains 300 gems.</p>
+        <p>Between 500kg-1000kg: first place gains 400 gems.</p>
+        <p>Above 1000kg: first place gains 500 gems.</p>
+      </answer>
+    </item>
+    <item faq_id="faq_helpful_info" question="Helpful side info">
+      <answer>
+        <p>Fish per pool: 1 legendary, 3 big epics, 6 small epics, 5 large rares, 10 medium rares, 15 small rares.</p>
+        <p>On average you gain 390 silver tickets per lure in the final lake.</p>
+        <p>On average you gain 4.7 kg per lure in the final lake.</p>
+        <p>On average you gain 83 tickets per kg in the final lake.</p>
       </answer>
     </item>
   </faq>
