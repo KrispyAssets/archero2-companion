@@ -601,7 +601,9 @@ export default function EventDetail() {
         .tasksModal {
           width: 100%;
           height: 80vh;
-          overflow: auto;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
           background: var(--surface);
           border-radius: 16px 16px 0 0;
           box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
