@@ -1,4 +1,5 @@
-import type { ToolDefinition, ToolPriorityList, ToolStaticText } from "../../catalog/types";
+import type { ToolDefinition, ToolFishingCalculator, ToolPriorityList, ToolStaticText } from "../../catalog/types";
+import FishingToolView from "./FishingTool";
 
 function renderBodyText(body: string) {
   if (!body) return null;
@@ -45,6 +46,9 @@ export default function ToolsHost({ tools }: { tools: ToolDefinition[] }) {
         }
         if (tool.toolType === "static_text") {
           return <StaticTextToolView key={tool.toolId} tool={tool} />;
+        }
+        if (tool.toolType === "fishing_calculator") {
+          return <FishingToolView key={tool.toolId} tool={tool as ToolFishingCalculator} />;
         }
 
         return (

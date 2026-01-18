@@ -7,6 +7,7 @@ import type {
   GuideSection,
   TaskDefinition,
   ToolDefinition,
+  ToolFishingCalculator,
   ToolPriorityList,
   ToolRef,
   ToolStaticText,
@@ -135,6 +136,20 @@ function parseToolDefinition(doc: Document): ToolDefinition | null {
       title,
       description,
       body,
+    };
+    return tool;
+  }
+
+  if (toolType === "fishing_calculator") {
+    const dataRefEl = toolEl.getElementsByTagName("data_ref")[0];
+    const settingsEl = toolEl.getElementsByTagName("settings")[0];
+    const tool: ToolFishingCalculator = {
+      toolId,
+      toolType: "fishing_calculator",
+      title,
+      description,
+      dataPath: dataRefEl ? getAttr(dataRefEl, "path") : "",
+      defaultSetId: settingsEl?.getAttribute("default_set_id") ?? undefined,
     };
     return tool;
   }

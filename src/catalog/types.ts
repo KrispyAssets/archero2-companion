@@ -90,7 +90,13 @@ export type ToolStaticText = ToolDefinitionBase & {
   body: string;
 };
 
-export type ToolDefinition = ToolPriorityList | ToolStaticText | ToolDefinitionBase;
+export type ToolFishingCalculator = ToolDefinitionBase & {
+  toolType: "fishing_calculator";
+  dataPath: string;
+  defaultSetId?: string;
+};
+
+export type ToolDefinition = ToolPriorityList | ToolStaticText | ToolFishingCalculator | ToolDefinitionBase;
 
 /** Summary (used for Events list) */
 export type EventCatalogItemFull = {
