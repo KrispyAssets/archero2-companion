@@ -182,29 +182,32 @@
   </guide>
   <data>
     <section section_id="lake_averages" title="Lake Averages">
-      <section section_id="avg_tickets" title="Average silver tickets per lure">
-        <p>Lake 1: 90 per lure.</p>
-        <p>Lake 2: 150 per lure.</p>
-        <p>Lake 3: 200 per lure.</p>
-        <p>Final lake: 390 per lure.</p>
-      </section>
-      <section section_id="avg_kg_per_lure" title="Average kg per lure">
-        <p>Lake 1: 0.97 kg per lure.</p>
-        <p>Lake 2: 1.52 kg per lure.</p>
-        <p>Lake 3: 2.34 kg per lure.</p>
-        <p>Final lake: 4.55 kg per lure.</p>
-      </section>
-      <section section_id="avg_tickets_per_kg" title="Average tickets per kg">
-        <p>Lake 1: 93.02 tickets per kg.</p>
-        <p>Lake 2: 98.52 tickets per kg.</p>
-        <p>Lake 3: 85.65 tickets per kg.</p>
-        <p>Final lake: 85.67 tickets per kg.</p>
-      </section>
       <section section_id="avg_weights" title="Average fish weight by rarity">
         <p>Lakehouse: Small Rare 0.3 | Medium Rare 0.6 | Large Rare 0.9 | Small Epic 1.4 | Large Epic 3.0 | Legendary 6.3</p>
         <p>Sunset Coast: Small Rare 0.4 | Medium Rare 0.9 | Large Rare 1.4 | Small Epic 2.4 | Large Epic 4.9 | Legendary 9.8</p>
         <p>Oceanic Abyss: Small Rare 0.8 | Medium Rare 1.2 | Large Rare 2.3 | Small Epic 4.0 | Large Epic 6.3 | Legendary 15.0</p>
         <p>Polar Glacier: Small Rare 1.5 | Medium Rare 2.3 | Large Rare 4.8 | Small Epic 7.9 | Large Epic 12.6 | Legendary 27.4</p>
+      </section>
+      <p>Lake 4 gives the most silver tickets per lure because the average weight per lure is much higher, even though tickets per kg are lower.</p>
+      <section section_id="lake_averages_lake_1" title="Lake 1 (Lakehouse)">
+        <p>Average silver tickets per lure: 90</p>
+        <p>Average kg per lure: 0.97</p>
+        <p>Average tickets per kg: 93.02</p>
+      </section>
+      <section section_id="lake_averages_lake_2" title="Lake 2 (Sunset Coast)">
+        <p>Average silver tickets per lure: 150</p>
+        <p>Average kg per lure: 1.52</p>
+        <p>Average tickets per kg: 98.52</p>
+      </section>
+      <section section_id="lake_averages_lake_3" title="Lake 3 (Oceanic Abyss)">
+        <p>Average silver tickets per lure: 200</p>
+        <p>Average kg per lure: 2.34</p>
+        <p>Average tickets per kg: 85.65</p>
+      </section>
+      <section section_id="lake_averages_lake_4" title="Lake 4 (Polar Glacier)">
+        <p>Average silver tickets per lure: 390</p>
+        <p>Average kg per lure: 4.55</p>
+        <p>Average tickets per kg: 85.67</p>
       </section>
     </section>
   </data>
@@ -227,6 +230,12 @@
         <p>Between 230kg-500kg: first place gains 300 gems.</p>
         <p>Between 500kg-1000kg: first place gains 400 gems.</p>
         <p>Above 1000kg: first place gains 500 gems.</p>
+      </answer>
+    </item>
+    <item faq_id="faq_best_silver_lake" question="Which lake should I fish for the most silver tickets?">
+      <answer>
+        <p>Lake 4 (Polar Glacier) gives the most silver tickets per lure on average (~390 per lure). #data-lake_averages</p>
+        <p>Its tickets per kg are lower than earlier lakes, but the average weight per lure is much higher, so you earn more silver tickets per lure overall.</p>
       </answer>
     </item>
   </faq>

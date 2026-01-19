@@ -60,6 +60,49 @@ function renderBodyText(body: string) {
   ));
 }
 
+function renderFaqAnswer(
+  answer: string,
+  dataTitles: Map<string, string>,
+  onAnchorClick: (anchorId: string) => void
+) {
+  if (!answer) return null;
+  return answer.split(/\n{2,}/).map((paragraph, index) => {
+    const parts = paragraph.split(/(#data-[A-Za-z0-9_-]+)/g);
+    if (parts.length === 1) {
+      return (
+        <p key={`${index}-${paragraph.slice(0, 12)}`} style={{ margin: "8px 0" }}>
+          {paragraph}
+        </p>
+      );
+    }
+    return (
+      <p key={`${index}-${paragraph.slice(0, 12)}`} style={{ margin: "8px 0" }}>
+        {parts.map((part, partIndex) => {
+          if (part.startsWith("#data-")) {
+            const anchorId = part.slice(1);
+            const label =
+              anchorId === "data-lake_averages" ? "See Lake Averages" : dataTitles.get(anchorId) ?? "Open Data";
+            return (
+              <a
+                key={`${partIndex}-${anchorId}`}
+                href={`#${anchorId}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  onAnchorClick(anchorId);
+                }}
+                style={{ marginLeft: 6 }}
+              >
+                {label}
+              </a>
+            );
+          }
+          return <span key={`${partIndex}-${part}`}>{part}</span>;
+        })}
+      </p>
+    );
+  });
+}
+
 function resolveImageSrc(src: string): string {
   if (src.startsWith("http://") || src.startsWith("https://") || src.startsWith("data:")) {
     return src;
@@ -520,6 +563,19 @@ export default function EventDetail() {
     }
   }
 
+  const dataTitles = useMemo(() => {
+    if (eventState.status !== "ready") return new Map<string, string>();
+    const map = new Map<string, string>();
+    function walk(sections: GuideSection[]) {
+      for (const section of sections) {
+        map.set(getDataAnchorId(section.sectionId), section.title);
+        if (section.subsections?.length) walk(section.subsections);
+      }
+    }
+    walk(eventState.event.dataSections);
+    return map;
+  }, [eventState]);
+
   if (eventState.status === "idle" || eventState.status === "loading") {
     return (
       <AppShell>
@@ -540,6 +596,17 @@ export default function EventDetail() {
 
   const ev = eventState.event;
   const filteredFaq = filterFaqItems(ev.faqItems, faqQuery);
+
+  function navigateToAnchor(anchorId: string) {
+    const hash = `#${encodeURIComponent(anchorId)}`;
+    if (window.location.hash !== hash) {
+      window.location.hash = hash;
+    } else {
+      setActiveAnchor(anchorId);
+    }
+    const nextTab = getTabForAnchor(anchorId);
+    if (nextTab) setActiveTabId(nextTab);
+  }
 
   const tabs = [
     {
@@ -601,7 +668,7 @@ export default function EventDetail() {
                       <LinkIcon />
                     </button>
                   </summary>
-                  <div style={{ marginTop: 8 }}>{renderBodyText(item.answer)}</div>
+                  <div style={{ marginTop: 8 }}>{renderFaqAnswer(item.answer, dataTitles, navigateToAnchor)}</div>
                   {item.tags && item.tags.length > 0 ? (
                     <div style={{ marginTop: 8, fontSize: 12, color: "var(--text-subtle)" }}>Tags: {item.tags.join(", ")}</div>
                   ) : null}
