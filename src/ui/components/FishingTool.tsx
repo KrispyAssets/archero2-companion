@@ -57,11 +57,11 @@ type HistoryEntry = {
 
 type ToolState = {
   activeSetId: string;
-  activeLakeIdBySet: Record<string, string>;
-  lakeStatesBySet: Record<string, Record<string, LakeState>>;
-  brokenLinesBySet: Record<string, number>;
-  historyBySet: Record<string, HistoryEntry[]>;
-  goalTicketsBySet: Record<string, number | null>;
+  activeLakeId: string;
+  lakeStates: Record<string, LakeState>;
+  brokenLines: number;
+  history: HistoryEntry[];
+  goalTickets: number | null;
 };
 
 type DataState =
@@ -142,44 +142,52 @@ export default function FishingToolView({ tool }: { tool: ToolFishingCalculator 
     }
 
     const defaultSetId = tool.defaultSetId ?? data.sets[0]?.setId ?? "";
-    const activeSetId = stored?.activeSetId && data.sets.some((set) => set.setId === stored?.activeSetId) ? stored.activeSetId : defaultSetId;
+    const activeSetId =
+      stored?.activeSetId && data.sets.some((set) => set.setId === stored?.activeSetId)
+        ? stored.activeSetId
+        : defaultSetId;
 
     const nextState: ToolState = {
       activeSetId,
-      activeLakeIdBySet: {},
-      lakeStatesBySet: {},
-      brokenLinesBySet: {},
-      historyBySet: {},
-      goalTicketsBySet: {},
+      activeLakeId: "",
+      lakeStates: {},
+      brokenLines: 0,
+      history: [],
+      goalTickets: null,
     };
 
-    for (const set of data.sets) {
-      const storedLakeStates = stored?.lakeStatesBySet?.[set.setId] ?? {};
-      const nextLakeStates: Record<string, LakeState> = {};
-      for (const lake of set.lakes) {
-        const storedLake = storedLakeStates[lake.lakeId];
-        const fullCounts = buildFullCounts(data, lake.lakeId);
-        const remainingByTypeId = storedLake?.remainingByTypeId
-          ? { ...fullCounts, ...storedLake.remainingByTypeId }
-          : fullCounts;
-        nextLakeStates[lake.lakeId] = {
-          remainingByTypeId,
-          poolsCompleted: storedLake?.poolsCompleted ?? 0,
-          legendaryCaught: storedLake?.legendaryCaught ?? 0,
-          fishCaught: storedLake?.fishCaught ?? 0,
-        };
-      }
-
-      nextState.lakeStatesBySet[set.setId] = nextLakeStates;
-      const storedActiveLake = stored?.activeLakeIdBySet?.[set.setId];
-      nextState.activeLakeIdBySet[set.setId] =
-        storedActiveLake && set.lakes.some((lake) => lake.lakeId === storedActiveLake)
-          ? storedActiveLake
-          : set.lakes[0]?.lakeId ?? "";
-      nextState.brokenLinesBySet[set.setId] = stored?.brokenLinesBySet?.[set.setId] ?? 0;
-      nextState.historyBySet[set.setId] = stored?.historyBySet?.[set.setId] ?? [];
-      nextState.goalTicketsBySet[set.setId] = stored?.goalTicketsBySet?.[set.setId] ?? null;
+    const baseSet = data.sets[0];
+    const legacySetKey = stored?.activeSetId ?? activeSetId;
+    const storedLakeStates =
+      stored?.lakeStates ??
+      stored?.lakeStatesBySet?.[legacySetKey] ??
+      {};
+    const nextLakeStates: Record<string, LakeState> = {};
+    for (const lake of baseSet.lakes) {
+      const storedLake = storedLakeStates[lake.lakeId];
+      const fullCounts = buildFullCounts(data, lake.lakeId);
+      const remainingByTypeId = storedLake?.remainingByTypeId
+        ? { ...fullCounts, ...storedLake.remainingByTypeId }
+        : fullCounts;
+      nextLakeStates[lake.lakeId] = {
+        remainingByTypeId,
+        poolsCompleted: storedLake?.poolsCompleted ?? 0,
+        legendaryCaught: storedLake?.legendaryCaught ?? 0,
+        fishCaught: storedLake?.fishCaught ?? 0,
+      };
     }
+
+    const storedActiveLake =
+      stored?.activeLakeId ??
+      stored?.activeLakeIdBySet?.[legacySetKey];
+    nextState.activeLakeId =
+      storedActiveLake && baseSet.lakes.some((lake) => lake.lakeId === storedActiveLake)
+        ? storedActiveLake
+        : baseSet.lakes[0]?.lakeId ?? "";
+    nextState.lakeStates = nextLakeStates;
+    nextState.brokenLines = stored?.brokenLines ?? stored?.brokenLinesBySet?.[legacySetKey] ?? 0;
+    nextState.history = stored?.history ?? stored?.historyBySet?.[legacySetKey] ?? [];
+    nextState.goalTickets = stored?.goalTickets ?? stored?.goalTicketsBySet?.[legacySetKey] ?? null;
 
     setToolState(nextState);
   }, [dataState, tool.defaultSetId, tool.toolId]);
@@ -195,10 +203,10 @@ export default function FishingToolView({ tool }: { tool: ToolFishingCalculator 
     const data = dataState.data;
     const set = data.sets.find((entry) => entry.setId === toolState.activeSetId);
     if (!set) return null;
-    const lakeId = toolState.activeLakeIdBySet[set.setId] ?? set.lakes[0]?.lakeId ?? "";
+    const lakeId = toolState.activeLakeId ?? set.lakes[0]?.lakeId ?? "";
     const lake = set.lakes.find((entry) => entry.lakeId === lakeId);
     if (!lake) return null;
-    const lakeState = toolState.lakeStatesBySet[set.setId]?.[lake.lakeId];
+    const lakeState = toolState.lakeStates[lake.lakeId];
     if (!lakeState) return null;
 
     return { data, set, lake, lakeState };
@@ -219,7 +227,7 @@ export default function FishingToolView({ tool }: { tool: ToolFishingCalculator 
   const { data, set, lake, lakeState } = derived;
   const legendaryTypeId = getLegendaryTypeId(data);
   const brokenLinesMax = data.brokenLinesMax ?? 120;
-  const history = toolState.historyBySet[set.setId] ?? [];
+  const history = toolState.history ?? [];
   const lastThree = history.slice(-3).reverse();
 
   const totalFishRemaining = Object.values(lakeState.remainingByTypeId).reduce((sum, count) => sum + count, 0);
@@ -233,11 +241,11 @@ export default function FishingToolView({ tool }: { tool: ToolFishingCalculator 
   }, 0);
   const ticketsRemaining = ticketsPerKg ? weightRemaining * ticketsPerKg : null;
 
-  const totalLegendaryCaught = Object.values(toolState.lakeStatesBySet[set.setId] ?? {}).reduce(
+  const totalLegendaryCaught = Object.values(toolState.lakeStates ?? {}).reduce(
     (sum, entry) => sum + entry.legendaryCaught,
     0
   );
-  const totalFishCaught = Object.values(toolState.lakeStatesBySet[set.setId] ?? {}).reduce(
+  const totalFishCaught = Object.values(toolState.lakeStates ?? {}).reduce(
     (sum, entry) => sum + entry.fishCaught,
     0
   );
@@ -253,7 +261,7 @@ export default function FishingToolView({ tool }: { tool: ToolFishingCalculator 
     return (totalWeight / fishCount) * ticketsPerKg;
   })();
 
-  const goalTickets = toolState.goalTicketsBySet[set.setId] ?? null;
+  const goalTickets = toolState.goalTickets ?? null;
   const estimatedFishForGoal =
     goalTickets && avgTicketsPerFish ? Math.ceil(goalTickets / avgTicketsPerFish) : null;
 
@@ -268,26 +276,26 @@ export default function FishingToolView({ tool }: { tool: ToolFishingCalculator 
   function setActiveLake(lakeId: string) {
     updateToolState((prev) => ({
       ...prev,
-      activeLakeIdBySet: { ...prev.activeLakeIdBySet, [set.setId]: lakeId },
+      activeLakeId: lakeId,
     }));
   }
 
   function resetLake(lakeId: string) {
     updateToolState((prev) => {
-      const nextLakeStates = { ...prev.lakeStatesBySet[set.setId] };
+      const nextLakeStates = { ...prev.lakeStates };
       const existing = nextLakeStates[lakeId];
       if (!existing) return prev;
       nextLakeStates[lakeId] = {
         ...existing,
         remainingByTypeId: buildFullCounts(data, lakeId),
       };
-      return { ...prev, lakeStatesBySet: { ...prev.lakeStatesBySet, [set.setId]: nextLakeStates } };
+      return { ...prev, lakeStates: nextLakeStates };
     });
   }
 
   function resetLakeProgress(lakeId: string) {
     updateToolState((prev) => {
-      const nextLakeStates = { ...prev.lakeStatesBySet[set.setId] };
+      const nextLakeStates = { ...prev.lakeStates };
       const existing = nextLakeStates[lakeId];
       if (!existing) return prev;
       nextLakeStates[lakeId] = {
@@ -296,7 +304,7 @@ export default function FishingToolView({ tool }: { tool: ToolFishingCalculator 
         legendaryCaught: 0,
         fishCaught: 0,
       };
-      return { ...prev, lakeStatesBySet: { ...prev.lakeStatesBySet, [set.setId]: nextLakeStates } };
+      return { ...prev, lakeStates: nextLakeStates };
     });
   }
 
@@ -306,7 +314,7 @@ export default function FishingToolView({ tool }: { tool: ToolFishingCalculator 
     if (!fish) return;
 
     updateToolState((prev) => {
-      const nextLakeStates = { ...prev.lakeStatesBySet[set.setId] };
+      const nextLakeStates = { ...prev.lakeStates };
       const currentLakeState = nextLakeStates[lake.lakeId];
       if (!currentLakeState || currentLakeState.remainingByTypeId[typeId] <= 0) {
         return prev;
@@ -338,7 +346,7 @@ export default function FishingToolView({ tool }: { tool: ToolFishingCalculator 
         fishCaught: nextFishCaught,
       };
 
-      const nextHistory = [...(prev.historyBySet[set.setId] ?? [])];
+      const nextHistory = [...(prev.history ?? [])];
       nextHistory.push({
         entryId: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         lakeId: lake.lakeId,
@@ -351,15 +359,15 @@ export default function FishingToolView({ tool }: { tool: ToolFishingCalculator 
 
       return {
         ...prev,
-        lakeStatesBySet: { ...prev.lakeStatesBySet, [set.setId]: nextLakeStates },
-        historyBySet: { ...prev.historyBySet, [set.setId]: nextHistory.slice(-200) },
+        lakeStates: nextLakeStates,
+        history: nextHistory.slice(-200),
       };
     });
   }
 
   function catchWholePool() {
     updateToolState((prev) => {
-      const nextLakeStates = { ...prev.lakeStatesBySet[set.setId] };
+      const nextLakeStates = { ...prev.lakeStates };
       const currentLakeState = nextLakeStates[lake.lakeId];
       if (!currentLakeState) return prev;
       const prevLakeState: LakeState = {
@@ -381,7 +389,7 @@ export default function FishingToolView({ tool }: { tool: ToolFishingCalculator 
         fishCaught: currentLakeState.fishCaught + remainingTotal,
       };
 
-      const nextHistory = [...(prev.historyBySet[set.setId] ?? [])];
+      const nextHistory = [...(prev.history ?? [])];
       nextHistory.push({
         entryId: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         lakeId: lake.lakeId,
@@ -394,18 +402,18 @@ export default function FishingToolView({ tool }: { tool: ToolFishingCalculator 
 
       return {
         ...prev,
-        lakeStatesBySet: { ...prev.lakeStatesBySet, [set.setId]: nextLakeStates },
-        historyBySet: { ...prev.historyBySet, [set.setId]: nextHistory.slice(-200) },
+        lakeStates: nextLakeStates,
+        history: nextHistory.slice(-200),
       };
     });
   }
 
   function undoLast() {
     updateToolState((prev) => {
-      const nextHistory = [...(prev.historyBySet[set.setId] ?? [])];
+      const nextHistory = [...(prev.history ?? [])];
       const last = nextHistory.pop();
       if (!last) return prev;
-      const nextLakeStates = { ...prev.lakeStatesBySet[set.setId] };
+      const nextLakeStates = { ...prev.lakeStates };
       nextLakeStates[last.lakeId] = {
         remainingByTypeId: { ...last.prevLakeState.remainingByTypeId },
         poolsCompleted: last.prevLakeState.poolsCompleted,
@@ -414,19 +422,19 @@ export default function FishingToolView({ tool }: { tool: ToolFishingCalculator 
       };
       return {
         ...prev,
-        lakeStatesBySet: { ...prev.lakeStatesBySet, [set.setId]: nextLakeStates },
-        historyBySet: { ...prev.historyBySet, [set.setId]: nextHistory },
+        lakeStates: nextLakeStates,
+        history: nextHistory,
       };
     });
   }
 
   function updateBrokenLines(delta: number) {
     updateToolState((prev) => {
-      const current = prev.brokenLinesBySet[set.setId] ?? 0;
+      const current = prev.brokenLines ?? 0;
       const next = clampNumber(current + delta, 0, brokenLinesMax);
       return {
         ...prev,
-        brokenLinesBySet: { ...prev.brokenLinesBySet, [set.setId]: next },
+        brokenLines: next,
       };
     });
   }
@@ -434,7 +442,7 @@ export default function FishingToolView({ tool }: { tool: ToolFishingCalculator 
   function setGoalTickets(value: number | null) {
     updateToolState((prev) => ({
       ...prev,
-      goalTicketsBySet: { ...prev.goalTicketsBySet, [set.setId]: value },
+      goalTickets: value,
     }));
   }
 
@@ -451,10 +459,10 @@ export default function FishingToolView({ tool }: { tool: ToolFishingCalculator 
       }
       return {
         ...prev,
-        lakeStatesBySet: { ...prev.lakeStatesBySet, [set.setId]: nextLakeStates },
-        brokenLinesBySet: { ...prev.brokenLinesBySet, [set.setId]: 0 },
-        historyBySet: { ...prev.historyBySet, [set.setId]: [] },
-        goalTicketsBySet: { ...prev.goalTicketsBySet, [set.setId]: null },
+        lakeStates: nextLakeStates,
+        brokenLines: 0,
+        history: [],
+        goalTickets: null,
       };
     });
   }
@@ -481,7 +489,7 @@ export default function FishingToolView({ tool }: { tool: ToolFishingCalculator 
           <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-muted)" }}>Select a Lake</div>
           <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))" }}>
             {set.lakes.map((entry) => {
-              const entryState = toolState.lakeStatesBySet[set.setId]?.[entry.lakeId];
+              const entryState = toolState.lakeStates[entry.lakeId];
               const remaining = entryState
                 ? Object.values(entryState.remainingByTypeId).reduce((sum, count) => sum + count, 0)
                 : 0;
@@ -576,7 +584,7 @@ export default function FishingToolView({ tool }: { tool: ToolFishingCalculator 
             <div style={{ fontWeight: 700, marginBottom: 6 }}>Broken Lines</div>
             <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
               <div style={{ fontWeight: 700 }}>
-                {toolState.brokenLinesBySet[set.setId] ?? 0}/{brokenLinesMax}
+                {toolState.brokenLines ?? 0}/{brokenLinesMax}
               </div>
               <select value={breakStep} onChange={(e) => setBreakStep(Number(e.target.value))}>
                 {[1, 2, 3, 5, 10].map((value) => (
@@ -613,7 +621,7 @@ export default function FishingToolView({ tool }: { tool: ToolFishingCalculator 
             <div style={{ fontWeight: 700, marginBottom: 6 }}>Lake Progress</div>
             <div style={{ display: "grid", gap: 6 }}>
               {set.lakes.map((entry) => {
-                const entryState = toolState.lakeStatesBySet[set.setId]?.[entry.lakeId];
+                const entryState = toolState.lakeStates[entry.lakeId];
                 return (
                   <div key={entry.lakeId} style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
                     <div>
