@@ -216,6 +216,26 @@ function collectGuideImages(sections: GuideSection[], out: GuideImageItem[] = []
   return out;
 }
 
+function collectGuideAnchorIds(sections: GuideSection[], out: string[] = []): string[] {
+  for (const section of sections) {
+    out.push(getGuideAnchorId(section.sectionId));
+    if (section.subsections?.length) {
+      collectGuideAnchorIds(section.subsections, out);
+    }
+  }
+  return out;
+}
+
+function collectDataAnchorIds(sections: DataSection[], out: string[] = []): string[] {
+  for (const section of sections) {
+    out.push(getDataAnchorId(section.sectionId));
+    if (section.subsections?.length) {
+      collectDataAnchorIds(section.subsections, out);
+    }
+  }
+  return out;
+}
+
 function GuideSectionView({
   section,
   copiedAnchor,
@@ -353,6 +373,7 @@ export default function EventDetail() {
   const [tasksSheetOffset, setTasksSheetOffset] = useState(0);
   const [tasksSheetDragging, setTasksSheetDragging] = useState(false);
   const [openDetailsByTab, setOpenDetailsByTab] = useState<Record<string, Record<string, boolean>>>({});
+  const [lastActiveTabByEvent, setLastActiveTabByEvent] = useState<Record<string, string>>({});
   const tasksScrollRef = useRef<HTMLDivElement | null>(null);
   const tasksSheetStartRef = useRef<number | null>(null);
   const tasksSheetStartOffsetRef = useRef(0);
@@ -399,6 +420,19 @@ export default function EventDetail() {
         nextTab[anchorId] = true;
       } else {
         delete nextTab[anchorId];
+      }
+      return { ...prev, [tabId]: nextTab };
+    });
+  }
+
+  function setAllDetails(tabId: string, anchorIds: string[], isOpen: boolean) {
+    setOpenDetailsByTab((prev) => {
+      if (!isOpen) {
+        return { ...prev, [tabId]: {} };
+      }
+      const nextTab: Record<string, boolean> = {};
+      for (const anchorId of anchorIds) {
+        nextTab[anchorId] = true;
       }
       return { ...prev, [tabId]: nextTab };
     });
@@ -487,6 +521,12 @@ export default function EventDetail() {
       setActiveTabId(nextTab);
     }
   }, [activeAnchor]);
+
+  useEffect(() => {
+    if (decodedEventId) {
+      setLastActiveTabByEvent((prev) => ({ ...prev, [decodedEventId]: activeTabId }));
+    }
+  }, [decodedEventId, activeTabId]);
 
   useEffect(() => {
     if (eventState.status !== "ready") return;
@@ -597,9 +637,10 @@ export default function EventDetail() {
     const hash = window.location.hash.replace(/^#/, "");
     const nextAnchor = hash ? decodeURIComponent(hash) : "";
     const nextTab = nextAnchor ? getTabForAnchor(nextAnchor) : null;
-    setActiveTabId(nextTab ?? "tasks");
+    const storedTab = lastActiveTabByEvent[decodedEventId] ?? null;
+    setActiveTabId(nextTab ?? storedTab ?? "tasks");
     setFaqQuery("");
-  }, [decodedEventId]);
+  }, [decodedEventId, lastActiveTabByEvent]);
 
   useEffect(() => {
     return () => {
@@ -779,6 +820,18 @@ export default function EventDetail() {
       label: `Guide (${ev.sections.guideSectionCount})`,
       content: ev.guideSections.length ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }} onClick={handleGuideImageClick}>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+            <button
+              type="button"
+              className="ghost"
+              onClick={() => setAllDetails("guide", collectGuideAnchorIds(ev.guideSections), true)}
+            >
+              Expand all
+            </button>
+            <button type="button" className="ghost" onClick={() => setAllDetails("guide", [], false)}>
+              Collapse all
+            </button>
+          </div>
           {ev.guideSections.map((section) => (
             <GuideSectionView
               key={section.sectionId}
@@ -800,6 +853,18 @@ export default function EventDetail() {
       label: `FAQ (${ev.sections.faqCount})`,
       content: ev.faqItems.length ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+            <button
+              type="button"
+              className="ghost"
+              onClick={() => setAllDetails("faq", filteredFaq.map((item) => getFaqAnchorId(item.faqId)), true)}
+            >
+              Expand all
+            </button>
+            <button type="button" className="ghost" onClick={() => setAllDetails("faq", [], false)}>
+              Collapse all
+            </button>
+          </div>
           <input type="text" value={faqQuery} onChange={(e) => setFaqQuery(e.target.value)} placeholder="Search FAQ..." style={{ maxWidth: 420 }} />
           {filteredFaq.length ? (
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -851,6 +916,18 @@ export default function EventDetail() {
       hidden: ev.sections.dataSectionCount === 0,
       content: ev.dataSections.length ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+            <button
+              type="button"
+              className="ghost"
+              onClick={() => setAllDetails("data", collectDataAnchorIds(ev.dataSections), true)}
+            >
+              Expand all
+            </button>
+            <button type="button" className="ghost" onClick={() => setAllDetails("data", [], false)}>
+              Collapse all
+            </button>
+          </div>
           {ev.dataSections.map((section) => (
             <DataSectionView
               key={section.sectionId}
