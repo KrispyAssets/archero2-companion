@@ -93,8 +93,8 @@
     <section section_id="how_lakes_work" title="How the Lakes Work">
       <p>Fishing may seem random at first, but it is not. You can predict fish pools and plan your lures.</p>
       <p>In the first three lakes the fish pool is the same; in the final lake the pool is doubled.</p>
-      <p>Pools contain 40 fish: 1 legendary, 3 large epics, 6 small epics, 5 large rares, 10 medium rares, 15 small rares.</p>
-      <p>In the final lake, this doubles to 80 fish: 2 legendaries, 6 large epics, 12 small epics, 10 large rares, 20 medium rares, 30 small rares.</p>
+      <p>Pool makeup (Lakes 1-3): Small Rare 15 | Medium Rare 10 | Large Rare 5 | Small Epic 6 | Large Epic 3 | Legendary 1</p>
+      <p>Final lake (80 fish): Small Rare 30 | Medium Rare 20 | Large Rare 10 | Small Epic 12 | Large Epic 6 | Legendary 2</p>
       <p>Pools reset only when you catch all fish. Snapping lines does not remove fish from the pool.</p>
       <p>Moving to a new lake starts a fresh pool in that lake. The previous lake pool stays intact as you left it.</p>
     </section>
