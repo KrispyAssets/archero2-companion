@@ -100,6 +100,22 @@ function getLegendaryTypeId(data: FishingToolData) {
   return data.fishTypes.find((type) => type.rarity === "legendary")?.typeId ?? "";
 }
 
+function getFishTypeLabel(typeId: string, rarity: FishingFishType["rarity"]) {
+  if (rarity === "legendary") return "Legendary";
+  if (rarity === "epic") {
+    if (typeId.endsWith("_1")) return "Small Epic";
+    if (typeId.endsWith("_2")) return "Large Epic";
+    return "Epic";
+  }
+  if (rarity === "rare") {
+    if (typeId.endsWith("_1")) return "Small Rare";
+    if (typeId.endsWith("_2")) return "Medium Rare";
+    if (typeId.endsWith("_3")) return "Large Rare";
+    return "Rare";
+  }
+  return rarity;
+}
+
 export default function FishingToolView({ tool }: { tool: ToolFishingCalculator }) {
   const [dataState, setDataState] = useState<DataState>(() => {
     const cached = dataCache.get(tool.dataPath);
@@ -540,14 +556,22 @@ export default function FishingToolView({ tool }: { tool: ToolFishingCalculator 
             {data.fishTypes.map((fishType) => {
               const fish = lake.fish.find((entry) => entry.typeId === fishType.typeId);
               const remaining = lakeState.remainingByTypeId[fishType.typeId] ?? 0;
+              const typeLabel = getFishTypeLabel(fishType.typeId, fishType.rarity);
+              const displayName = fish?.name ?? typeLabel;
+              const rarityStyle =
+                fishType.rarity === "legendary"
+                  ? { background: "#F2A31A", border: "1px solid #E79A14" }
+                  : fishType.rarity === "epic"
+                  ? { background: "#9B6BFF", border: "1px solid #8D5CFA" }
+                  : { background: "#0E84FF", border: "1px solid #0A7CF2" };
               return (
                 <button
                   key={fishType.typeId}
                   type="button"
                   onClick={() => catchFish(fishType.typeId)}
                   style={{
-                    border: "1px solid var(--border)",
-                    background: "var(--surface-2)",
+                    border: rarityStyle.border,
+                    background: rarityStyle.background,
                     borderRadius: 12,
                     padding: "10px 8px",
                     textAlign: "center",
@@ -561,10 +585,10 @@ export default function FishingToolView({ tool }: { tool: ToolFishingCalculator 
                       style={{ width: 44, height: 44, objectFit: "contain", marginBottom: 6 }}
                     />
                   ) : (
-                    <div style={{ fontSize: 18, marginBottom: 6 }}>{fishType.label}</div>
+                    <div style={{ fontSize: 18, marginBottom: 6 }}>{typeLabel}</div>
                   )}
-                  <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{fish?.name ?? fishType.label}</div>
-                  <div style={{ fontSize: 13 }}>{remaining} left</div>
+                  <div style={{ fontSize: 12, color: "#0A0A0A" }}>{displayName}</div>
+                  <div style={{ fontSize: 13, color: "#0A0A0A" }}>{remaining} left</div>
                 </button>
               );
             })}
@@ -580,8 +604,8 @@ export default function FishingToolView({ tool }: { tool: ToolFishingCalculator 
           <div style={{ display: "grid", gap: 6, marginTop: 8, fontSize: 14 }}>
             <div>Fish remaining: {totalFishRemaining}</div>
             <div>Chance next fish is Legendary: {legendaryChance.toFixed(1)}%</div>
-            <div>Weight remaining: {formatNumber(weightRemaining, 1)} kg</div>
-            <div>Tickets remaining: {ticketsPerKg ? formatNumber(ticketsRemaining, 0) : "Add ticket data"}</div>
+            <div>Average Weight Remaining: {formatNumber(weightRemaining, 1)} kg</div>
+            <div>Average Silver Tickets Remaining: {ticketsPerKg ? formatNumber(ticketsRemaining, 0) : "Add ticket data"}</div>
           </div>
         </div>
 
