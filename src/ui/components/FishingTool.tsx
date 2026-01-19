@@ -316,6 +316,12 @@ export default function FishingToolView({
     );
   }, [eventId, eventVersion, tasks, taskTick]);
 
+  const baselineMin = 70000;
+  const baselineMax = 130000;
+  const baselineDefault = 120000;
+  const silverGoalBaselineRaw = toolState?.targetSilverTickets ?? baselineDefault;
+  const silverGoalBaseline = clampNumber(silverGoalBaselineRaw, baselineMin, baselineMax);
+
   const lakeRecommendations = useMemo(() => {
     if (dataState.status !== "ready" || !toolState) return null;
     const data = dataState.data;
@@ -327,12 +333,91 @@ export default function FishingToolView({
     const goldRemaining =
       goldCurrent !== null && goldTarget !== null ? Math.max(0, goldTarget - goldCurrent) : null;
     if (!goldRemaining) return null;
-    let best: { lakeId: string; expectedOne: number } | null = null;
+    const silverCurrent = toolState.currentSilverTickets ?? null;
+    const silverTarget = toolState.targetSilverTickets ?? null;
+    const silverRemaining =
+      silverCurrent !== null && silverTarget !== null ? Math.max(0, silverTarget - silverCurrent) : null;
+    const silverGoalBaselineRaw = silverTarget ?? baselineDefault;
+    const silverGoalBaseline = clampNumber(silverGoalBaselineRaw, baselineMin, baselineMax);
+    const silverWeight =
+      silverRemaining && silverGoalBaseline > 0
+        ? Math.min(1, Math.max(0.25, silverRemaining / silverGoalBaseline))
+        : 0;
+
+    const maxAvgTickets = Math.max(
+      ...set.lakes.map((entry) => getAvgTicketsPerFish(data, entry.lakeId) ?? 0)
+    );
+
+    const quickThreshold = 10;
+    let quickPick: { lakeId: string; remainingFish: number } | null = null;
     for (const entry of set.lakes) {
-      const estimate = getLegendaryRangeForLake(entry.lakeId, 1, data, toolState.lakeStates, legendaryTypeId);
-      if (!estimate) continue;
-      if (!best || estimate.expectedOne < best.expectedOne) {
-        best = { lakeId: entry.lakeId, expectedOne: estimate.expectedOne };
+      const state = toolState.lakeStates[entry.lakeId];
+      if (!state) continue;
+      const remainingFish = sumCounts(state.remainingByTypeId);
+      const remainingLegendary = state.remainingByTypeId[legendaryTypeId] ?? 0;
+      if (remainingLegendary > 0 && remainingFish <= quickThreshold) {
+        if (!quickPick || remainingFish < quickPick.remainingFish) {
+          quickPick = { lakeId: entry.lakeId, remainingFish };
+        }
+      }
+    }
+
+    function scoreLake(lakeId: string, goal: number) {
+      const estimate = getLegendaryRangeForLake(lakeId, goal, data, toolState.lakeStates, legendaryTypeId);
+      if (!estimate) return null;
+      const avgTicketsPerFish = getAvgTicketsPerFish(data, lakeId);
+      const expectedFish = estimate.expected;
+      const fishEquivalent =
+        avgTicketsPerFish && maxAvgTickets > 0 ? (expectedFish * avgTicketsPerFish) / maxAvgTickets : 0;
+      const riskAdjusted = expectedFish + estimate.worst * 0.5 + estimate.best * 0.25;
+      const score = riskAdjusted - fishEquivalent * silverWeight;
+      return { lakeId, avgTicketsPerFish, score };
+    }
+
+    if (quickPick && goldRemaining > 0) {
+      const remainingGoal = Math.max(0, goldRemaining - 1);
+      let bestRest: { lakeId: string; avgTicketsPerFish: number | null; score: number } | null = null;
+      if (remainingGoal > 0) {
+        for (const entry of set.lakes) {
+          if (entry.lakeId === quickPick.lakeId) continue;
+          const scored = scoreLake(entry.lakeId, remainingGoal);
+          if (!scored) continue;
+          if (!bestRest || scored.score < bestRest.score - 0.01) {
+            bestRest = scored;
+          }
+        }
+      }
+      return {
+        lakeId: quickPick.lakeId,
+        avgTicketsPerFish: getAvgTicketsPerFish(data, quickPick.lakeId),
+        score: -Infinity,
+        silverWeight,
+        quickPick: true,
+        restLakeId: bestRest?.lakeId ?? null,
+      };
+    }
+
+    let best:
+      | {
+          lakeId: string;
+          avgTicketsPerFish: number | null;
+          score: number;
+          silverWeight: number;
+          quickPick?: boolean;
+          restLakeId?: string | null;
+        }
+      | null = null;
+    for (const entry of set.lakes) {
+      const scored = scoreLake(entry.lakeId, goldRemaining);
+      if (!scored) continue;
+      const { avgTicketsPerFish, score } = scored;
+      if (!best || score < best.score - 0.01) {
+        best = {
+          lakeId: entry.lakeId,
+          avgTicketsPerFish,
+          score,
+          silverWeight,
+        };
       }
     }
     return best;
@@ -347,6 +432,29 @@ export default function FishingToolView({
     const goldRemaining =
       goldCurrent !== null && goldTarget !== null ? Math.max(0, goldTarget - goldCurrent) : null;
     if (!goldRemaining || !lakeRecommendations) return null;
+    if (lakeRecommendations.quickPick && lakeRecommendations.restLakeId && goldRemaining > 1) {
+      const first = getLegendaryRangeForLake(
+        lakeRecommendations.lakeId,
+        1,
+        data,
+        toolState.lakeStates,
+        legendaryTypeId
+      );
+      const rest = getLegendaryRangeForLake(
+        lakeRecommendations.restLakeId,
+        goldRemaining - 1,
+        data,
+        toolState.lakeStates,
+        legendaryTypeId
+      );
+      if (!first || !rest) return null;
+      return {
+        best: first.best + rest.best,
+        expected: first.expected + rest.expected,
+        worst: first.worst + rest.worst,
+        expectedOne: first.expectedOne,
+      };
+    }
     return getLegendaryRangeForLake(
       lakeRecommendations.lakeId,
       goldRemaining,
@@ -425,16 +533,39 @@ export default function FishingToolView({
     const fullFish = sumCounts(fullCounts);
     const fullLegendary = fullCounts[legendaryTypeId] ?? 0;
     if (!fullLegendary) return null;
-    const expectedFull = fullFish / fullLegendary;
-    const bestOne = remainingLegendary > 0 ? 1 : remainingFish + 1;
-    const worstOne = remainingLegendary > 0 ? remainingFish - remainingLegendary + 1 : remainingFish + fullFish;
-    const expectedOne =
-      remainingLegendary > 0 ? (remainingFish + 1) / (remainingLegendary + 1) : remainingFish + expectedFull;
+    const expectedOneFull = (fullFish + 1) / (fullLegendary + 1);
+    const expectedOneRemaining =
+      remainingLegendary > 0 ? (remainingFish + 1) / (remainingLegendary + 1) : null;
+
+    function poolRange(totalFish: number, legendaryCount: number, target: number) {
+      const best = target;
+      const worst = totalFish - legendaryCount + target;
+      const expected = (target * (totalFish + 1)) / (legendaryCount + 1);
+      return { best, expected, worst };
+    }
+
+    if (goal <= remainingLegendary) {
+      const range = poolRange(remainingFish, remainingLegendary, goal);
+      return {
+        ...range,
+        expectedOne: expectedOneRemaining ?? expectedOneFull,
+      };
+    }
+
+    const remainingGoal = goal - remainingLegendary;
+    const fullPoolsBefore = Math.floor((remainingGoal - 1) / fullLegendary);
+    const remainingInLast = remainingGoal - fullPoolsBefore * fullLegendary;
+
+    const lastRange = poolRange(fullFish, fullLegendary, remainingInLast);
+    const best = remainingFish + fullPoolsBefore * fullFish + lastRange.best;
+    const expected = remainingFish + fullPoolsBefore * fullFish + lastRange.expected;
+    const worst = remainingFish + fullPoolsBefore * fullFish + lastRange.worst;
+
     return {
-      best: bestOne + (goal - 1),
-      expected: expectedOne + (goal - 1) * expectedFull,
-      worst: worstOne + (goal - 1) * fullFish,
-      expectedOne,
+      best,
+      expected,
+      worst,
+      expectedOne: expectedOneRemaining ?? remainingFish + expectedOneFull,
     };
   }
 
@@ -849,7 +980,7 @@ export default function FishingToolView({
             </div>
 
             {toolState.goalMode !== "gold" ? (
-              <div style={{ display: "grid", gap: 8, marginTop: 12 }}>
+              <div style={{ display: "grid", gap: 10, marginTop: 12, padding: 10, borderRadius: 10, background: "var(--surface-2)", border: "1px solid var(--border)" }}>
                 <div style={{ fontWeight: 700 }}>Silver Tickets</div>
                 <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                   <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
@@ -857,6 +988,7 @@ export default function FishingToolView({
                     <input
                       type="text"
                       inputMode="numeric"
+                      placeholder="Current"
                       value={silverCurrent === null ? "" : silverCurrent}
                       onChange={(e) => {
                         const raw = e.target.value.replace(/[^\d]/g, "");
@@ -870,6 +1002,7 @@ export default function FishingToolView({
                     <input
                       type="text"
                       inputMode="numeric"
+                      placeholder="Target"
                       value={silverTarget === null ? "" : silverTarget}
                       onChange={(e) => {
                         const raw = e.target.value.replace(/[^\d]/g, "");
@@ -878,13 +1011,6 @@ export default function FishingToolView({
                       style={{ maxWidth: 160 }}
                     />
                   </label>
-                </div>
-                <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
-                  {silverRemaining === null
-                    ? "Enter current and goal silver tickets."
-                    : silverRemaining === 0
-                    ? "Goal reached."
-                    : `Using ${set.lakes.find((entry) => entry.lakeId === data.lastLakeId)?.label ?? data.lastLakeId} for estimates.`}
                 </div>
                 <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
                   <label style={{ fontSize: 12, color: "var(--text-muted)" }}>Estimate lake</label>
@@ -898,6 +1024,13 @@ export default function FishingToolView({
                       </option>
                     ))}
                   </select>
+                </div>
+                <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
+                  {silverRemaining === null
+                    ? "Enter current and goal silver tickets."
+                    : silverRemaining === 0
+                    ? "Goal reached."
+                    : `Using ${set.lakes.find((entry) => entry.lakeId === silverEstimateLakeId)?.label ?? silverEstimateLakeId} for estimates.`}
                 </div>
                 {silverRemaining ? (
                   <div style={{ display: "grid", gap: 6, fontSize: 13 }}>
@@ -927,7 +1060,7 @@ export default function FishingToolView({
             ) : null}
 
             {toolState.goalMode !== "silver" ? (
-              <div style={{ display: "grid", gap: 8, marginTop: 12 }}>
+              <div style={{ display: "grid", gap: 10, marginTop: 12, padding: 10, borderRadius: 10, background: "var(--surface-2)", border: "1px solid var(--border)" }}>
                 <div style={{ fontWeight: 700 }}>Golden Tickets</div>
                 <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                   <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
@@ -935,6 +1068,7 @@ export default function FishingToolView({
                     <input
                       type="text"
                       inputMode="numeric"
+                      placeholder="Current"
                       value={goldCurrent === null ? "" : goldCurrent}
                       onChange={(e) => {
                         const raw = e.target.value.replace(/[^\d]/g, "");
@@ -948,6 +1082,7 @@ export default function FishingToolView({
                     <input
                       type="text"
                       inputMode="numeric"
+                      placeholder="Target"
                       value={goldTarget === null ? "" : goldTarget}
                       onChange={(e) => {
                         const raw = e.target.value.replace(/[^\d]/g, "");
@@ -962,6 +1097,8 @@ export default function FishingToolView({
                     ? "Enter current and goal golden tickets."
                     : goldRemaining === 0
                     ? "Goal reached."
+                    : lakeRecommendations?.quickPick && lakeRecommendations.restLakeId
+                    ? `Quick legendary in ${set.lakes.find((entry) => entry.lakeId === lakeRecommendations.lakeId)?.label ?? lakeRecommendations.lakeId}, then switch to ${set.lakes.find((entry) => entry.lakeId === lakeRecommendations.restLakeId)?.label ?? lakeRecommendations.restLakeId}.`
                     : lakeRecommendations
                     ? `Recommended lake: ${set.lakes.find((entry) => entry.lakeId === lakeRecommendations.lakeId)?.label ?? lakeRecommendations.lakeId}.`
                     : "Add a goal to see a recommended lake."}
@@ -975,8 +1112,20 @@ export default function FishingToolView({
                         {formatNumber(Math.ceil(goldRange.worst))}
                       </b>
                     </div>
+                    <div>
+                      Estimated gem cost (expected):{" "}
+                      <b>{formatNumber(Math.ceil(goldRange.expected) * 150)}</b>
+                    </div>
+                    <div>
+                      Estimated silver tickets gained (expected):{" "}
+                      <b>
+                        {lakeRecommendations?.avgTicketsPerFish
+                          ? formatNumber(goldRange.expected * lakeRecommendations.avgTicketsPerFish, 0)
+                          : "—"}
+                      </b>
+                    </div>
                     <div style={{ color: "var(--text-muted)" }}>
-                      Based on current pools in the recommended lake.
+                      Weighted by silver value (weight {formatNumber(lakeRecommendations?.silverWeight ?? 0, 2)} using baseline {formatNumber(silverGoalBaseline)}). Best-case assumes full pools between legendaries.
                     </div>
                   </div>
                 ) : null}
