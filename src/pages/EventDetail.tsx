@@ -220,14 +220,25 @@ function GuideSectionView({
   section,
   copiedAnchor,
   onCopyLink,
+  tabId,
+  openState,
+  onToggleOpen,
 }: {
   section: GuideSection;
   copiedAnchor: string;
   onCopyLink: (anchorId: string) => void;
+  tabId: string;
+  openState: Record<string, boolean>;
+  onToggleOpen: (tabId: string, anchorId: string, isOpen: boolean) => void;
 }) {
   const anchorId = getGuideAnchorId(section.sectionId);
   return (
-    <details id={anchorId} style={{ border: "1px solid var(--border)", borderRadius: 10, padding: "8px 12px", background: "var(--surface)", scrollMarginTop: 90 }}>
+    <details
+      id={anchorId}
+      open={Boolean(openState[anchorId])}
+      onToggle={(e) => onToggleOpen(tabId, anchorId, (e.currentTarget as HTMLDetailsElement).open)}
+      style={{ border: "1px solid var(--border)", borderRadius: 10, padding: "8px 12px", background: "var(--surface)", scrollMarginTop: 90 }}
+    >
       <summary className="detailsSummary" style={{ cursor: "pointer", fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
         <span aria-hidden="true" className="detailsChevron">
           ▸
@@ -247,7 +258,15 @@ function GuideSectionView({
       {section.subsections && section.subsections.length > 0 ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
           {section.subsections.map((child) => (
-            <GuideSectionView key={child.sectionId} section={child} copiedAnchor={copiedAnchor} onCopyLink={onCopyLink} />
+            <GuideSectionView
+              key={child.sectionId}
+              section={child}
+              copiedAnchor={copiedAnchor}
+              onCopyLink={onCopyLink}
+              tabId={tabId}
+              openState={openState}
+              onToggleOpen={onToggleOpen}
+            />
           ))}
         </div>
       ) : null}
@@ -259,14 +278,25 @@ function DataSectionView({
   section,
   copiedAnchor,
   onCopyLink,
+  tabId,
+  openState,
+  onToggleOpen,
 }: {
   section: DataSection;
   copiedAnchor: string;
   onCopyLink: (anchorId: string) => void;
+  tabId: string;
+  openState: Record<string, boolean>;
+  onToggleOpen: (tabId: string, anchorId: string, isOpen: boolean) => void;
 }) {
   const anchorId = getDataAnchorId(section.sectionId);
   return (
-    <details id={anchorId} style={{ border: "1px solid var(--border)", borderRadius: 10, padding: "8px 12px", background: "var(--surface)", scrollMarginTop: 90 }}>
+    <details
+      id={anchorId}
+      open={Boolean(openState[anchorId])}
+      onToggle={(e) => onToggleOpen(tabId, anchorId, (e.currentTarget as HTMLDetailsElement).open)}
+      style={{ border: "1px solid var(--border)", borderRadius: 10, padding: "8px 12px", background: "var(--surface)", scrollMarginTop: 90 }}
+    >
       <summary className="detailsSummary" style={{ cursor: "pointer", fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
         <span aria-hidden="true" className="detailsChevron">
           ▸
@@ -286,7 +316,15 @@ function DataSectionView({
       {section.subsections && section.subsections.length > 0 ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
           {section.subsections.map((child) => (
-            <DataSectionView key={child.sectionId} section={child} copiedAnchor={copiedAnchor} onCopyLink={onCopyLink} />
+            <DataSectionView
+              key={child.sectionId}
+              section={child}
+              copiedAnchor={copiedAnchor}
+              onCopyLink={onCopyLink}
+              tabId={tabId}
+              openState={openState}
+              onToggleOpen={onToggleOpen}
+            />
           ))}
         </div>
       ) : null}
@@ -314,6 +352,7 @@ export default function EventDetail() {
   const [tasksOpen, setTasksOpen] = useState(false);
   const [tasksSheetOffset, setTasksSheetOffset] = useState(0);
   const [tasksSheetDragging, setTasksSheetDragging] = useState(false);
+  const [openDetailsByTab, setOpenDetailsByTab] = useState<Record<string, Record<string, boolean>>>({});
   const tasksScrollRef = useRef<HTMLDivElement | null>(null);
   const tasksSheetStartRef = useRef<number | null>(null);
   const tasksSheetStartOffsetRef = useRef(0);
@@ -352,6 +391,18 @@ export default function EventDetail() {
   const eventState = useEventCatalog(decodedEventId);
   const toolState = useToolsCatalog(eventState.status === "ready" ? eventState.event.toolRefs.map((ref) => ref.toolId) : []);
   const guideImages = useMemo(() => (eventState.status === "ready" ? collectGuideImages(eventState.event.guideSections) : []), [eventState]);
+
+  function setDetailOpen(tabId: string, anchorId: string, isOpen: boolean) {
+    setOpenDetailsByTab((prev) => {
+      const nextTab = { ...(prev[tabId] ?? {}) };
+      if (isOpen) {
+        nextTab[anchorId] = true;
+      } else {
+        delete nextTab[anchorId];
+      }
+      return { ...prev, [tabId]: nextTab };
+    });
+  }
 
   function getTabFromLocation() {
     const params = new URLSearchParams(window.location.search);
@@ -449,15 +500,22 @@ export default function EventDetail() {
     if (lastHandledAnchorRef.current === activeAnchor) return;
     lastHandledAnchorRef.current = activeAnchor;
     const anchorEl = document.getElementById(activeAnchor);
+    const tabForAnchor = getTabForAnchor(activeAnchor) ?? activeTabId;
     let parent = anchorEl?.parentElement ?? null;
     while (parent) {
       if (parent.tagName === "DETAILS") {
         (parent as HTMLDetailsElement).open = true;
+        if (parent.id) {
+          setDetailOpen(tabForAnchor, parent.id, true);
+        }
       }
       parent = parent.parentElement;
     }
     if (anchorEl && anchorEl.tagName === "DETAILS") {
       (anchorEl as HTMLDetailsElement).open = true;
+      if (anchorEl.id) {
+        setDetailOpen(tabForAnchor, anchorEl.id, true);
+      }
     }
     let attempts = 0;
 
@@ -722,7 +780,15 @@ export default function EventDetail() {
       content: ev.guideSections.length ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }} onClick={handleGuideImageClick}>
           {ev.guideSections.map((section) => (
-            <GuideSectionView key={section.sectionId} section={section} copiedAnchor={copiedAnchor} onCopyLink={copyAnchorLink} />
+            <GuideSectionView
+              key={section.sectionId}
+              section={section}
+              copiedAnchor={copiedAnchor}
+              onCopyLink={copyAnchorLink}
+              tabId="guide"
+              openState={openDetailsByTab.guide ?? {}}
+              onToggleOpen={setDetailOpen}
+            />
           ))}
         </div>
       ) : (
@@ -741,6 +807,10 @@ export default function EventDetail() {
                 <details
                   key={item.faqId}
                   id={getFaqAnchorId(item.faqId)}
+                  open={Boolean((openDetailsByTab.faq ?? {})[getFaqAnchorId(item.faqId)])}
+                  onToggle={(e) =>
+                    setDetailOpen("faq", getFaqAnchorId(item.faqId), (e.currentTarget as HTMLDetailsElement).open)
+                  }
                   style={{ border: "1px solid var(--border)", borderRadius: 10, padding: "8px 12px", background: "var(--surface)", scrollMarginTop: 90 }}
                 >
                   <summary className="detailsSummary" style={{ cursor: "pointer", fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
@@ -782,7 +852,15 @@ export default function EventDetail() {
       content: ev.dataSections.length ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {ev.dataSections.map((section) => (
-            <DataSectionView key={section.sectionId} section={section} copiedAnchor={copiedAnchor} onCopyLink={copyAnchorLink} />
+            <DataSectionView
+              key={section.sectionId}
+              section={section}
+              copiedAnchor={copiedAnchor}
+              onCopyLink={copyAnchorLink}
+              tabId="data"
+              openState={openDetailsByTab.data ?? {}}
+              onToggleOpen={setDetailOpen}
+            />
           ))}
         </div>
       ) : (
