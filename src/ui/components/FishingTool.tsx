@@ -70,6 +70,8 @@ type DataState =
   | { status: "ready"; data: FishingToolData };
 
 const STORAGE_PREFIX = "archero2_tool_state_";
+const dataCache = new Map<string, FishingToolData>();
+const toolStateCache = new Map<string, ToolState>();
 
 function resolvePath(path: string) {
   if (!path) return "";
@@ -99,20 +101,31 @@ function getLegendaryTypeId(data: FishingToolData) {
 }
 
 export default function FishingToolView({ tool }: { tool: ToolFishingCalculator }) {
-  const [dataState, setDataState] = useState<DataState>({ status: "loading" });
-  const [toolState, setToolState] = useState<ToolState | null>(null);
+  const [dataState, setDataState] = useState<DataState>(() => {
+    const cached = dataCache.get(tool.dataPath);
+    return cached ? { status: "ready", data: cached } : { status: "loading" };
+  });
+  const [toolState, setToolState] = useState<ToolState | null>(() => {
+    return toolStateCache.get(tool.toolId) ?? null;
+  });
   const [breakStep, setBreakStep] = useState(1);
 
   useEffect(() => {
     let cancelled = false;
     async function loadData() {
       try {
+        const cached = dataCache.get(tool.dataPath);
+        if (cached) {
+          setDataState({ status: "ready", data: cached });
+          return;
+        }
         const response = await fetch(resolvePath(tool.dataPath), { cache: "no-cache" });
         if (!response.ok) {
           throw new Error(`Failed to load tool data: ${response.status} ${response.statusText}`);
         }
         const json = (await response.json()) as FishingToolData;
         if (!cancelled) {
+          dataCache.set(tool.dataPath, json);
           setDataState({ status: "ready", data: json });
         }
       } catch (error) {
@@ -190,12 +203,14 @@ export default function FishingToolView({ tool }: { tool: ToolFishingCalculator 
     nextState.goalTickets = stored?.goalTickets ?? stored?.goalTicketsBySet?.[legacySetKey] ?? null;
 
     setToolState(nextState);
+    toolStateCache.set(tool.toolId, nextState);
   }, [dataState, tool.defaultSetId, tool.toolId]);
 
   useEffect(() => {
     if (!toolState) return;
     const storageKey = `${STORAGE_PREFIX}${tool.toolId}`;
     localStorage.setItem(storageKey, JSON.stringify(toolState));
+    toolStateCache.set(tool.toolId, toolState);
   }, [tool.toolId, toolState]);
 
   const derived = useMemo(() => {
@@ -221,7 +236,7 @@ export default function FishingToolView({ tool }: { tool: ToolFishingCalculator 
   }
 
   if (!toolState || !derived) {
-    return <p style={{ color: "var(--danger)" }}>Tool data not ready.</p>;
+    return <p>Loading fishing tool…</p>;
   }
 
   const { data, set, lake, lakeState } = derived;
