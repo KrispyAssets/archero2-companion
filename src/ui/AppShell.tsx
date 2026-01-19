@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import "./appShell.css";
 
@@ -26,6 +26,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }
   const [historyIndex, setHistoryIndex] = useState(initialIdx);
   const [historyMaxIndex, setHistoryMaxIndex] = useState(Math.max(initialIdx, historyMaxCache));
+  const locationKeyRef = useRef(location.key);
+  const historyCheckRef = useRef<number | null>(null);
 
   useEffect(() => {
     document.documentElement.dataset.theme = themeId;
@@ -35,6 +37,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }, [themeId, mode]);
 
   useEffect(() => {
+    locationKeyRef.current = location.key;
     const idx = Number(window.history.state?.idx ?? 0);
     setHistoryIndex(idx);
     setHistoryMaxIndex((prev) => {
@@ -56,8 +59,30 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     }
 
     document.addEventListener("pointerdown", handlePointerDown);
-    return () => document.removeEventListener("pointerdown", handlePointerDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      if (historyCheckRef.current !== null) {
+        window.clearTimeout(historyCheckRef.current);
+      }
+    };
   }, []);
+
+  function scheduleHistoryCheck(kind: "back" | "forward") {
+    if (historyCheckRef.current !== null) {
+      window.clearTimeout(historyCheckRef.current);
+    }
+    const beforeKey = locationKeyRef.current;
+    historyCheckRef.current = window.setTimeout(() => {
+      historyCheckRef.current = null;
+      if (locationKeyRef.current !== beforeKey) return;
+      if (kind === "forward") {
+        historyMaxCache = historyIndex;
+        setHistoryMaxIndex(historyIndex);
+      } else {
+        historyMinCache = historyIndex;
+      }
+    }, 200);
+  }
 
   return (
     <div className="app">
@@ -69,7 +94,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 type="button"
                 className="secondary"
                 onClick={() => {
-                  if (canGoBack) window.history.back();
+                  if (!canGoBack) return;
+                  window.history.back();
+                  scheduleHistoryCheck("back");
                 }}
                 aria-label="Go back"
                 disabled={!canGoBack}
@@ -80,7 +107,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 type="button"
                 className="secondary"
                 onClick={() => {
-                  if (canGoForward) window.history.forward();
+                  if (!canGoForward) return;
+                  window.history.forward();
+                  scheduleHistoryCheck("forward");
                 }}
                 aria-label="Go forward"
                 disabled={!canGoForward}
