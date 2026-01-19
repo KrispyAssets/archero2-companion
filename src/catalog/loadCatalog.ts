@@ -200,8 +200,8 @@ function parseEventDocument(doc: Document, relPath?: string): EventCatalogFull {
       }))
     : [];
 
-  const guideSectionCount = guideEl ? guideEl.getElementsByTagName("section").length : 0;
-  const dataSectionCount = dataEl ? dataEl.getElementsByTagName("section").length : 0;
+  const guideSectionCount = guideEl ? getDirectChildElements(guideEl, "section").length : 0;
+  const dataSectionCount = dataEl ? getDirectChildElements(dataEl, "section").length : 0;
   const faqCount = faqEl ? faqEl.getElementsByTagName("item").length : 0;
   const toolCount = toolRefs.length;
 
@@ -269,8 +269,8 @@ export async function loadEventSummaries(eventPaths: string[]): Promise<EventCat
     const toolsEl = eventEl.getElementsByTagName("tools")[0];
 
     const taskCount = tasksEl ? tasksEl.getElementsByTagName("task").length : 0;
-    const guideSectionCount = guideEl ? guideEl.getElementsByTagName("section").length : 0;
-    const dataSectionCount = dataEl ? dataEl.getElementsByTagName("section").length : 0;
+    const guideSectionCount = guideEl ? getDirectChildElements(guideEl, "section").length : 0;
+    const dataSectionCount = dataEl ? getDirectChildElements(dataEl, "section").length : 0;
     const faqCount = faqEl ? faqEl.getElementsByTagName("item").length : 0;
     const toolCount = toolsEl ? toolsEl.getElementsByTagName("tool_ref").length : 0;
 
