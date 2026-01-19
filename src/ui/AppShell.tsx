@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import "./appShell.css";
 
 const THEME_STORAGE_KEY = "archero2_theme";
@@ -11,12 +11,17 @@ const THEME_OPTIONS = [
 ];
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
   const prefersDark = useMemo(
     () => (typeof window !== "undefined" ? window.matchMedia("(prefers-color-scheme: dark)").matches : false),
     []
   );
   const [themeId, setThemeId] = useState(() => localStorage.getItem(THEME_STORAGE_KEY) ?? "sea-glass");
   const [mode, setMode] = useState(() => localStorage.getItem(MODE_STORAGE_KEY) ?? (prefersDark ? "dark" : "light"));
+  const initialIdx = typeof window !== "undefined" ? Number(window.history.state?.idx ?? 0) : 0;
+  const storedMax = typeof window !== "undefined" ? Number(sessionStorage.getItem("archero2_history_max") ?? initialIdx) : initialIdx;
+  const [historyIndex, setHistoryIndex] = useState(initialIdx);
+  const [historyMaxIndex, setHistoryMaxIndex] = useState(storedMax);
 
   useEffect(() => {
     document.documentElement.dataset.theme = themeId;
@@ -24,6 +29,19 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     localStorage.setItem(THEME_STORAGE_KEY, themeId);
     localStorage.setItem(MODE_STORAGE_KEY, mode);
   }, [themeId, mode]);
+
+  useEffect(() => {
+    const idx = Number(window.history.state?.idx ?? 0);
+    setHistoryIndex(idx);
+    setHistoryMaxIndex((prev) => {
+      const next = idx > prev ? idx : prev;
+      sessionStorage.setItem("archero2_history_max", String(next));
+      return next;
+    });
+  }, [location.key]);
+
+  const canGoBack = historyIndex > 0;
+  const canGoForward = historyIndex < historyMaxIndex;
 
   useEffect(() => {
     function handlePointerDown(event: PointerEvent) {
@@ -43,10 +61,26 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <div className="appHeaderInner">
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{ display: "flex", gap: 6 }}>
-              <button type="button" className="secondary" onClick={() => window.history.back()} aria-label="Go back">
+              <button
+                type="button"
+                className="secondary"
+                onClick={() => {
+                  if (canGoBack) window.history.back();
+                }}
+                aria-label="Go back"
+                disabled={!canGoBack}
+              >
                 ←
               </button>
-              <button type="button" className="secondary" onClick={() => window.history.forward()} aria-label="Go forward">
+              <button
+                type="button"
+                className="secondary"
+                onClick={() => {
+                  if (canGoForward) window.history.forward();
+                }}
+                aria-label="Go forward"
+                disabled={!canGoForward}
+              >
                 →
               </button>
             </div>

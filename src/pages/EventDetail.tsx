@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useNavigationType, useParams } from "react-router-dom";
 import AppShell from "../ui/AppShell";
 import Tabs from "../ui/Tabs";
 import TasksTracker from "../ui/components/TasksTracker";
@@ -365,6 +365,7 @@ export default function EventDetail() {
   const { eventId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const navigationType = useNavigationType();
   const [faqQuery, setFaqQuery] = useState("");
   const [activeAnchor, setActiveAnchor] = useState("");
   const [activeTabId, setActiveTabId] = useState("tasks");
@@ -415,6 +416,7 @@ export default function EventDetail() {
     }
   }, [eventId]);
   const urlTab = useMemo(() => new URLSearchParams(location.search).get("tab") ?? "", [location.search]);
+  const isFreshEntry = navigationType === "PUSH" && !urlTab && !window.location.hash;
 
   const eventState = useEventCatalog(decodedEventId);
   const toolState = useToolsCatalog(eventState.status === "ready" ? eventState.event.toolRefs.map((ref) => ref.toolId) : []);
@@ -423,6 +425,14 @@ export default function EventDetail() {
   useEffect(() => {
     if (!decodedEventId) return;
     const key = `archero2_event_ui_${decodedEventId}`;
+    if (isFreshEntry) {
+      setActiveTabId("tools");
+      setOpenDetailsByTab({});
+      scrollPositionsRef.current = new Map();
+      uiRestoredRef.current = true;
+      allowUiSaveRef.current = true;
+      return;
+    }
     const raw = sessionStorage.getItem(key);
     if (!raw) {
       uiRestoredRef.current = true;
