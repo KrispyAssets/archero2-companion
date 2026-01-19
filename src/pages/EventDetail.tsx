@@ -6,7 +6,7 @@ import TasksTracker from "../ui/components/TasksTracker";
 import ToolsHost from "../ui/components/ToolsHost";
 import { useEventCatalog } from "../catalog/useEventCatalog";
 import { useToolsCatalog } from "../catalog/useToolsCatalog";
-import type { DataSection, FaqItem, GuideContentBlock, GuideSection } from "../catalog/types";
+import type { DataSection, EventCatalogFull, FaqItem, GuideContentBlock, GuideSection } from "../catalog/types";
 
 function getGuideAnchorId(sectionId: string): string {
   return `guide-${sectionId}`;
@@ -294,6 +294,38 @@ function GuideSectionView({
   );
 }
 
+export default function EventDetail() {
+  const { eventId } = useParams();
+  const decodedEventId = useMemo(() => {
+    try {
+      return eventId ? decodeURIComponent(eventId) : "";
+    } catch {
+      return eventId ?? "";
+    }
+  }, [eventId]);
+  const eventState = useEventCatalog(decodedEventId);
+
+  if (eventState.status === "idle" || eventState.status === "loading") {
+    return (
+      <AppShell>
+        <h1>Event</h1>
+        <p>Loading event…</p>
+      </AppShell>
+    );
+  }
+
+  if (eventState.status === "error") {
+    return (
+      <AppShell>
+        <h1>Event</h1>
+        <p style={{ color: "var(--danger)" }}>Error: {eventState.error}</p>
+      </AppShell>
+    );
+  }
+
+  return <EventDetailContent event={eventState.event} />;
+}
+
 function DataSectionView({
   section,
   copiedAnchor,
@@ -361,8 +393,7 @@ function filterFaqItems(items: FaqItem[], query: string): FaqItem[] {
   });
 }
 
-export default function EventDetail() {
-  const { eventId } = useParams();
+function EventDetailContent({ event }: { event: EventCatalogFull }) {
   const location = useLocation();
   const navigate = useNavigate();
   const navigationType = useNavigationType();
@@ -408,28 +439,20 @@ export default function EventDetail() {
   const scrollRetryRef = useRef<number | null>(null);
   const lastHandledAnchorRef = useRef<string>("");
 
-  const decodedEventId = useMemo(() => {
-    try {
-      return eventId ? decodeURIComponent(eventId) : "";
-    } catch {
-      return eventId ?? "";
-    }
-  }, [eventId]);
   const urlTab = useMemo(() => new URLSearchParams(location.search).get("tab") ?? "", [location.search]);
   const isFreshEntry = navigationType === "PUSH" && !urlTab && !window.location.hash;
 
-  const eventState = useEventCatalog(decodedEventId);
-  const toolState = useToolsCatalog(eventState.status === "ready" ? eventState.event.toolRefs.map((ref) => ref.toolId) : []);
-  const guideImages = useMemo(() => (eventState.status === "ready" ? collectGuideImages(eventState.event.guideSections) : []), [eventState]);
+  const toolState = useToolsCatalog(event.toolRefs.map((ref) => ref.toolId));
+  const guideImages = useMemo(() => collectGuideImages(event.guideSections), [event]);
 
   useEffect(() => {
-    if (!decodedEventId) return;
-    const key = `archero2_event_ui_${decodedEventId}`;
+    const key = `archero2_event_ui_${event.eventId}`;
     if (isFreshEntry) {
       setActiveTabId("tools");
       setOpenDetailsByTab({});
       scrollPositionsRef.current = new Map();
       uiRestoredRef.current = true;
+      restoredUiRef.current = true;
       allowUiSaveRef.current = true;
       return;
     }
@@ -450,7 +473,7 @@ export default function EventDetail() {
       const savedScrollPositions = parsed.scrollPositions ?? {};
       if (!hasHash && !urlTab && parsed.activeTabId) {
         setActiveTabId(parsed.activeTabId);
-        setLastActiveTabByEvent((prev) => ({ ...prev, [decodedEventId]: parsed.activeTabId! }));
+        setLastActiveTabByEvent((prev) => ({ ...prev, [event.eventId]: parsed.activeTabId! }));
         restoredUiRef.current = true;
         const saved = savedScrollPositions[`tab:${parsed.activeTabId}`];
         if (typeof saved === "number") {
@@ -474,20 +497,19 @@ export default function EventDetail() {
       uiRestoredRef.current = true;
       allowUiSaveRef.current = true;
     }
-  }, [decodedEventId]);
+  }, [event.eventId, isFreshEntry]);
 
   useEffect(() => {
-    if (!decodedEventId) return;
     if (!uiRestoredRef.current) return;
     if (!allowUiSaveRef.current) return;
-    const key = `archero2_event_ui_${decodedEventId}`;
+    const key = `archero2_event_ui_${event.eventId}`;
     const payload = {
       activeTabId,
       openDetailsByTab,
       scrollPositions: Object.fromEntries(scrollPositionsRef.current),
     };
     sessionStorage.setItem(key, JSON.stringify(payload));
-  }, [decodedEventId, activeTabId, openDetailsByTab]);
+  }, [event.eventId, activeTabId, openDetailsByTab]);
 
   function setDetailOpen(tabId: string, anchorId: string, isOpen: boolean) {
     setOpenDetailsByTab((prev) => {
@@ -564,7 +586,7 @@ export default function EventDetail() {
       setActiveAnchor(decodedHash);
       if (!decodedHash) {
         const nextTab = getTabFromLocation();
-        if (nextTab) setActiveTabId(nextTab);
+        if (nextTab && nextTab !== activeTabId) setActiveTabId(nextTab);
       }
     }
 
@@ -575,7 +597,7 @@ export default function EventDetail() {
       window.removeEventListener("hashchange", syncHash);
       window.removeEventListener("popstate", syncHash);
     };
-  }, [decodedEventId, activeTabId]);
+  }, [event.eventId]);
 
   useEffect(() => {
     function handleScroll() {
@@ -593,7 +615,7 @@ export default function EventDetail() {
         scrollUpdateRef.current = null;
       }
     };
-  }, [decodedEventId]);
+  }, [event.eventId]);
 
   useEffect(() => {
     const nextTab = getTabForAnchor(activeAnchor);
@@ -603,13 +625,13 @@ export default function EventDetail() {
   }, [activeAnchor]);
 
   useEffect(() => {
-    if (decodedEventId) {
-      setLastActiveTabByEvent((prev) => ({ ...prev, [decodedEventId]: activeTabId }));
-    }
-  }, [decodedEventId, activeTabId]);
+    setLastActiveTabByEvent((prev) => {
+      if (prev[event.eventId] === activeTabId) return prev;
+      return { ...prev, [event.eventId]: activeTabId };
+    });
+  }, [event.eventId, activeTabId]);
 
   useEffect(() => {
-    if (eventState.status !== "ready") return;
     if (pendingScrollRestoreRef.current !== null) {
       const y = pendingScrollRestoreRef.current;
       pendingScrollRestoreRef.current = null;
@@ -658,7 +680,7 @@ export default function EventDetail() {
         window.cancelAnimationFrame(scrollRetryRef.current);
       }
     };
-  }, [eventState.status, activeAnchor]);
+  }, [activeAnchor]);
 
   function handleGuideImageClick(e: React.MouseEvent) {
     const target = e.target as HTMLElement | null;
@@ -714,10 +736,11 @@ export default function EventDetail() {
   }
 
   useEffect(() => {
+    if (isFreshEntry) return;
     const hash = window.location.hash.replace(/^#/, "");
     const nextAnchor = hash ? decodeURIComponent(hash) : "";
     const nextTab = nextAnchor ? getTabForAnchor(nextAnchor) : null;
-    const storedTab = lastActiveTabByEvent[decodedEventId] ?? null;
+    const storedTab = lastActiveTabByEvent[event.eventId] ?? null;
 
     if (pendingTabRef.current && urlTab !== pendingTabRef.current) {
       return;
@@ -727,19 +750,28 @@ export default function EventDetail() {
     }
 
     if (urlTab) {
-      setActiveTabId(urlTab);
+      if (activeTabId !== urlTab) {
+        setActiveTabId(urlTab);
+      }
       if (!hash) {
-        setActiveAnchor("");
+        if (activeAnchor) {
+          setActiveAnchor("");
+        }
         const saved = scrollPositionsRef.current.get(`tab:${urlTab}`);
         if (typeof saved === "number") {
           pendingScrollRestoreRef.current = saved;
         }
       }
     } else if (!restoredUiRef.current) {
-      setActiveTabId(nextTab ?? storedTab ?? "tasks");
+      const next = nextTab ?? storedTab ?? "tasks";
+      if (activeTabId !== next) {
+        setActiveTabId(next);
+      }
     }
-    setFaqQuery("");
-  }, [decodedEventId, lastActiveTabByEvent, urlTab]);
+    if (faqQuery) {
+      setFaqQuery("");
+    }
+  }, [activeAnchor, activeTabId, event.eventId, faqQuery, isFreshEntry, lastActiveTabByEvent, urlTab]);
 
   useEffect(() => {
     return () => {
@@ -836,7 +868,6 @@ export default function EventDetail() {
   }
 
   const dataTitles = useMemo(() => {
-    if (eventState.status !== "ready") return new Map<string, string>();
     const map = new Map<string, string>();
     function walk(sections: GuideSection[]) {
       for (const section of sections) {
@@ -844,29 +875,34 @@ export default function EventDetail() {
         if (section.subsections?.length) walk(section.subsections);
       }
     }
-    walk(eventState.event.dataSections);
+    walk(event.dataSections);
     return map;
-  }, [eventState]);
+  }, [event]);
 
-  if (eventState.status === "idle" || eventState.status === "loading") {
-    return (
-      <AppShell>
-        <h1>Event</h1>
-        <p>Loading event…</p>
-      </AppShell>
-    );
-  }
+  const defaultTabId = useMemo(() => {
+    const candidates = [
+      { id: "tools", hidden: event.sections.toolCount === 0 },
+      { id: "guide", hidden: event.sections.guideSectionCount === 0 },
+      { id: "faq", hidden: event.sections.faqCount === 0 },
+      { id: "data", hidden: event.sections.dataSectionCount === 0 },
+    ];
+    return candidates.find((tab) => !tab.hidden)?.id ?? "guide";
+  }, [event]);
 
-  if (eventState.status === "error") {
-    return (
-      <AppShell>
-        <h1>Event</h1>
-        <p style={{ color: "var(--danger)" }}>Error: {eventState.error}</p>
-      </AppShell>
-    );
-  }
+  useEffect(() => {
+    if (!defaultTabId) return;
+    const hash = window.location.hash.replace(/^#/, "");
+    if (urlTab || hash) return;
+    if (activeTabId !== defaultTabId) {
+      setActiveTabId(defaultTabId);
+      setActiveAnchor("");
+    }
+    const params = new URLSearchParams(location.search);
+    params.set("tab", defaultTabId);
+    navigate({ pathname: location.pathname, search: `?${params.toString()}`, hash: "" }, { replace: true });
+  }, [activeTabId, defaultTabId, location.pathname, location.search, navigate, urlTab]);
 
-  const ev = eventState.event;
+  const ev = event;
   const filteredFaq = filterFaqItems(ev.faqItems, faqQuery);
 
   function navigateToAnchor(anchorId: string) {
