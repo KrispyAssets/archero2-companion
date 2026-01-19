@@ -9,6 +9,8 @@ const THEME_OPTIONS = [
   { id: "guild-ledger", label: "Guild Ledger" },
   { id: "signal-flare", label: "Signal Flare" },
 ];
+let historyMaxCache = typeof window !== "undefined" ? Number(window.history.state?.idx ?? 0) : 0;
+let historyMinCache: number | null = typeof window !== "undefined" ? Number(window.history.state?.idx ?? 0) : null;
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const location = useLocation();
@@ -19,9 +21,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [themeId, setThemeId] = useState(() => localStorage.getItem(THEME_STORAGE_KEY) ?? "sea-glass");
   const [mode, setMode] = useState(() => localStorage.getItem(MODE_STORAGE_KEY) ?? (prefersDark ? "dark" : "light"));
   const initialIdx = typeof window !== "undefined" ? Number(window.history.state?.idx ?? 0) : 0;
-  const storedMax = typeof window !== "undefined" ? Number(sessionStorage.getItem("archero2_history_max") ?? initialIdx) : initialIdx;
+  if (historyMinCache === null) {
+    historyMinCache = initialIdx;
+  }
   const [historyIndex, setHistoryIndex] = useState(initialIdx);
-  const [historyMaxIndex, setHistoryMaxIndex] = useState(storedMax);
+  const [historyMaxIndex, setHistoryMaxIndex] = useState(Math.max(initialIdx, historyMaxCache));
 
   useEffect(() => {
     document.documentElement.dataset.theme = themeId;
@@ -35,12 +39,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     setHistoryIndex(idx);
     setHistoryMaxIndex((prev) => {
       const next = idx > prev ? idx : prev;
-      sessionStorage.setItem("archero2_history_max", String(next));
+      historyMaxCache = Math.max(historyMaxCache, next);
       return next;
     });
   }, [location.key]);
 
-  const canGoBack = historyIndex > 0;
+  const canGoBack = historyIndex > (historyMinCache ?? 0);
   const canGoForward = historyIndex < historyMaxIndex;
 
   useEffect(() => {

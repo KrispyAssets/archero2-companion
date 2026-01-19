@@ -79,6 +79,15 @@
   text-decoration: underline;
 }
 
+.appHeader .secondary:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text-muted);
+}
+
 .appMain {
   flex: 1;
   padding: 16px 0 32px;
