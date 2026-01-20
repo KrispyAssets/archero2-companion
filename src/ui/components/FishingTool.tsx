@@ -1560,28 +1560,6 @@ export default function FishingToolView({
           </div>
 
           <div style={{ border: "1px solid var(--border)", borderRadius: 12, padding: 12 }}>
-            <div style={{ fontWeight: 700, marginBottom: 6 }}>Lake Progress</div>
-            <div style={{ display: "grid", gap: 6 }}>
-              {set.lakes.map((entry) => {
-                const entryState = toolState.lakeStates[entry.lakeId];
-                return (
-                  <div key={entry.lakeId} style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
-                    <div>
-                      <div>{entry.label}</div>
-                      <div style={{ color: "var(--text-muted)", fontSize: 13 }}>
-                        Pools: {entryState?.poolsCompleted ?? 0} • Legendary: {entryState?.legendaryCaught ?? 0}
-                      </div>
-                    </div>
-                    <button type="button" className="ghost" onClick={() => resetLakeProgress(entry.lakeId)}>
-                      Reset
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div style={{ border: "1px solid var(--border)", borderRadius: 12, padding: 12 }}>
             <div style={{ fontWeight: 700, marginBottom: 6 }}>Purchase Goals</div>
             <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
               <label style={{ fontSize: 12, color: "var(--text-muted)" }}>Preset</label>
@@ -2007,11 +1985,6 @@ export default function FishingToolView({
             </details>
           </div>
 
-          <div style={{ display: "flex", justifyContent: "flex-end" }}>
-            <button type="button" className="ghost" onClick={resetAllProgress}>
-              Reset All Progress
-            </button>
-          </div>
         </div>
       </div>
     </div>
