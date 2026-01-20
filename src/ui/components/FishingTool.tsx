@@ -1151,6 +1151,7 @@ export default function FishingToolView({
       return {
         ...prev,
         guidedStepIndex: 0,
+        guidedCurrentWeight: null,
       };
     });
   }
@@ -1185,6 +1186,7 @@ export default function FishingToolView({
         lakeStates: nextLakeStates,
         brokenLines: 0,
         history: [],
+        guidedCurrentWeight: null,
       };
     });
   }
@@ -1366,7 +1368,9 @@ export default function FishingToolView({
                     textAlign: "left",
                   }}
                 >
-                  <div style={{ fontWeight: 700 }}>{entry.label}</div>
+                  <div style={{ fontWeight: 700 }}>
+                    {entry.label} {entry.lakeId.endsWith("_1") ? "(Lake 1)" : entry.lakeId.endsWith("_2") ? "(Lake 2)" : entry.lakeId.endsWith("_3") ? "(Lake 3)" : entry.lakeId.endsWith("_4") ? "(Lake 4)" : ""}
+                  </div>
                   <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
                     {remaining} fish • {odds.toFixed(1)}% legendary
                   </div>
