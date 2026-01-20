@@ -118,9 +118,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 →
               </button>
             </div>
-            <Link to="/" className="brand">
-              Archero 2 Event Companion
-            </Link>
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <Link to="/" className="brand">
+                Archero 2 Companion
+              </Link>
+              <span style={{ fontSize: 12, color: "var(--text-subtle)" }}>Not affiliated with Habby.</span>
+            </div>
           </div>
 
           <div className="headerRight">

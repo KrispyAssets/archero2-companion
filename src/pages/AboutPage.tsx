@@ -52,7 +52,8 @@ export default function AboutPage() {
   return (
     <AppShell>
       <h1>About</h1>
-      <p>Archero 2 Event Companion</p>
+      <p>Archero 2 Companion</p>
+      <p style={{ color: "var(--text-subtle)" }}>Not affiliated with Habby.</p>
 
       <section style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 12 }}>
         <h2>Export / Import Save Code</h2>
