@@ -3,5 +3,5 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
-  base: "/archero2-event-companion/",
+  base: "/archero2-companion/",
 });
