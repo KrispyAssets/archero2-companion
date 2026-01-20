@@ -58,7 +58,11 @@ export default function AboutPage() {
         tools, FAQ, and more across every aspect of the game
       </p>
       <p style={{ color: "var(--text-subtle)" }}>All guides and data come from resources gathered by the Archero 2 Discord community.</p>
-      <p style={{ color: "var(--text-subtle)" }}>Created by Zerkzis (KrispyAssets).</p>
+      <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 4 }}>
+        <p style={{ color: "var(--text-subtle)", margin: 0 }}>Created by Zerkzis.</p>
+        <p style={{ color: "var(--text-subtle)", margin: 0 }}>GitHub: KrispyAssets</p>
+        <p style={{ color: "var(--text-subtle)", margin: 0 }}>In-game: KrisFromBali (User ID 115838558).</p>
+      </div>
 
       <section style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 12 }}>
         <h2>Export / Import Save Code</h2>
