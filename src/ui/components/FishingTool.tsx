@@ -91,6 +91,11 @@ type HistoryEntry = {
   rarity: FishingFishType["rarity"];
   timestamp: number;
   prevLakeState: LakeState;
+  action?: "catch" | "pool_clear" | "reset_lake" | "reset_lake_progress" | "reset_all";
+  prevAllStates?: Record<string, LakeState>;
+  prevBrokenLines?: number;
+  prevGuidedWeight?: number | null;
+  prevHistory?: HistoryEntry[];
 };
 
 type ToolState = {
@@ -722,7 +727,10 @@ export default function FishingToolView({
   const legendaryTypeId = getLegendaryTypeId(data);
   const brokenLinesMax = data.brokenLinesMax ?? 120;
   const history = toolState.history ?? [];
-  const lastThree = history.slice(-3).reverse();
+  const resetAllEntry = history[history.length - 1];
+  const historyVisible = resetAllEntry?.action === "reset_all" ? [] : history;
+  const recentCatchEntries = historyVisible.filter((entry) => entry.action === "catch" || entry.action === "pool_clear");
+  const lastThree = recentCatchEntries.slice(-3).reverse();
 
   const totalFishRemaining = sumCounts(lakeState.remainingByTypeId);
   const legendaryRemaining = lakeState.remainingByTypeId[legendaryTypeId] ?? 0;
@@ -837,11 +845,30 @@ export default function FishingToolView({
       const nextLakeStates = { ...prev.lakeStates };
       const existing = nextLakeStates[lakeId];
       if (!existing) return prev;
+      const prevLakeState: LakeState = {
+        remainingByTypeId: { ...existing.remainingByTypeId },
+        poolsCompleted: existing.poolsCompleted,
+        legendaryCaught: existing.legendaryCaught,
+        fishCaught: existing.fishCaught,
+      };
       nextLakeStates[lakeId] = {
         ...existing,
         remainingByTypeId: buildFullCounts(data, lakeId),
       };
-      return { ...prev, lakeStates: nextLakeStates };
+      const prevHistory = prev.history ?? [];
+      const nextHistory = prevHistory.filter((entry) => entry.lakeId !== lakeId);
+      nextHistory.push({
+        entryId: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        lakeId,
+        typeId: "__reset__",
+        fishName: "Refill lake",
+        rarity: "rare",
+        timestamp: Date.now(),
+        prevLakeState,
+        action: "reset_lake",
+        prevHistory,
+      });
+      return { ...prev, lakeStates: nextLakeStates, history: nextHistory.slice(-200) };
     });
   }
 
@@ -850,13 +877,32 @@ export default function FishingToolView({
       const nextLakeStates = { ...prev.lakeStates };
       const existing = nextLakeStates[lakeId];
       if (!existing) return prev;
+      const prevLakeState: LakeState = {
+        remainingByTypeId: { ...existing.remainingByTypeId },
+        poolsCompleted: existing.poolsCompleted,
+        legendaryCaught: existing.legendaryCaught,
+        fishCaught: existing.fishCaught,
+      };
       nextLakeStates[lakeId] = {
         remainingByTypeId: buildFullCounts(data, lakeId),
         poolsCompleted: 0,
         legendaryCaught: 0,
         fishCaught: 0,
       };
-      return { ...prev, lakeStates: nextLakeStates };
+      const prevHistory = prev.history ?? [];
+      const nextHistory = prevHistory.filter((entry) => entry.lakeId !== lakeId);
+      nextHistory.push({
+        entryId: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        lakeId,
+        typeId: "__reset__",
+        fishName: "Reset lake progress",
+        rarity: "rare",
+        timestamp: Date.now(),
+        prevLakeState,
+        action: "reset_lake_progress",
+        prevHistory,
+      });
+      return { ...prev, lakeStates: nextLakeStates, history: nextHistory.slice(-200) };
     });
   }
 
@@ -906,6 +952,7 @@ export default function FishingToolView({
         rarity: data.fishTypes.find((type) => type.typeId === typeId)?.rarity ?? "rare",
         timestamp: Date.now(),
         prevLakeState,
+        action: "catch",
       });
 
       return {
@@ -949,6 +996,7 @@ export default function FishingToolView({
         rarity: "legendary",
         timestamp: Date.now(),
         prevLakeState,
+        action: "pool_clear",
       });
 
       return {
@@ -964,6 +1012,29 @@ export default function FishingToolView({
       const nextHistory = [...(prev.history ?? [])];
       const last = nextHistory.pop();
       if (!last) return prev;
+      if (last.action === "reset_all" && last.prevAllStates && last.prevHistory) {
+        return {
+          ...prev,
+          lakeStates: last.prevAllStates,
+          brokenLines: last.prevBrokenLines ?? prev.brokenLines,
+          guidedCurrentWeight: last.prevGuidedWeight ?? prev.guidedCurrentWeight,
+          history: last.prevHistory,
+        };
+      }
+      if ((last.action === "reset_lake" || last.action === "reset_lake_progress") && last.prevHistory) {
+        const nextLakeStates = { ...prev.lakeStates };
+        nextLakeStates[last.lakeId] = {
+          remainingByTypeId: { ...last.prevLakeState.remainingByTypeId },
+          poolsCompleted: last.prevLakeState.poolsCompleted,
+          legendaryCaught: last.prevLakeState.legendaryCaught,
+          fishCaught: last.prevLakeState.fishCaught,
+        };
+        return {
+          ...prev,
+          lakeStates: nextLakeStates,
+          history: last.prevHistory,
+        };
+      }
       const nextLakeStates = { ...prev.lakeStates };
       nextLakeStates[last.lakeId] = {
         remainingByTypeId: { ...last.prevLakeState.remainingByTypeId },
@@ -1119,11 +1190,31 @@ export default function FishingToolView({
           fishCaught: 0,
         };
       }
+      const nextHistory = [...(prev.history ?? [])];
+      nextHistory.push({
+        entryId: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        lakeId: prev.activeLakeId,
+        typeId: "__reset__",
+        fishName: "Reset all progress",
+        rarity: "rare",
+        timestamp: Date.now(),
+        prevLakeState: prev.lakeStates[prev.activeLakeId] ?? {
+          remainingByTypeId: buildFullCounts(data, prev.activeLakeId),
+          poolsCompleted: 0,
+          legendaryCaught: 0,
+          fishCaught: 0,
+        },
+        action: "reset_all",
+        prevAllStates: prev.lakeStates,
+        prevBrokenLines: prev.brokenLines,
+        prevGuidedWeight: prev.guidedCurrentWeight ?? null,
+        prevHistory: prev.history ?? [],
+      });
       return {
         ...prev,
         lakeStates: nextLakeStates,
         brokenLines: 0,
-        history: [],
+        history: nextHistory.slice(-200),
         guidedCurrentWeight: null,
       };
     });
@@ -1302,6 +1393,8 @@ export default function FishingToolView({
                     type="button"
                     className="ghost"
                     onClick={() => {
+                      const confirmed = window.confirm("Reset all progress? You can undo this with Undo Last.");
+                      if (!confirmed) return;
                       resetAllProgress();
                       closeResetMenu();
                     }}
@@ -1405,7 +1498,14 @@ export default function FishingToolView({
           </button>
 
           <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-            <button type="button" className="secondary" onClick={() => resetLake(lake.lakeId)}>
+            <button
+              type="button"
+              className="secondary"
+              onClick={() => resetLake(lake.lakeId)}
+              disabled={Object.entries(buildFullCounts(data, lake.lakeId)).every(
+                ([typeId, count]) => lakeState.remainingByTypeId[typeId] === count,
+              )}
+            >
               Refill Lake
             </button>
             <button type="button" className="secondary" onClick={undoLast} disabled={!history.length}>
@@ -1817,9 +1917,9 @@ export default function FishingToolView({
 
         <div style={{ border: "1px solid var(--border)", borderRadius: 12, padding: 12 }}>
           <div style={{ fontWeight: 700, marginBottom: 6 }}>Recent Catches</div>
-          {lastThree.length ? (
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              {lastThree.map((entry) => (
+            {lastThree.length ? (
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {lastThree.map((entry) => (
                 <div
                   key={entry.entryId}
                   style={{
@@ -1837,11 +1937,11 @@ export default function FishingToolView({
           ) : (
             <div style={{ color: "var(--text-muted)" }}>No catches yet.</div>
           )}
-          <details style={{ marginTop: 10 }}>
-            <summary style={{ cursor: "pointer" }}>History ({history.length})</summary>
-            <div style={{ marginTop: 8, display: "grid", gap: 6, maxHeight: 180, overflow: "auto" }}>
-              {history
-                .slice()
+            <details style={{ marginTop: 10 }}>
+              <summary style={{ cursor: "pointer" }}>History ({historyVisible.length})</summary>
+              <div style={{ marginTop: 8, display: "grid", gap: 6, maxHeight: 180, overflow: "auto" }}>
+                {historyVisible
+                  .slice()
                 .reverse()
                 .map((entry) => {
                   const lakeLabel = set.lakes.find((l) => l.lakeId === entry.lakeId)?.label ?? entry.lakeId;
