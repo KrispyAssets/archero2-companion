@@ -745,6 +745,32 @@ export default function FishingToolView({
 
   const totalLegendaryCaught = Object.values(toolState.lakeStates ?? {}).reduce((sum, entry) => sum + entry.legendaryCaught, 0);
   const totalFishCaught = Object.values(toolState.lakeStates ?? {}).reduce((sum, entry) => sum + entry.fishCaught, 0);
+  const totalWeightCaught = Object.entries(toolState.lakeStates ?? {}).reduce((sum, [lakeId, entry]) => {
+    const fullCounts = buildFullCounts(data, lakeId);
+    const weightsForLakeEntry = data.weightsByLake[lakeId] ?? {};
+    const remainingCounts = entry.remainingByTypeId;
+    const lakeCaughtWeight = Object.entries(fullCounts).reduce((lakeSum, [typeId, fullCount]) => {
+      const remaining = remainingCounts[typeId] ?? 0;
+      const caughtCount = entry.poolsCompleted * fullCount + Math.max(0, fullCount - remaining);
+      return lakeSum + caughtCount * (weightsForLakeEntry[typeId] ?? 0);
+    }, 0);
+    return sum + lakeCaughtWeight;
+  }, 0);
+  const ticketsPerKgMap = data.ticketsPerKgByLake ?? {};
+  const hasAllTicketRates = Object.keys(toolState.lakeStates ?? {}).every((lakeId) => ticketsPerKgMap[lakeId] !== undefined);
+  const totalTicketsGained = hasAllTicketRates
+    ? Object.entries(toolState.lakeStates ?? {}).reduce((sum, [lakeId, entry]) => {
+        const fullCounts = buildFullCounts(data, lakeId);
+        const weightsForLakeEntry = data.weightsByLake[lakeId] ?? {};
+        const remainingCounts = entry.remainingByTypeId;
+        const lakeCaughtWeight = Object.entries(fullCounts).reduce((lakeSum, [typeId, fullCount]) => {
+          const remaining = remainingCounts[typeId] ?? 0;
+          const caughtCount = entry.poolsCompleted * fullCount + Math.max(0, fullCount - remaining);
+          return lakeSum + caughtCount * (weightsForLakeEntry[typeId] ?? 0);
+        }, 0);
+        return sum + lakeCaughtWeight * (ticketsPerKgMap[lakeId] ?? 0);
+      }, 0)
+    : null;
 
   const silverEstimateLakeId = toolState.silverEstimateLakeId ?? data.lastLakeId;
   const avgTicketsPerFishSilver = silverEstimateLakeId ? getAvgTicketsPerFish(data, silverEstimateLakeId) : null;
@@ -757,6 +783,12 @@ export default function FishingToolView({
   const currentLures = toolState.currentLures ?? null;
   const purchasedLures = toolState.purchasedLures ?? null;
   const currentGems = toolState.currentGems ?? null;
+  const luresEarnedFromTasks = taskTotals?.earned ?? null;
+  const estimatedGemLuresUsed =
+    luresEarnedFromTasks !== null && currentLures !== null
+      ? Math.max(0, totalFishCaught - luresEarnedFromTasks - currentLures)
+      : null;
+  const estimatedGemsSpent = estimatedGemLuresUsed !== null ? estimatedGemLuresUsed * 150 : null;
   const totalAvailableLures =
     currentLures !== null && luresRemainingFromTasks !== null ? currentLures + luresRemainingFromTasks + (purchasedLures ?? 0) : null;
   const purchasableLuresFromGems = currentGems !== null ? Math.floor(currentGems / 150) : null;
@@ -1566,10 +1598,17 @@ export default function FishingToolView({
           </div>
           <div style={{ border: "1px solid var(--border)", borderRadius: 12, padding: 12, background: "var(--surface-2)" }}>
             <div style={{ fontWeight: 700, marginBottom: 6 }}>Totals</div>
-            <div style={{ display: "grid", gap: 6, fontSize: 14 }}>
-              <div>Total Fish Caught: {totalFishCaught}</div>
-              <div>Total Legendary Fish Caught: {totalLegendaryCaught}</div>
-            </div>
+              <div style={{ display: "grid", gap: 6, fontSize: 14 }}>
+                <div>Total Fish Caught: {totalFishCaught}</div>
+                <div>Total Legendary Fish Caught: {totalLegendaryCaught}</div>
+                <div>Estimated Weight Caught: {formatNumber(totalWeightCaught, 1)} kg</div>
+                <div>
+                  Estimated Silver Tickets Gained: {totalTicketsGained !== null ? formatNumber(totalTicketsGained, 0) : "Add ticket data"}
+                </div>
+                <div>
+                  Estimated Gems Spent: {estimatedGemsSpent !== null ? formatNumber(estimatedGemsSpent, 0) : "Add current lures + task progress"}
+                </div>
+              </div>
           </div>
         </div>
 
