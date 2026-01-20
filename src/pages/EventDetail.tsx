@@ -51,15 +51,6 @@ function getTabForAnchor(anchorId: string): string | null {
   return null;
 }
 
-function renderBodyText(body: string) {
-  if (!body) return null;
-  return body.split(/\n{2,}/).map((paragraph, index) => (
-    <p key={`${index}-${paragraph.slice(0, 12)}`} style={{ margin: "8px 0" }}>
-      {paragraph}
-    </p>
-  ));
-}
-
 function renderFaqAnswer(
   answer: string,
   dataTitles: Map<string, string>,

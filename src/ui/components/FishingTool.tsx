@@ -229,6 +229,7 @@ export default function FishingToolView({
         ? stored.activeSetId
         : defaultSetId;
 
+    const baseSet = data.sets[0];
     const nextState: ToolState = {
       activeSetId,
       activeLakeId: "",
@@ -238,7 +239,7 @@ export default function FishingToolView({
       goalMode: stored?.goalMode ?? "silver",
       goalPreset: stored?.goalPreset ?? "custom",
       currentSilverTickets: stored?.currentSilverTickets ?? null,
-      targetSilverTickets: stored?.targetSilverTickets ?? stored?.goalTickets ?? null,
+      targetSilverTickets: stored?.targetSilverTickets ?? null,
       silverEstimateLakeId: stored?.silverEstimateLakeId ?? data.lastLakeId ?? baseSet.lakes[0]?.lakeId ?? null,
       currentGoldTickets: stored?.currentGoldTickets ?? null,
       currentLures: stored?.currentLures ?? null,
@@ -253,13 +254,8 @@ export default function FishingToolView({
         chromaticKeyBundle: null,
       },
     };
-
-    const baseSet = data.sets[0];
-    const legacySetKey = stored?.activeSetId ?? activeSetId;
     const storedLakeStates =
-      stored?.lakeStates ??
-      stored?.lakeStatesBySet?.[legacySetKey] ??
-      {};
+      stored?.lakeStates ?? {};
     const nextLakeStates: Record<string, LakeState> = {};
     for (const lake of baseSet.lakes) {
       const storedLake = storedLakeStates[lake.lakeId];
@@ -275,20 +271,18 @@ export default function FishingToolView({
       };
     }
 
-    const storedActiveLake =
-      stored?.activeLakeId ??
-      stored?.activeLakeIdBySet?.[legacySetKey];
+    const storedActiveLake = stored?.activeLakeId;
     nextState.activeLakeId =
       storedActiveLake && baseSet.lakes.some((lake) => lake.lakeId === storedActiveLake)
         ? storedActiveLake
         : baseSet.lakes[0]?.lakeId ?? "";
     nextState.lakeStates = nextLakeStates;
-    nextState.brokenLines = stored?.brokenLines ?? stored?.brokenLinesBySet?.[legacySetKey] ?? 0;
-    nextState.history = stored?.history ?? stored?.historyBySet?.[legacySetKey] ?? [];
+    nextState.brokenLines = stored?.brokenLines ?? 0;
+    nextState.history = stored?.history ?? [];
     nextState.goalMode = stored?.goalMode ?? "silver";
     nextState.goalPreset = stored?.goalPreset ?? "custom";
     nextState.currentSilverTickets = stored?.currentSilverTickets ?? null;
-    nextState.targetSilverTickets = stored?.targetSilverTickets ?? stored?.goalTickets ?? null;
+    nextState.targetSilverTickets = stored?.targetSilverTickets ?? null;
     nextState.silverEstimateLakeId =
       stored?.silverEstimateLakeId ?? data.lastLakeId ?? baseSet.lakes[0]?.lakeId ?? null;
     nextState.currentGoldTickets = stored?.currentGoldTickets ?? null;
@@ -396,6 +390,7 @@ export default function FishingToolView({
     const goldRemaining =
       goldCurrent !== null && goldTarget !== null ? Math.max(0, goldTarget - goldCurrent) : null;
     if (!goldRemaining) return null;
+    const lakeStates = toolState.lakeStates;
     const silverCurrent = toolState.currentSilverTickets ?? null;
     const silverTarget = effectiveSilverTarget;
     const silverRemaining =
@@ -426,7 +421,7 @@ export default function FishingToolView({
     }
 
     function scoreLake(lakeId: string, goal: number) {
-      const estimate = getLegendaryRangeForLake(lakeId, goal, data, toolState.lakeStates, legendaryTypeId);
+      const estimate = getLegendaryRangeForLake(lakeId, goal, data, lakeStates, legendaryTypeId);
       if (!estimate) return null;
       const avgTicketsPerFish = getAvgTicketsPerFish(data, lakeId);
       const expectedFish = estimate.expected;
@@ -564,7 +559,6 @@ export default function FishingToolView({
     0
   );
 
-  const avgTicketsPerFish = getAvgTicketsPerFish(data, lake.lakeId);
   const silverEstimateLakeId = toolState.silverEstimateLakeId ?? data.lastLakeId;
   const avgTicketsPerFishSilver = silverEstimateLakeId ? getAvgTicketsPerFish(data, silverEstimateLakeId) : null;
 
@@ -574,7 +568,6 @@ export default function FishingToolView({
   const silverFishNeeded =
     silverRemaining !== null && avgTicketsPerFishSilver ? Math.ceil(silverRemaining / avgTicketsPerFishSilver) : null;
   const luresRemainingFromTasks = taskTotals?.remaining ?? null;
-  const luresEarnedFromTasks = taskTotals?.earned ?? null;
   const currentLures = toolState.currentLures ?? null;
   const purchasedLures = toolState.purchasedLures ?? null;
   const currentGems = toolState.currentGems ?? null;
