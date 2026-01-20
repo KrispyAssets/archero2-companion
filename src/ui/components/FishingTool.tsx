@@ -1443,10 +1443,10 @@ export default function FishingToolView({
                     {entry.label} {entry.lakeId.endsWith("_1") ? "(Lake 1)" : entry.lakeId.endsWith("_2") ? "(Lake 2)" : entry.lakeId.endsWith("_3") ? "(Lake 3)" : entry.lakeId.endsWith("_4") ? "(Lake 4)" : ""}
                   </div>
                   <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                    {remaining} fish • {odds.toFixed(1)}% legendary
+                    Fish Remaining {remaining} • Legendary {odds.toFixed(1)}%
                   </div>
                   <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>
-                    Pools {entryState?.poolsCompleted ?? 0} • Legendary {entryState?.legendaryCaught ?? 0}
+                    Pools Cleared {entryState?.poolsCompleted ?? 0} • Legendaries Caught {entryState?.legendaryCaught ?? 0}
                   </div>
                 </button>
               );
