@@ -189,8 +189,8 @@
             "warnIfBrokenLinesOver": 120,
             "warnMessage": "You are out of line breaks! Use your remaining lures then buy more if needed to reach 16 Golden Tickets."
           },
-          "action": "At this point, you have two options.",
-          "notes": "Spend more gems for more silver tickets or line break until you catch the last 2 legendaries. If you intend to fish for more silver tickets on a budget, line breaking only the rares is acceptable as well but ensure you can guarantee your last two legendaries worst case scenario. Continue tracking every fish caught to ensure accurate progress."
+          "action": "At this point, decide how to finish your last 2 legendaries.",
+          "notes": "If you need more silver tickets and have the gems for more lures worst case scenario, you can catch Epics while hunting the legendaries. If you’re low on gems, only catch the legendaries. Keep tracking every fish to ensure accurate progress."
         },
         {
           "stepId": "opt1_l4_finish",
