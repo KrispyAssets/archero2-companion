@@ -242,6 +242,7 @@
   </faq>
   <tools>
     <tool_ref tool_id="archero2.tool.fishing_companion.v1" />
+    <tool_ref tool_id="archero2.tool.purchase_goals.v1" />
   </tools>
 
 </event>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { TaskDefinition, ToolFishingCalculator } from "../../catalog/types";
+import type { TaskDefinition, ToolFishingCalculator, ToolPurchaseGoals } from "../../catalog/types";
 import { buildTaskGroups, computeEarned, computeRemaining } from "../../catalog/taskGrouping";
 import { getEventProgressState } from "../../state/userStateStore";
 
@@ -145,6 +145,11 @@ const STORAGE_PREFIX = "archero2_tool_state_";
 const dataCache = new Map<string, FishingToolData>();
 const guidedCache = new Map<string, GuidedRouteData>();
 const toolStateCache = new Map<string, ToolState>();
+const TOOL_STATE_EVENT = "archero2_tool_state";
+
+function getToolStateKey(tool: ToolFishingCalculator | ToolPurchaseGoals) {
+  return tool.stateKey ?? tool.toolId;
+}
 
 function resolvePath(path: string) {
   if (!path) return "";
@@ -215,13 +220,18 @@ export default function FishingToolView({
   eventVersion,
   tasks,
   guidedRoutePath,
+  variant = "companion",
 }: {
-  tool: ToolFishingCalculator;
+  tool: ToolFishingCalculator | ToolPurchaseGoals;
   eventId?: string;
   eventVersion?: number;
   tasks?: TaskDefinition[];
   guidedRoutePath?: string;
+  variant?: "companion" | "purchase";
 }) {
+  const showCompanion = variant !== "purchase";
+  const showPurchase = variant !== "companion";
+  const stateKey = getToolStateKey(tool);
   const [dataState, setDataState] = useState<DataState>(() => {
     const cached = dataCache.get(tool.dataPath);
     return cached ? { status: "ready", data: cached } : { status: "loading" };
@@ -233,13 +243,12 @@ export default function FishingToolView({
     return cached ? { status: "ready", data: cached } : { status: "loading" };
   });
   const [toolState, setToolState] = useState<ToolState | null>(() => {
-    return toolStateCache.get(tool.toolId) ?? null;
+    return toolStateCache.get(stateKey) ?? null;
   });
   const [breakStep, setBreakStep] = useState(1);
   const [taskTick, setTaskTick] = useState(0);
   const [resetMenuOpen, setResetMenuOpen] = useState(false);
   const [showBreakOdds, setShowBreakOdds] = useState(false);
-  const [purchaseCollapsed, setPurchaseCollapsed] = useState(false);
   const resetMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -310,8 +319,11 @@ export default function FishingToolView({
   useEffect(() => {
     if (dataState.status !== "ready") return;
     const data = dataState.data;
-    const storageKey = `${STORAGE_PREFIX}${tool.toolId}`;
-    const raw = localStorage.getItem(storageKey);
+    const storageKey = `${STORAGE_PREFIX}${stateKey}`;
+    let raw = localStorage.getItem(storageKey);
+    if (!raw && stateKey !== tool.toolId) {
+      raw = localStorage.getItem(`${STORAGE_PREFIX}${tool.toolId}`);
+    }
     let stored: ToolState | null = null;
     if (raw) {
       try {
@@ -398,15 +410,29 @@ export default function FishingToolView({
     nextState.guidedCurrentWeight = stored?.guidedCurrentWeight ?? null;
 
     setToolState(nextState);
-    toolStateCache.set(tool.toolId, nextState);
-  }, [dataState, tool.defaultSetId, tool.toolId]);
+    toolStateCache.set(stateKey, nextState);
+  }, [dataState, stateKey, tool.defaultSetId, tool.toolId]);
 
   useEffect(() => {
     if (!toolState) return;
-    const storageKey = `${STORAGE_PREFIX}${tool.toolId}`;
+    const storageKey = `${STORAGE_PREFIX}${stateKey}`;
     localStorage.setItem(storageKey, JSON.stringify(toolState));
-    toolStateCache.set(tool.toolId, toolState);
-  }, [tool.toolId, toolState]);
+    toolStateCache.set(stateKey, toolState);
+    window.dispatchEvent(new CustomEvent(TOOL_STATE_EVENT, { detail: { stateKey } }));
+  }, [stateKey, toolState]);
+
+  useEffect(() => {
+    function handleToolStateEvent(event: Event) {
+      const detail = (event as CustomEvent<{ stateKey?: string }>).detail;
+      if (!detail?.stateKey || detail.stateKey !== stateKey) return;
+      const cached = toolStateCache.get(stateKey);
+      if (cached) {
+        setToolState(cached);
+      }
+    }
+    window.addEventListener(TOOL_STATE_EVENT, handleToolStateEvent);
+    return () => window.removeEventListener(TOOL_STATE_EVENT, handleToolStateEvent);
+  }, [stateKey]);
 
   useEffect(() => {
     function handleStateChange() {
@@ -780,7 +806,6 @@ export default function FishingToolView({
   const legendaryChance = totalFishRemaining > 0 ? (legendaryRemaining / totalFishRemaining) * 100 : 0;
   const expectedLuresNextLegendary = legendaryRemaining > 0 ? (totalFishRemaining + 1) / (legendaryRemaining + 1) : null;
   const breakChance = totalFishRemaining > 0 ? legendaryRemaining / totalFishRemaining : null;
-  const breakExpectedLures = breakChance ? 1 / breakChance : null;
   const breakLuresForChance = (targetChance: number) => {
     if (!breakChance) return null;
     return Math.ceil(Math.log(1 - targetChance) / Math.log(1 - breakChance));
@@ -1306,23 +1331,24 @@ export default function FishingToolView({
 
   return (
     <div style={{ display: "grid", gap: 12 }}>
-      <div style={{ border: "1px solid var(--border)", borderRadius: 16, padding: 16, background: "var(--surface)" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-        <div style={{ fontSize: 18, fontWeight: 800 }}>{tool.title}</div>
-        <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
-          <label style={{ fontSize: 12, color: "var(--text-muted)" }}>Set</label>
-          <select value={set.setId} onChange={(e) => setActiveSet(e.target.value)}>
-            {data.sets.map((option) => (
-              <option key={option.setId} value={option.setId}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-      {tool.description ? <p style={{ marginTop: 6 }}>{tool.description}</p> : null}
+      {showCompanion ? (
+        <div style={{ border: "1px solid var(--border)", borderRadius: 16, padding: 16, background: "var(--surface)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+            <div style={{ fontSize: 18, fontWeight: 800 }}>{tool.title}</div>
+            <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+              <label style={{ fontSize: 12, color: "var(--text-muted)" }}>Set</label>
+              <select value={set.setId} onChange={(e) => setActiveSet(e.target.value)}>
+                {data.sets.map((option) => (
+                  <option key={option.setId} value={option.setId}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          {tool.description ? <p style={{ marginTop: 6 }}>{tool.description}</p> : null}
 
-      <div style={{ display: "grid", gap: 10, marginTop: 12 }}>
+          <div style={{ display: "grid", gap: 10, marginTop: 12 }}>
         <div style={{ border: "1px solid var(--border)", borderRadius: 12, padding: 12, background: "var(--surface-2)" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
             <div style={{ fontWeight: 700 }}>Guided Route</div>
@@ -1709,17 +1735,16 @@ export default function FishingToolView({
             </div>
           </details>
         </div>
-      </div>
-      </div>
-
-      <div style={{ border: "1px solid var(--border)", borderRadius: 16, padding: 16, background: "var(--surface)" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-          <div style={{ fontSize: 18, fontWeight: 800 }}>Purchase Goals</div>
-          <button type="button" className="ghost" onClick={() => setPurchaseCollapsed((prev) => !prev)}>
-            {purchaseCollapsed ? "Expand" : "Collapse"}
-          </button>
+          </div>
         </div>
-        {purchaseCollapsed ? null : (
+      ) : null}
+
+      {showPurchase ? (
+        <div style={{ border: "1px solid var(--border)", borderRadius: 16, padding: 16, background: "var(--surface)" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+            <div style={{ fontSize: 18, fontWeight: 800 }}>{tool.title}</div>
+          </div>
+          {tool.description ? <p style={{ marginTop: 6 }}>{tool.description}</p> : null}
           <div style={{ display: "grid", gap: 12, marginTop: 12 }}>
             <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
               <label style={{ fontSize: 12, color: "var(--text-muted)" }}>Preset</label>
@@ -2073,8 +2098,8 @@ export default function FishingToolView({
               ) : null}
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      ) : null}
     </div>
   );
 }

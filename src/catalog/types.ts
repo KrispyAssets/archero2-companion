@@ -76,6 +76,7 @@ export type ToolDefinitionBase = {
   toolType: string;
   title: string;
   description?: string;
+  stateKey?: string;
 };
 
 export type ToolPriorityListItem = {
@@ -99,7 +100,13 @@ export type ToolFishingCalculator = ToolDefinitionBase & {
   defaultSetId?: string;
 };
 
-export type ToolDefinition = ToolPriorityList | ToolStaticText | ToolFishingCalculator | ToolDefinitionBase;
+export type ToolPurchaseGoals = ToolDefinitionBase & {
+  toolType: "purchase_goals";
+  dataPath: string;
+  defaultSetId?: string;
+};
+
+export type ToolDefinition = ToolPriorityList | ToolStaticText | ToolFishingCalculator | ToolPurchaseGoals | ToolDefinitionBase;
 
 /** Summary (used for Events list) */
 export type EventCatalogItemFull = {

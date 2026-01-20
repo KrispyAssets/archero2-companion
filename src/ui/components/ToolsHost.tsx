@@ -1,4 +1,5 @@
-import type { TaskDefinition, ToolDefinition, ToolFishingCalculator, ToolPriorityList, ToolStaticText } from "../../catalog/types";
+import { useEffect, useState } from "react";
+import type { TaskDefinition, ToolDefinition, ToolFishingCalculator, ToolPurchaseGoals, ToolPriorityList, ToolStaticText } from "../../catalog/types";
 import FishingToolView from "./FishingTool";
 
 function renderBodyText(body: string) {
@@ -12,10 +13,9 @@ function renderBodyText(body: string) {
 
 function PriorityListToolView({ tool }: { tool: ToolPriorityList }) {
   return (
-    <div style={{ border: "1px solid var(--border)", borderRadius: 12, padding: 12, background: "var(--surface)" }}>
-      <div style={{ fontWeight: 800 }}>{tool.title}</div>
-      {tool.description ? <p style={{ marginTop: 6 }}>{tool.description}</p> : null}
-      <ol style={{ paddingLeft: 18, marginTop: 10, marginBottom: 0 }}>
+    <div style={{ display: "grid", gap: 8 }}>
+      {tool.description ? <p style={{ margin: 0 }}>{tool.description}</p> : null}
+      <ol style={{ paddingLeft: 18, marginTop: 0, marginBottom: 0 }}>
         {tool.items.map((item, index) => (
           <li key={`${tool.toolId}-${index}`} style={{ marginBottom: 8 }}>
             <div style={{ fontWeight: 600 }}>{item.label}</div>
@@ -29,10 +29,9 @@ function PriorityListToolView({ tool }: { tool: ToolPriorityList }) {
 
 function StaticTextToolView({ tool }: { tool: ToolStaticText }) {
   return (
-    <div style={{ border: "1px solid var(--border)", borderRadius: 12, padding: 12, background: "var(--surface)" }}>
-      <div style={{ fontWeight: 800 }}>{tool.title}</div>
-      {tool.description ? <p style={{ marginTop: 6 }}>{tool.description}</p> : null}
-      <div style={{ marginTop: 8 }}>{renderBodyText(tool.body)}</div>
+    <div style={{ display: "grid", gap: 8 }}>
+      {tool.description ? <p style={{ margin: 0 }}>{tool.description}</p> : null}
+      <div>{renderBodyText(tool.body)}</div>
     </div>
   );
 }
@@ -50,33 +49,72 @@ export default function ToolsHost({
   tasks?: TaskDefinition[];
   guidedRoutePath?: string;
 }) {
+  const [openById, setOpenById] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    setOpenById((prev) => {
+      const next = { ...prev };
+      for (const tool of tools) {
+        if (next[tool.toolId] === undefined) {
+          next[tool.toolId] = tool.toolType === "fishing_calculator";
+        }
+      }
+      return next;
+    });
+  }, [tools]);
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       {tools.map((tool) => {
+        let content: React.ReactNode;
         if (tool.toolType === "priority_list") {
-          return <PriorityListToolView key={tool.toolId} tool={tool as ToolPriorityList} />;
-        }
-        if (tool.toolType === "static_text") {
-          return <StaticTextToolView key={tool.toolId} tool={tool as ToolStaticText} />;
-        }
-        if (tool.toolType === "fishing_calculator") {
-          return (
+          content = <PriorityListToolView tool={tool as ToolPriorityList} />;
+        } else if (tool.toolType === "static_text") {
+          content = <StaticTextToolView tool={tool as ToolStaticText} />;
+        } else if (tool.toolType === "fishing_calculator") {
+          content = (
             <FishingToolView
-              key={tool.toolId}
               tool={tool as ToolFishingCalculator}
               eventId={eventId}
               eventVersion={eventVersion}
               tasks={tasks}
               guidedRoutePath={guidedRoutePath}
+              variant="companion"
             />
           );
+        } else if (tool.toolType === "purchase_goals") {
+          content = (
+            <FishingToolView
+              tool={tool as ToolPurchaseGoals}
+              eventId={eventId}
+              eventVersion={eventVersion}
+              tasks={tasks}
+              guidedRoutePath={guidedRoutePath}
+              variant="purchase"
+            />
+          );
+        } else {
+          content = <p>Unsupported tool type: {tool.toolType}</p>;
         }
 
         return (
-          <div key={tool.toolId} style={{ border: "1px solid var(--border)", borderRadius: 12, padding: 12, background: "var(--surface)" }}>
-            <div style={{ fontWeight: 800 }}>{tool.title}</div>
-            <p style={{ marginTop: 6 }}>Unsupported tool type: {tool.toolType}</p>
-          </div>
+          <details
+            key={tool.toolId}
+            open={openById[tool.toolId] ?? false}
+            onToggle={(e) => {
+              const isOpen = (e.currentTarget as HTMLDetailsElement).open;
+              setOpenById((prev) => ({ ...prev, [tool.toolId]: isOpen }));
+            }}
+            style={{ border: "1px solid var(--border)", borderRadius: 10, padding: "8px 12px", background: "var(--surface)" }}
+          >
+            <summary className="detailsSummary" style={{ cursor: "pointer", fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
+              <span aria-hidden="true" className="detailsChevron">
+                ▸
+              </span>
+              <span style={{ flex: 1 }}>{tool.title}</span>
+            </summary>
+            <div style={{ marginTop: 8 }}>{content}</div>
+          </details>
         );
       })}
     </div>

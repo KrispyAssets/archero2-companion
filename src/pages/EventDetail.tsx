@@ -870,15 +870,17 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
     return map;
   }, [event]);
 
+  const effectiveToolCount = toolState.status === "ready" ? toolState.tools.length : event.sections.toolCount;
+
   const defaultTabId = useMemo(() => {
     const candidates = [
-      { id: "tools", hidden: event.sections.toolCount === 0 },
+      { id: "tools", hidden: effectiveToolCount === 0 },
       { id: "guide", hidden: event.sections.guideSectionCount === 0 },
       { id: "faq", hidden: event.sections.faqCount === 0 },
       { id: "data", hidden: event.sections.dataSectionCount === 0 },
     ];
     return candidates.find((tab) => !tab.hidden)?.id ?? "guide";
-  }, [event]);
+  }, [effectiveToolCount, event]);
 
   useEffect(() => {
     if (!defaultTabId) return;
@@ -930,8 +932,8 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
   const tabs = [
     {
       id: "tools",
-      label: `Tools (${ev.sections.toolCount})`,
-      hidden: ev.sections.toolCount === 0,
+      label: `Tools (${effectiveToolCount})`,
+      hidden: effectiveToolCount === 0,
       content:
         toolState.status === "loading" ? (
           <p>Loading tools…</p>

@@ -9,6 +9,7 @@ import type {
   TaskDefinition,
   ToolDefinition,
   ToolFishingCalculator,
+  ToolPurchaseGoals,
   ToolPriorityList,
   ToolRef,
   ToolStaticText,
@@ -108,6 +109,7 @@ function parseToolDefinition(doc: Document): ToolDefinition | null {
   const title = getAttr(toolEl, "title");
   const descriptionEl = toolEl.getElementsByTagName("description")[0];
   const description = descriptionEl ? collectParagraphText(descriptionEl) : undefined;
+  const stateKey = toolEl.getAttribute("state_key") ?? undefined;
 
   if (toolType === "priority_list") {
     const itemsEl = toolEl.getElementsByTagName("items")[0];
@@ -122,6 +124,7 @@ function parseToolDefinition(doc: Document): ToolDefinition | null {
       toolType: "priority_list",
       title,
       description,
+      stateKey,
       items,
     };
 
@@ -136,6 +139,7 @@ function parseToolDefinition(doc: Document): ToolDefinition | null {
       toolType: "static_text",
       title,
       description,
+      stateKey,
       body,
     };
     return tool;
@@ -149,6 +153,22 @@ function parseToolDefinition(doc: Document): ToolDefinition | null {
       toolType: "fishing_calculator",
       title,
       description,
+      stateKey,
+      dataPath: dataRefEl ? getAttr(dataRefEl, "path") : "",
+      defaultSetId: settingsEl?.getAttribute("default_set_id") ?? undefined,
+    };
+    return tool;
+  }
+
+  if (toolType === "purchase_goals") {
+    const dataRefEl = toolEl.getElementsByTagName("data_ref")[0];
+    const settingsEl = toolEl.getElementsByTagName("settings")[0];
+    const tool: ToolPurchaseGoals = {
+      toolId,
+      toolType: "purchase_goals",
+      title,
+      description,
+      stateKey,
       dataPath: dataRefEl ? getAttr(dataRefEl, "path") : "",
       defaultSetId: settingsEl?.getAttribute("default_set_id") ?? undefined,
     };
@@ -160,6 +180,7 @@ function parseToolDefinition(doc: Document): ToolDefinition | null {
     toolType,
     title,
     description,
+    stateKey,
   };
 }
 
