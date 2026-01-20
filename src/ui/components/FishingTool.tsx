@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { TaskDefinition, ToolFishingCalculator } from "../../catalog/types";
 import { buildTaskGroups, computeEarned, computeRemaining } from "../../catalog/taskGrouping";
 import { getEventProgressState } from "../../state/userStateStore";
@@ -238,6 +238,8 @@ export default function FishingToolView({
   });
   const [breakStep, setBreakStep] = useState(1);
   const [taskTick, setTaskTick] = useState(0);
+  const [resetMenuOpen, setResetMenuOpen] = useState(false);
+  const resetMenuRef = useRef<HTMLDetailsElement | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -417,6 +419,18 @@ export default function FishingToolView({
     }
     window.addEventListener("archero2_user_state", handleStateChange);
     return () => window.removeEventListener("archero2_user_state", handleStateChange);
+  }, []);
+
+  useEffect(() => {
+    function handleClick(event: MouseEvent) {
+      const target = event.target as Node | null;
+      if (!resetMenuRef.current || !target) return;
+      if (!resetMenuRef.current.contains(target)) {
+        setResetMenuOpen(false);
+      }
+    }
+    document.addEventListener("click", handleClick);
+    return () => document.removeEventListener("click", handleClick);
   }, []);
 
   const derived = useMemo(() => {
@@ -1170,6 +1184,10 @@ export default function FishingToolView({
     }));
   }
 
+  function closeResetMenu() {
+    setResetMenuOpen(false);
+  }
+
   function resetAllProgress() {
     updateToolState((prev) => {
       const nextLakeStates: Record<string, LakeState> = {};
@@ -1344,7 +1362,60 @@ export default function FishingToolView({
           )}
         </div>
         <div style={{ display: "grid", gap: 8 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-muted)" }}>Select a Lake</div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-muted)" }}>Select a Lake</div>
+            <div ref={resetMenuRef} style={{ position: "relative" }}>
+              <button
+                type="button"
+                className="secondary"
+                onClick={() => setResetMenuOpen((prev) => !prev)}
+              >
+                Reset Options
+              </button>
+              {resetMenuOpen ? (
+                <div
+                  style={{
+                    position: "absolute",
+                    right: 0,
+                    top: "100%",
+                    marginTop: 6,
+                    display: "grid",
+                    gap: 6,
+                    padding: 8,
+                    minWidth: 180,
+                    background: "var(--surface)",
+                    border: "1px solid var(--border)",
+                    borderRadius: 10,
+                    zIndex: 5,
+                  }}
+                >
+                  {set.lakes.map((entry, index) => (
+                    <button
+                      key={entry.lakeId}
+                      type="button"
+                      className="ghost"
+                      onClick={() => {
+                        resetLakeProgress(entry.lakeId);
+                        closeResetMenu();
+                      }}
+                    >
+                      Reset Lake {index + 1}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    className="ghost"
+                    onClick={() => {
+                      resetAllProgress();
+                      closeResetMenu();
+                    }}
+                  >
+                    Reset All Progress
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          </div>
           <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))" }}>
             {set.lakes.map((entry) => {
               const entryState = toolState.lakeStates[entry.lakeId];
@@ -1373,6 +1444,9 @@ export default function FishingToolView({
                   </div>
                   <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
                     {remaining} fish • {odds.toFixed(1)}% legendary
+                  </div>
+                  <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>
+                    Pools {entryState?.poolsCompleted ?? 0} • Legendary {entryState?.legendaryCaught ?? 0}
                   </div>
                 </button>
               );
