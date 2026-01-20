@@ -1526,13 +1526,28 @@ export default function FishingToolView({
                   </option>
                 ))}
               </select>
-              <button type="button" className="secondary" onClick={() => updateBrokenLines(breakStep)}>
+              <button
+                type="button"
+                className="secondary"
+                onClick={() => updateBrokenLines(breakStep)}
+                disabled={(toolState.brokenLines ?? 0) >= brokenLinesMax}
+              >
                 Add Breaks
               </button>
-              <button type="button" className="secondary" onClick={() => updateBrokenLines(-breakStep)}>
+              <button
+                type="button"
+                className="secondary"
+                onClick={() => updateBrokenLines(-breakStep)}
+                disabled={(toolState.brokenLines ?? 0) <= 0}
+              >
                 Remove Breaks
               </button>
-              <button type="button" className="ghost" onClick={() => updateBrokenLines(-brokenLinesMax)}>
+              <button
+                type="button"
+                className="ghost"
+                onClick={() => updateBrokenLines(-brokenLinesMax)}
+                disabled={(toolState.brokenLines ?? 0) <= 0}
+              >
                 Reset
               </button>
             </div>
