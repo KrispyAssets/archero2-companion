@@ -23,12 +23,27 @@ export default function CreditsPage() {
         </div>
 
         <div style={{ border: "1px solid var(--border)", borderRadius: 12, padding: 12, background: "var(--surface)" }}>
-          <div style={{ fontWeight: 800 }}>Fishing Guide</div>
+          <div style={{ fontWeight: 800 }}>Original Fishing Guide</div>
+          <p style={{ marginTop: 6 }}>
+            Created by Kai&apos;thulhu.{" "}
+            <a
+              className="linkButton"
+              href="https://discord.com/channels/1268830572743102505/1394706549074821271/1394706549074821271"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Open in Discord
+            </a>
+          </p>
+        </div>
+
+        <div style={{ border: "1px solid var(--border)", borderRadius: 12, padding: 12, background: "var(--surface)" }}>
+          <div style={{ fontWeight: 800 }}>Revamped Fishing Guide</div>
           <p style={{ marginTop: 6 }}>
             Created by Ty the Squirtle Squirt.{" "}
             <a
               className="linkButton"
-              href="https://discord.com/channels/1268830572743102505/1459511349951467541"
+              href="https://discord.com/channels/1268830572743102505/1459511349951467541/1459511349951467541"
               target="_blank"
               rel="noopener noreferrer"
             >
