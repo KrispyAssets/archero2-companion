@@ -69,7 +69,6 @@ type ToolState = {
   targetSilverTickets: number | null;
   silverEstimateLakeId: string | null;
   currentGoldTickets: number | null;
-  targetGoldTickets: number | null;
   currentLures: number | null;
   purchasedLures: number | null;
   currentGems: number | null;
@@ -77,6 +76,13 @@ type ToolState = {
     etchedRune: number | null;
     blessedRune: number | null;
     artifact: number | null;
+  };
+  goldPurchaseCounts: {
+    etchedRune: number | null;
+    advancedEnchantium: number | null;
+    ruinShovelBundle: number | null;
+    promisedShovelBundle: number | null;
+    chromaticKeyBundle: number | null;
   };
 };
 
@@ -235,11 +241,17 @@ export default function FishingToolView({
       targetSilverTickets: stored?.targetSilverTickets ?? stored?.goalTickets ?? null,
       silverEstimateLakeId: stored?.silverEstimateLakeId ?? data.lastLakeId ?? baseSet.lakes[0]?.lakeId ?? null,
       currentGoldTickets: stored?.currentGoldTickets ?? null,
-      targetGoldTickets: stored?.targetGoldTickets ?? null,
       currentLures: stored?.currentLures ?? null,
       purchasedLures: stored?.purchasedLures ?? null,
       currentGems: stored?.currentGems ?? null,
       purchaseCounts: stored?.purchaseCounts ?? { etchedRune: null, blessedRune: null, artifact: null },
+      goldPurchaseCounts: stored?.goldPurchaseCounts ?? {
+        etchedRune: 1,
+        advancedEnchantium: null,
+        ruinShovelBundle: null,
+        promisedShovelBundle: null,
+        chromaticKeyBundle: null,
+      },
     };
 
     const baseSet = data.sets[0];
@@ -280,11 +292,17 @@ export default function FishingToolView({
     nextState.silverEstimateLakeId =
       stored?.silverEstimateLakeId ?? data.lastLakeId ?? baseSet.lakes[0]?.lakeId ?? null;
     nextState.currentGoldTickets = stored?.currentGoldTickets ?? null;
-    nextState.targetGoldTickets = stored?.targetGoldTickets ?? null;
     nextState.currentLures = stored?.currentLures ?? null;
     nextState.purchasedLures = stored?.purchasedLures ?? null;
     nextState.currentGems = stored?.currentGems ?? null;
     nextState.purchaseCounts = stored?.purchaseCounts ?? { etchedRune: null, blessedRune: null, artifact: null };
+    nextState.goldPurchaseCounts = stored?.goldPurchaseCounts ?? {
+      etchedRune: 1,
+      advancedEnchantium: null,
+      ruinShovelBundle: null,
+      promisedShovelBundle: null,
+      chromaticKeyBundle: null,
+    };
 
     setToolState(nextState);
     toolStateCache.set(tool.toolId, nextState);
@@ -338,7 +356,34 @@ export default function FishingToolView({
   const baselineMin = 70000;
   const baselineMax = 130000;
   const baselineDefault = 120000;
-  const silverGoalBaselineRaw = toolState?.targetSilverTickets ?? baselineDefault;
+
+  const goldTarget = useMemo(() => {
+    if (!toolState) return null;
+    const counts = toolState.goldPurchaseCounts;
+    if (!counts) return null;
+    let total = 0;
+    if (counts.etchedRune) total += counts.etchedRune * 16;
+    if (counts.advancedEnchantium) total += counts.advancedEnchantium * 18;
+    if (counts.ruinShovelBundle) total += counts.ruinShovelBundle * 1;
+    if (counts.promisedShovelBundle) total += counts.promisedShovelBundle * 1;
+    if (counts.chromaticKeyBundle) total += counts.chromaticKeyBundle * 4;
+    return total || null;
+  }, [toolState?.goldPurchaseCounts]);
+
+  const suggestedSilverTarget = useMemo(() => {
+    if (!toolState) return null;
+    const counts = toolState.purchaseCounts;
+    if (!counts) return null;
+    const etchedCount = counts.etchedRune ?? 0;
+    let total = 0;
+    if (etchedCount) total += etchedCount * 32400;
+    if (counts.blessedRune) total += counts.blessedRune * 4050;
+    if (counts.artifact) total += counts.artifact * 184000;
+    return total || null;
+  }, [toolState?.purchaseCounts]);
+
+  const effectiveSilverTarget = toolState?.targetSilverTickets ?? suggestedSilverTarget ?? null;
+  const silverGoalBaselineRaw = effectiveSilverTarget ?? baselineDefault;
   const silverGoalBaseline = clampNumber(silverGoalBaselineRaw, baselineMin, baselineMax);
 
   const lakeRecommendations = useMemo(() => {
@@ -348,12 +393,11 @@ export default function FishingToolView({
     if (!set) return null;
     const legendaryTypeId = getLegendaryTypeId(data);
     const goldCurrent = toolState.currentGoldTickets ?? null;
-    const goldTarget = toolState.targetGoldTickets ?? null;
     const goldRemaining =
       goldCurrent !== null && goldTarget !== null ? Math.max(0, goldTarget - goldCurrent) : null;
     if (!goldRemaining) return null;
     const silverCurrent = toolState.currentSilverTickets ?? null;
-    const silverTarget = toolState.targetSilverTickets ?? null;
+    const silverTarget = effectiveSilverTarget;
     const silverRemaining =
       silverCurrent !== null && silverTarget !== null ? Math.max(0, silverTarget - silverCurrent) : null;
     const silverGoalBaselineRaw = silverTarget ?? baselineDefault;
@@ -440,14 +484,13 @@ export default function FishingToolView({
       }
     }
     return best;
-  }, [dataState, toolState]);
+  }, [dataState, toolState, goldTarget, effectiveSilverTarget]);
 
   const goldRange = useMemo(() => {
     if (dataState.status !== "ready" || !toolState) return null;
     const data = dataState.data;
     const legendaryTypeId = getLegendaryTypeId(data);
     const goldCurrent = toolState.currentGoldTickets ?? null;
-    const goldTarget = toolState.targetGoldTickets ?? null;
     const goldRemaining =
       goldCurrent !== null && goldTarget !== null ? Math.max(0, goldTarget - goldCurrent) : null;
     if (!goldRemaining || !lakeRecommendations) return null;
@@ -481,22 +524,7 @@ export default function FishingToolView({
       toolState.lakeStates,
       legendaryTypeId
     );
-  }, [dataState, toolState, lakeRecommendations]);
-
-  const suggestedSilverTarget = useMemo(() => {
-    if (!toolState) return null;
-    const counts = toolState.purchaseCounts;
-    if (!counts) return null;
-    const goldTarget = toolState.targetGoldTickets ?? 0;
-    const etchedCount = counts.etchedRune ?? 0;
-    const etchedViaGold = Math.min(etchedCount, Math.floor(goldTarget / 16));
-    const etchedViaSilver = etchedCount - etchedViaGold;
-    let total = 0;
-    if (etchedViaSilver) total += etchedViaSilver * 32400;
-    if (counts.blessedRune) total += counts.blessedRune * 4050;
-    if (counts.artifact) total += counts.artifact * 184000;
-    return total || null;
-  }, [toolState?.purchaseCounts, toolState?.targetGoldTickets]);
+  }, [dataState, toolState, lakeRecommendations, goldTarget]);
 
   if (dataState.status === "loading") {
     return <p>Loading fishing tool…</p>;
@@ -541,7 +569,7 @@ export default function FishingToolView({
   const avgTicketsPerFishSilver = silverEstimateLakeId ? getAvgTicketsPerFish(data, silverEstimateLakeId) : null;
 
   const silverCurrent = toolState.currentSilverTickets ?? null;
-  const silverTarget = toolState.targetSilverTickets ?? null;
+  const silverTarget = effectiveSilverTarget;
   const silverRemaining = silverCurrent !== null && silverTarget !== null ? Math.max(0, silverTarget - silverCurrent) : null;
   const silverFishNeeded =
     silverRemaining !== null && avgTicketsPerFishSilver ? Math.ceil(silverRemaining / avgTicketsPerFishSilver) : null;
@@ -616,7 +644,6 @@ export default function FishingToolView({
   }
 
   const goldCurrent = toolState.currentGoldTickets ?? null;
-  const goldTarget = toolState.targetGoldTickets ?? null;
   const goldRemaining = goldCurrent !== null && goldTarget !== null ? Math.max(0, goldTarget - goldCurrent) : null;
   const goldExpectedLures = goldRange ? Math.ceil(goldRange.expected) : null;
   const goldLureShortfall =
@@ -803,12 +830,25 @@ export default function FishingToolView({
       return;
     }
     const presetValues =
-      preset === "silver-heavy" ? { silver: 120000, gold: 16 } : { silver: 80000, gold: 16 };
+      preset === "silver-heavy"
+        ? { etchedRune: 3, blessedRune: 4, artifact: null, goldEtched: 1 }
+        : { etchedRune: 2, blessedRune: 4, artifact: null, goldEtched: 1 };
     updateToolState((prev) => ({
       ...prev,
       goalPreset: preset,
-      targetSilverTickets: presetValues.silver,
-      targetGoldTickets: presetValues.gold,
+      targetSilverTickets: null,
+      purchaseCounts: {
+        etchedRune: presetValues.etchedRune,
+        blessedRune: presetValues.blessedRune,
+        artifact: presetValues.artifact,
+      },
+      goldPurchaseCounts: {
+        etchedRune: presetValues.goldEtched,
+        advancedEnchantium: null,
+        ruinShovelBundle: null,
+        promisedShovelBundle: null,
+        chromaticKeyBundle: null,
+      },
     }));
   }
 
@@ -819,14 +859,14 @@ export default function FishingToolView({
     }));
   }
 
-  function setTicketValue(key: "currentSilverTickets" | "targetSilverTickets" | "currentGoldTickets" | "targetGoldTickets", value: number | null) {
+  function setTicketValue(key: "currentSilverTickets" | "targetSilverTickets" | "currentGoldTickets", value: number | null) {
     updateToolState((prev) => ({
       ...prev,
       [key]: value,
     }));
   }
 
-  function setTargetTicketValue(key: "targetSilverTickets" | "targetGoldTickets", value: number | null) {
+  function setTargetTicketValue(key: "targetSilverTickets", value: number | null) {
     updateToolState((prev) => ({
       ...prev,
       [key]: value,
@@ -848,6 +888,14 @@ export default function FishingToolView({
     updateToolState((prev) => ({
       ...prev,
       purchaseCounts: { ...prev.purchaseCounts, [key]: value },
+      goalPreset: "custom",
+    }));
+  }
+
+  function setGoldPurchaseCount(key: keyof ToolState["goldPurchaseCounts"], value: number | null) {
+    updateToolState((prev) => ({
+      ...prev,
+      goldPurchaseCounts: { ...prev.goldPurchaseCounts, [key]: value },
       goalPreset: "custom",
     }));
   }
@@ -1064,9 +1112,9 @@ export default function FishingToolView({
             </div>
 
             <div style={{ display: "grid", gap: 10, marginTop: 12, padding: 10, borderRadius: 10, background: "var(--surface-2)", border: "1px solid var(--border)" }}>
-              <div style={{ fontWeight: 700 }}>Purchase Goals</div>
+              <div style={{ fontWeight: 700 }}>Inputs</div>
               <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                Etched runes can be purchased with 16 gold or 32,400 silver each.
+                Etched runes can be purchased with 16 gold or 32,400 silver each. Add them under the purchase type you plan to use.
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
                 <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
@@ -1112,22 +1160,166 @@ export default function FishingToolView({
                   />
                 </label>
               </div>
+              <div style={{ display: "grid", gap: 8 }}>
+                <div style={{ fontWeight: 600, fontSize: 12 }}>Golden Ticket Purchases</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                  <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
+                    <span style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                      <input
+                        type="checkbox"
+                        checked={toolState.goldPurchaseCounts.etchedRune !== null}
+                        onChange={(e) =>
+                          setGoldPurchaseCount("etchedRune", e.target.checked ? 1 : null)
+                        }
+                      />
+                      Etched Rune (16 gold)
+                    </span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="Qty"
+                      value={
+                        toolState.goldPurchaseCounts.etchedRune === null
+                          ? ""
+                          : toolState.goldPurchaseCounts.etchedRune
+                      }
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/[^\d]/g, "");
+                        setGoldPurchaseCount("etchedRune", raw ? Number(raw) : null);
+                      }}
+                      style={{ maxWidth: 120 }}
+                      disabled={toolState.goldPurchaseCounts.etchedRune === null}
+                    />
+                  </label>
+                  <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
+                    <span style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                      <input
+                        type="checkbox"
+                        checked={toolState.goldPurchaseCounts.advancedEnchantium !== null}
+                        onChange={(e) =>
+                          setGoldPurchaseCount("advancedEnchantium", e.target.checked ? 1 : null)
+                        }
+                      />
+                      Advanced Enchantium (18 gold)
+                    </span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="Qty"
+                      value={
+                        toolState.goldPurchaseCounts.advancedEnchantium === null
+                          ? ""
+                          : toolState.goldPurchaseCounts.advancedEnchantium
+                      }
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/[^\d]/g, "");
+                        setGoldPurchaseCount("advancedEnchantium", raw ? Number(raw) : null);
+                      }}
+                      style={{ maxWidth: 120 }}
+                      disabled={toolState.goldPurchaseCounts.advancedEnchantium === null}
+                    />
+                  </label>
+                  <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
+                    <span style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                      <input
+                        type="checkbox"
+                        checked={toolState.goldPurchaseCounts.ruinShovelBundle !== null}
+                        onChange={(e) =>
+                          setGoldPurchaseCount("ruinShovelBundle", e.target.checked ? 1 : null)
+                        }
+                      />
+                      Ruin Shovels (3 for 1 gold)
+                    </span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="Bundles"
+                      value={
+                        toolState.goldPurchaseCounts.ruinShovelBundle === null
+                          ? ""
+                          : toolState.goldPurchaseCounts.ruinShovelBundle
+                      }
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/[^\d]/g, "");
+                        setGoldPurchaseCount("ruinShovelBundle", raw ? Number(raw) : null);
+                      }}
+                      style={{ maxWidth: 120 }}
+                      disabled={toolState.goldPurchaseCounts.ruinShovelBundle === null}
+                    />
+                  </label>
+                  <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
+                    <span style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                      <input
+                        type="checkbox"
+                        checked={toolState.goldPurchaseCounts.promisedShovelBundle !== null}
+                        onChange={(e) =>
+                          setGoldPurchaseCount("promisedShovelBundle", e.target.checked ? 1 : null)
+                        }
+                      />
+                      Promised Shovels (2 for 1 gold)
+                    </span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="Bundles"
+                      value={
+                        toolState.goldPurchaseCounts.promisedShovelBundle === null
+                          ? ""
+                          : toolState.goldPurchaseCounts.promisedShovelBundle
+                      }
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/[^\d]/g, "");
+                        setGoldPurchaseCount("promisedShovelBundle", raw ? Number(raw) : null);
+                      }}
+                      style={{ maxWidth: 120 }}
+                      disabled={toolState.goldPurchaseCounts.promisedShovelBundle === null}
+                    />
+                  </label>
+                  <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
+                    <span style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                      <input
+                        type="checkbox"
+                        checked={toolState.goldPurchaseCounts.chromaticKeyBundle !== null}
+                        onChange={(e) =>
+                          setGoldPurchaseCount("chromaticKeyBundle", e.target.checked ? 1 : null)
+                        }
+                      />
+                      Chromatic Keys (5 for 4 gold)
+                    </span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="Bundles"
+                      value={
+                        toolState.goldPurchaseCounts.chromaticKeyBundle === null
+                          ? ""
+                          : toolState.goldPurchaseCounts.chromaticKeyBundle
+                      }
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/[^\d]/g, "");
+                        setGoldPurchaseCount("chromaticKeyBundle", raw ? Number(raw) : null);
+                      }}
+                      style={{ maxWidth: 120 }}
+                      disabled={toolState.goldPurchaseCounts.chromaticKeyBundle === null}
+                    />
+                  </label>
+                </div>
+              </div>
               <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10, fontSize: 12 }}>
-                <span>Suggested silver target: <b>{suggestedSilverTarget ? formatNumber(suggestedSilverTarget) : "—"}</b></span>
+                <span>Computed silver target: <b>{suggestedSilverTarget ? formatNumber(suggestedSilverTarget) : "—"}</b></span>
                 {suggestedSilverTarget ? (
                   <button
                     type="button"
                     className="ghost"
-                        onClick={() => setTargetTicketValue("targetSilverTickets", suggestedSilverTarget)}
+                    onClick={() => setTargetTicketValue("targetSilverTickets", suggestedSilverTarget)}
                   >
-                    Use Suggested
+                    Override Target
                   </button>
                 ) : null}
               </div>
-            </div>
-
-            <div style={{ display: "grid", gap: 10, marginTop: 12, padding: 10, borderRadius: 10, background: "var(--surface-2)", border: "1px solid var(--border)" }}>
-              <div style={{ fontWeight: 700 }}>Silver Tickets</div>
+              <div style={{ fontSize: 12 }}>
+                Computed gold target: <b>{goldTarget ? formatNumber(goldTarget) : "—"}</b>
+              </div>
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                 <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
                   Current Silver Tickets
@@ -1144,15 +1336,15 @@ export default function FishingToolView({
                   />
                 </label>
                 <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
-                  Silver Tickets Goal
+                  Current Golden Tickets
                   <input
                     type="text"
                     inputMode="numeric"
-                    placeholder="Target"
-                    value={silverTarget === null ? "" : silverTarget}
+                    placeholder="Current"
+                    value={goldCurrent === null ? "" : goldCurrent}
                     onChange={(e) => {
                       const raw = e.target.value.replace(/[^\d]/g, "");
-                      setTargetTicketValue("targetSilverTickets", raw ? Number(raw) : null);
+                      setTicketValue("currentGoldTickets", raw ? Number(raw) : null);
                     }}
                     style={{ maxWidth: 160 }}
                   />
@@ -1215,87 +1407,14 @@ export default function FishingToolView({
                   ))}
                 </select>
               </div>
-              <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
-                {silverRemaining === null
-                  ? "Enter current and goal silver tickets."
-                  : silverRemaining === 0
-                  ? "Goal reached."
-                  : `Using ${set.lakes.find((entry) => entry.lakeId === silverEstimateLakeId)?.label ?? silverEstimateLakeId} for estimates.`}
-              </div>
-              {silverRemaining ? (
-                <div style={{ display: "grid", gap: 6, fontSize: 13 }}>
-                  <div>
-                    Estimated fish needed:{" "}
-                    <b>{silverFishNeeded !== null ? formatNumber(silverFishNeeded) : "—"}</b>
-                  </div>
-                  <div>
-                    Lures earned from tasks:{" "}
-                    <b>{luresEarnedFromTasks !== null ? formatNumber(luresEarnedFromTasks) : "—"}</b>
-                  </div>
-                  <div>
-                    Lures remaining from tasks:{" "}
-                    <b>{luresRemainingFromTasks !== null ? formatNumber(luresRemainingFromTasks) : "—"}</b>
-                  </div>
-                  <div>
-                    Lures available (now + tasks + bought):{" "}
-                    <b>{totalAvailableLures !== null ? formatNumber(totalAvailableLures) : "—"}</b>
-                  </div>
-                  <div>
-                    Max possible lures (incl. gems):{" "}
-                    <b>{maxPossibleLures !== null ? formatNumber(maxPossibleLures) : "—"}</b>
-                  </div>
-                  <div>
-                    Lure shortfall:{" "}
-                    <b>{silverLureShortfall !== null ? formatNumber(silverLureShortfall) : "—"}</b>
-                  </div>
-                  <div>
-                    Estimated gem cost:{" "}
-                    <b>{silverGemCost !== null ? formatNumber(silverGemCost) : "—"}</b>
-                  </div>
-                  {currentGems !== null && silverGemCost !== null && currentGems < silverGemCost ? (
-                    <div style={{ color: "var(--danger)" }}>
-                      Not enough gems for the silver goal with current lures.
-                    </div>
-                  ) : null}
-                </div>
-              ) : null}
             </div>
 
+
             <div style={{ display: "grid", gap: 10, marginTop: 12, padding: 10, borderRadius: 10, background: "var(--surface-2)", border: "1px solid var(--border)" }}>
-              <div style={{ fontWeight: 700 }}>Golden Tickets</div>
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
-                  Current Golden Tickets
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="Current"
-                    value={goldCurrent === null ? "" : goldCurrent}
-                    onChange={(e) => {
-                      const raw = e.target.value.replace(/[^\d]/g, "");
-                      setTicketValue("currentGoldTickets", raw ? Number(raw) : null);
-                    }}
-                    style={{ maxWidth: 160 }}
-                  />
-                </label>
-                <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
-                  Golden Tickets Goal
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="Target"
-                    value={goldTarget === null ? "" : goldTarget}
-                    onChange={(e) => {
-                      const raw = e.target.value.replace(/[^\d]/g, "");
-                      setTargetTicketValue("targetGoldTickets", raw ? Number(raw) : null);
-                    }}
-                    style={{ maxWidth: 160 }}
-                  />
-                </label>
-              </div>
+              <div style={{ fontWeight: 700 }}>Recommendations</div>
               <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
                 {goldRemaining === null
-                  ? "Enter current and goal golden tickets."
+                  ? "Select gold purchases and enter your current golden tickets."
                   : goldRemaining === 0
                   ? "Goal reached."
                   : lakeRecommendations?.quickPick && lakeRecommendations.restLakeId
@@ -1333,9 +1452,30 @@ export default function FishingToolView({
                         : "—"}
                     </b>
                   </div>
+                  {silverRemaining !== null ? (
+                    <>
+                      <div>
+                        Estimated fish needed for purchase gap:{" "}
+                        <b>{silverFishNeeded !== null ? formatNumber(silverFishNeeded) : "—"}</b>
+                      </div>
+                      <div>
+                        Lure shortfall (purchase gap):{" "}
+                        <b>{silverLureShortfall !== null ? formatNumber(silverLureShortfall) : "—"}</b>
+                      </div>
+                      <div>
+                        Estimated gem cost (purchase gap):{" "}
+                        <b>{silverGemCost !== null ? formatNumber(silverGemCost) : "—"}</b>
+                      </div>
+                    </>
+                  ) : null}
                   {currentGems !== null && goldGemCost !== null && currentGems < goldGemCost ? (
                     <div style={{ color: "var(--danger)" }}>
                       Not enough gems for the golden goal with current lures.
+                    </div>
+                  ) : null}
+                  {currentGems !== null && silverGemCost !== null && currentGems < silverGemCost ? (
+                    <div style={{ color: "var(--danger)" }}>
+                      Not enough gems for the purchase gap with current lures.
                     </div>
                   ) : null}
                   <div style={{ color: "var(--text-muted)" }}>
