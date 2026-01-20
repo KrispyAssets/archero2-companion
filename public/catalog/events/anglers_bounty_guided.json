@@ -9,7 +9,7 @@
     {
       "optionId": "option_1",
       "title": "Option 1 (Maximize Silver Tickets)",
-      "summary": "This option is more expensive (20–30k gems) but yields more silver tickets.",
+      "summary": "This option is more expensive (20–30k gems) but yields more Silver Tickets.",
       "disclaimer": "If you have started fishing prior to this without tracking your fishes, this guide might not work correctly for you without spending more gems later on. If you are on an earlier lake, you can likely salvage your run by following the steps on your next lake unlock. Check your legendary tickets at the end of each lake to ensure you are matching the expected legendaries caught at that point, but if you are missing a legendary and haven't tracked anything at this point, DO NOT go back and try to get it as you likely don't know the current fish in the pools.",
       "steps": [
         {
@@ -190,14 +190,14 @@
             "warnMessage": "You are out of line breaks! Use your remaining lures then buy more if needed to reach 16 Golden Tickets."
           },
           "action": "At this point, decide how to finish your last 2 legendaries.",
-          "notes": "If you need more silver tickets and have the gems for more lures worst case scenario, you can catch Epics while hunting the legendaries. If you’re low on gems, only catch the legendaries. Keep tracking every fish to ensure accurate progress."
+          "notes": "If you need more Silver Tickets and have the gems for more lures worst case scenario, you can catch Epics while hunting the legendaries. If you’re low on gems, only catch the legendaries. Keep tracking every fish to ensure accurate progress."
         },
         {
           "stepId": "opt1_l4_finish",
           "lakeId": "lake_4",
           "goal": { "type": "manual_confirm", "count": 0 },
-          "action": "Congratulations! You should have at least 16 Golden Tickets and a hefty chunk of silver tickets for all of your purchasing needs!",
-          "notes": "If you decide to continue fishing, it is almost always recommended to do it on Polar Glacier as it provides the highest silver tickets per lure by far."
+          "action": "Congratulations! You should have at least 16 Golden Tickets and a hefty chunk of Silver Tickets for all of your purchasing needs!",
+          "notes": "If you decide to continue fishing, it is almost always recommended to do it on Polar Glacier as it provides the highest Silver Tickets per lure by far."
         }
       ]
     },
@@ -370,8 +370,8 @@
           "stepId": "opt2_l4_finish",
           "lakeId": "lake_4",
           "goal": { "type": "manual_confirm", "count": 0 },
-          "action": "Congratulations! You should have at least 16 Golden Tickets and a hefty chunk of silver tickets for all of your purchasing needs!",
-          "notes": "If you decide to continue fishing, it is almost always recommended to do it on Polar Glacier as it provides the highest silver tickets per lure by far."
+          "action": "Congratulations! You should have at least 16 Golden Tickets and a hefty chunk of Silver Tickets for all of your purchasing needs!",
+          "notes": "If you decide to continue fishing, it is almost always recommended to do it on Polar Glacier as it provides the highest Silver Tickets per lure by far."
         }
       ]
     }
