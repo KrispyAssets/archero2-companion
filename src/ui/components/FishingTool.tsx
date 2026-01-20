@@ -239,6 +239,7 @@ export default function FishingToolView({
   const [taskTick, setTaskTick] = useState(0);
   const [resetMenuOpen, setResetMenuOpen] = useState(false);
   const [showBreakOdds, setShowBreakOdds] = useState(false);
+  const [purchaseCollapsed, setPurchaseCollapsed] = useState(false);
   const resetMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -1304,7 +1305,8 @@ export default function FishingToolView({
   }
 
   return (
-    <div style={{ border: "1px solid var(--border)", borderRadius: 16, padding: 16, background: "var(--surface)" }}>
+    <div style={{ display: "grid", gap: 12 }}>
+      <div style={{ border: "1px solid var(--border)", borderRadius: 16, padding: 16, background: "var(--surface)" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <div style={{ fontSize: 18, fontWeight: 800 }}>{tool.title}</div>
         <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
@@ -1669,363 +1671,6 @@ export default function FishingToolView({
         </div>
 
         <div style={{ border: "1px solid var(--border)", borderRadius: 12, padding: 12 }}>
-          <div style={{ fontWeight: 700, marginBottom: 6 }}>Purchase Goals</div>
-          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-            <label style={{ fontSize: 12, color: "var(--text-muted)" }}>Preset</label>
-            <select value={toolState.goalPreset} onChange={(e) => setGoalPreset(e.target.value as ToolState["goalPreset"])}>
-              <option value="silver-heavy">Silver-heavy (120k + 16 gold)</option>
-              <option value="gold-efficient">Gold-efficient (80k + 16 gold)</option>
-              <option value="custom">Custom</option>
-            </select>
-          </div>
-
-          <div
-            style={{
-              display: "grid",
-              gap: 10,
-              marginTop: 12,
-              padding: 10,
-              borderRadius: 10,
-              background: "var(--surface-2)",
-              border: "1px solid var(--border)",
-            }}
-          >
-            <div style={{ fontWeight: 700 }}>Inputs</div>
-            <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-              Etched runes can be purchased with 16 gold or 32,400 silver each. Add them under the purchase type you plan to use.
-            </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-              <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
-                Etched Rune (32,400)
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="Qty"
-                  value={toolState.purchaseCounts.etchedRune === null ? "" : toolState.purchaseCounts.etchedRune}
-                  onChange={(e) => {
-                    const raw = e.target.value.replace(/[^\d]/g, "");
-                    setPurchaseCount("etchedRune", raw ? Number(raw) : null);
-                  }}
-                  style={{ maxWidth: 120 }}
-                />
-              </label>
-              <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
-                Blessed Rune (4,050)
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="Qty"
-                  value={toolState.purchaseCounts.blessedRune === null ? "" : toolState.purchaseCounts.blessedRune}
-                  onChange={(e) => {
-                    const raw = e.target.value.replace(/[^\d]/g, "");
-                    setPurchaseCount("blessedRune", raw ? Number(raw) : null);
-                  }}
-                  style={{ maxWidth: 120 }}
-                />
-              </label>
-              <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
-                Artifact (184,000)
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="Qty"
-                  value={toolState.purchaseCounts.artifact === null ? "" : toolState.purchaseCounts.artifact}
-                  onChange={(e) => {
-                    const raw = e.target.value.replace(/[^\d]/g, "");
-                    setPurchaseCount("artifact", raw ? Number(raw) : null);
-                  }}
-                  style={{ maxWidth: 120 }}
-                />
-              </label>
-            </div>
-            <div style={{ display: "grid", gap: 8 }}>
-              <div style={{ fontWeight: 600, fontSize: 12 }}>Golden Ticket Purchases</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-                <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
-                  <span style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                    <input
-                      type="checkbox"
-                      checked={toolState.goldPurchaseCounts.etchedRune !== null}
-                      onChange={(e) => setGoldPurchaseCount("etchedRune", e.target.checked ? 1 : null)}
-                    />
-                    Etched Rune (16 gold)
-                  </span>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="Qty"
-                    value={toolState.goldPurchaseCounts.etchedRune === null ? "" : toolState.goldPurchaseCounts.etchedRune}
-                    onChange={(e) => {
-                      const raw = e.target.value.replace(/[^\d]/g, "");
-                      setGoldPurchaseCount("etchedRune", raw ? Number(raw) : null);
-                    }}
-                    style={{ maxWidth: 120 }}
-                    disabled={toolState.goldPurchaseCounts.etchedRune === null}
-                  />
-                </label>
-                <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
-                  <span style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                    <input
-                      type="checkbox"
-                      checked={toolState.goldPurchaseCounts.advancedEnchantium !== null}
-                      onChange={(e) => setGoldPurchaseCount("advancedEnchantium", e.target.checked ? 1 : null)}
-                    />
-                    Advanced Enchantium (18 gold)
-                  </span>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="Qty"
-                    value={toolState.goldPurchaseCounts.advancedEnchantium === null ? "" : toolState.goldPurchaseCounts.advancedEnchantium}
-                    onChange={(e) => {
-                      const raw = e.target.value.replace(/[^\d]/g, "");
-                      setGoldPurchaseCount("advancedEnchantium", raw ? Number(raw) : null);
-                    }}
-                    style={{ maxWidth: 120 }}
-                    disabled={toolState.goldPurchaseCounts.advancedEnchantium === null}
-                  />
-                </label>
-                <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
-                  <span style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                    <input
-                      type="checkbox"
-                      checked={toolState.goldPurchaseCounts.ruinShovelBundle !== null}
-                      onChange={(e) => setGoldPurchaseCount("ruinShovelBundle", e.target.checked ? 1 : null)}
-                    />
-                    Ruin Shovels (3 for 1 gold)
-                  </span>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="Bundles"
-                    value={toolState.goldPurchaseCounts.ruinShovelBundle === null ? "" : toolState.goldPurchaseCounts.ruinShovelBundle}
-                    onChange={(e) => {
-                      const raw = e.target.value.replace(/[^\d]/g, "");
-                      setGoldPurchaseCount("ruinShovelBundle", raw ? Number(raw) : null);
-                    }}
-                    style={{ maxWidth: 120 }}
-                    disabled={toolState.goldPurchaseCounts.ruinShovelBundle === null}
-                  />
-                </label>
-                <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
-                  <span style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                    <input
-                      type="checkbox"
-                      checked={toolState.goldPurchaseCounts.promisedShovelBundle !== null}
-                      onChange={(e) => setGoldPurchaseCount("promisedShovelBundle", e.target.checked ? 1 : null)}
-                    />
-                    Promised Shovels (2 for 1 gold)
-                  </span>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="Bundles"
-                    value={toolState.goldPurchaseCounts.promisedShovelBundle === null ? "" : toolState.goldPurchaseCounts.promisedShovelBundle}
-                    onChange={(e) => {
-                      const raw = e.target.value.replace(/[^\d]/g, "");
-                      setGoldPurchaseCount("promisedShovelBundle", raw ? Number(raw) : null);
-                    }}
-                    style={{ maxWidth: 120 }}
-                    disabled={toolState.goldPurchaseCounts.promisedShovelBundle === null}
-                  />
-                </label>
-                <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
-                  <span style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                    <input
-                      type="checkbox"
-                      checked={toolState.goldPurchaseCounts.chromaticKeyBundle !== null}
-                      onChange={(e) => setGoldPurchaseCount("chromaticKeyBundle", e.target.checked ? 1 : null)}
-                    />
-                    Chromatic Keys (5 for 4 gold)
-                  </span>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="Bundles"
-                    value={toolState.goldPurchaseCounts.chromaticKeyBundle === null ? "" : toolState.goldPurchaseCounts.chromaticKeyBundle}
-                    onChange={(e) => {
-                      const raw = e.target.value.replace(/[^\d]/g, "");
-                      setGoldPurchaseCount("chromaticKeyBundle", raw ? Number(raw) : null);
-                    }}
-                    style={{ maxWidth: 120 }}
-                    disabled={toolState.goldPurchaseCounts.chromaticKeyBundle === null}
-                  />
-                </label>
-              </div>
-            </div>
-            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10, fontSize: 12 }}>
-              <span>
-                Computed silver target: <b>{suggestedSilverTarget ? formatNumber(suggestedSilverTarget) : "—"}</b>
-              </span>
-              {suggestedSilverTarget ? (
-                <button type="button" className="ghost" onClick={() => setTargetTicketValue("targetSilverTickets", suggestedSilverTarget)}>
-                  Override Target
-                </button>
-              ) : null}
-            </div>
-            <div style={{ fontSize: 12 }}>
-              Computed gold target: <b>{goldTarget ? formatNumber(goldTarget) : "—"}</b>
-            </div>
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
-                Current Silver Tickets
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="Current"
-                  value={silverCurrent === null ? "" : silverCurrent}
-                  onChange={(e) => {
-                    const raw = e.target.value.replace(/[^\d]/g, "");
-                    setTicketValue("currentSilverTickets", raw ? Number(raw) : null);
-                  }}
-                  style={{ maxWidth: 160 }}
-                />
-              </label>
-              <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
-                Current Golden Tickets
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="Current"
-                  value={goldCurrent === null ? "" : goldCurrent}
-                  onChange={(e) => {
-                    const raw = e.target.value.replace(/[^\d]/g, "");
-                    setTicketValue("currentGoldTickets", raw ? Number(raw) : null);
-                  }}
-                  style={{ maxWidth: 160 }}
-                />
-              </label>
-            </div>
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
-                Current Lures
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="On hand"
-                  value={currentLures === null ? "" : currentLures}
-                  onChange={(e) => {
-                    const raw = e.target.value.replace(/[^\d]/g, "");
-                    setResourceValue("currentLures", raw ? Number(raw) : null);
-                  }}
-                  style={{ maxWidth: 160 }}
-                />
-              </label>
-              <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
-                Lures Bought
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="Purchased"
-                  value={purchasedLures === null ? "" : purchasedLures}
-                  onChange={(e) => {
-                    const raw = e.target.value.replace(/[^\d]/g, "");
-                    setResourceValue("purchasedLures", raw ? Number(raw) : null);
-                  }}
-                  style={{ maxWidth: 160 }}
-                />
-              </label>
-              <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
-                Current Gems
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="Gems"
-                  value={currentGems === null ? "" : currentGems}
-                  onChange={(e) => {
-                    const raw = e.target.value.replace(/[^\d]/g, "");
-                    setResourceValue("currentGems", raw ? Number(raw) : null);
-                  }}
-                  style={{ maxWidth: 160 }}
-                />
-              </label>
-            </div>
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-              <label style={{ fontSize: 12, color: "var(--text-muted)" }}>Estimate lake</label>
-              <select value={silverEstimateLakeId ?? ""} onChange={(e) => setSilverEstimateLake(e.target.value)}>
-                {set.lakes.map((entry) => (
-                  <option key={entry.lakeId} value={entry.lakeId}>
-                    {entry.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div
-            style={{
-              display: "grid",
-              gap: 10,
-              marginTop: 12,
-              padding: 10,
-              borderRadius: 10,
-              background: "var(--surface-2)",
-              border: "1px solid var(--border)",
-            }}
-          >
-            <div style={{ fontWeight: 700 }}>Recommendations</div>
-            <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
-              {goldRemaining === null
-                ? "Select gold purchases and enter your current golden tickets."
-                : goldRemaining === 0
-                  ? "Goal reached."
-                  : lakeRecommendations?.quickPick && lakeRecommendations.restLakeId
-                    ? `Quick legendary in ${set.lakes.find((entry) => entry.lakeId === lakeRecommendations.lakeId)?.label ?? lakeRecommendations.lakeId}, then switch to ${set.lakes.find((entry) => entry.lakeId === lakeRecommendations.restLakeId)?.label ?? lakeRecommendations.restLakeId}.`
-                    : lakeRecommendations
-                      ? `Recommended lake: ${set.lakes.find((entry) => entry.lakeId === lakeRecommendations.lakeId)?.label ?? lakeRecommendations.lakeId}.`
-                      : "Add a goal to see a recommended lake."}
-            </div>
-            {goldRemaining && goldRange ? (
-              <div style={{ display: "grid", gap: 6, fontSize: 13 }}>
-                <div>
-                  Estimated fish needed (best / expected / worst):{" "}
-                  <b>
-                    {formatNumber(Math.ceil(goldRange.best))} / {formatNumber(Math.ceil(goldRange.expected))} /{" "}
-                    {formatNumber(Math.ceil(goldRange.worst))}
-                  </b>
-                </div>
-                <div>
-                  Estimated gem cost (expected): <b>{formatNumber(Math.ceil(goldRange.expected) * 150)}</b>
-                </div>
-                <div>
-                  Lures available (now + tasks + bought): <b>{totalAvailableLures !== null ? formatNumber(totalAvailableLures) : "—"}</b>
-                </div>
-                <div>
-                  Max possible lures (incl. gems): <b>{maxPossibleLures !== null ? formatNumber(maxPossibleLures) : "—"}</b>
-                </div>
-                <div>
-                  Estimated silver tickets gained (expected):{" "}
-                  <b>{lakeRecommendations?.avgTicketsPerFish ? formatNumber(goldRange.expected * lakeRecommendations.avgTicketsPerFish, 0) : "—"}</b>
-                </div>
-                {silverRemaining !== null ? (
-                  <>
-                    <div>
-                      Estimated fish needed for purchase gap: <b>{silverFishNeeded !== null ? formatNumber(silverFishNeeded) : "—"}</b>
-                    </div>
-                    <div>
-                      Lure shortfall (purchase gap): <b>{silverLureShortfall !== null ? formatNumber(silverLureShortfall) : "—"}</b>
-                    </div>
-                    <div>
-                      Estimated gem cost (purchase gap): <b>{silverGemCost !== null ? formatNumber(silverGemCost) : "—"}</b>
-                    </div>
-                  </>
-                ) : null}
-                {currentGems !== null && goldGemCost !== null && currentGems < goldGemCost ? (
-                  <div style={{ color: "var(--danger)" }}>Not enough gems for the golden goal with current lures.</div>
-                ) : null}
-                {currentGems !== null && silverGemCost !== null && currentGems < silverGemCost ? (
-                  <div style={{ color: "var(--danger)" }}>Not enough gems for the purchase gap with current lures.</div>
-                ) : null}
-                <div style={{ color: "var(--text-muted)" }}>
-                  Weighted by silver value (weight {formatNumber(lakeRecommendations?.silverWeight ?? 0, 2)} using baseline{" "}
-                  {formatNumber(silverGoalBaseline)}). Best-case assumes full pools between legendaries.
-                </div>
-              </div>
-            ) : null}
-          </div>
-        </div>
-
-        <div style={{ border: "1px solid var(--border)", borderRadius: 12, padding: 12 }}>
           <div style={{ fontWeight: 700, marginBottom: 6 }}>Recent Catches</div>
           {lastThree.length ? (
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -2064,6 +1709,371 @@ export default function FishingToolView({
             </div>
           </details>
         </div>
+      </div>
+      </div>
+
+      <div style={{ border: "1px solid var(--border)", borderRadius: 16, padding: 16, background: "var(--surface)" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+          <div style={{ fontSize: 18, fontWeight: 800 }}>Purchase Goals</div>
+          <button type="button" className="ghost" onClick={() => setPurchaseCollapsed((prev) => !prev)}>
+            {purchaseCollapsed ? "Expand" : "Collapse"}
+          </button>
+        </div>
+        {purchaseCollapsed ? null : (
+          <div style={{ display: "grid", gap: 12, marginTop: 12 }}>
+            <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+              <label style={{ fontSize: 12, color: "var(--text-muted)" }}>Preset</label>
+              <select value={toolState.goalPreset} onChange={(e) => setGoalPreset(e.target.value as ToolState["goalPreset"])}>
+                <option value="silver-heavy">Silver-heavy (120k + 16 gold)</option>
+                <option value="gold-efficient">Gold-efficient (80k + 16 gold)</option>
+                <option value="custom">Custom</option>
+              </select>
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gap: 10,
+                padding: 10,
+                borderRadius: 10,
+                background: "var(--surface-2)",
+                border: "1px solid var(--border)",
+              }}
+            >
+              <div style={{ fontWeight: 700 }}>Inputs</div>
+              <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                Etched runes can be purchased with 16 gold or 32,400 silver each. Add them under the purchase type you plan to use.
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
+                  Etched Rune (32,400)
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Qty"
+                    value={toolState.purchaseCounts.etchedRune === null ? "" : toolState.purchaseCounts.etchedRune}
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/[^\d]/g, "");
+                      setPurchaseCount("etchedRune", raw ? Number(raw) : null);
+                    }}
+                    style={{ maxWidth: 120 }}
+                  />
+                </label>
+                <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
+                  Blessed Rune (4,050)
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Qty"
+                    value={toolState.purchaseCounts.blessedRune === null ? "" : toolState.purchaseCounts.blessedRune}
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/[^\d]/g, "");
+                      setPurchaseCount("blessedRune", raw ? Number(raw) : null);
+                    }}
+                    style={{ maxWidth: 120 }}
+                  />
+                </label>
+                <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
+                  Artifact (184,000)
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Qty"
+                    value={toolState.purchaseCounts.artifact === null ? "" : toolState.purchaseCounts.artifact}
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/[^\d]/g, "");
+                      setPurchaseCount("artifact", raw ? Number(raw) : null);
+                    }}
+                    style={{ maxWidth: 120 }}
+                  />
+                </label>
+              </div>
+              <div style={{ display: "grid", gap: 8 }}>
+                <div style={{ fontWeight: 600, fontSize: 12 }}>Golden Ticket Purchases</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                  <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
+                    <span style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                      <input
+                        type="checkbox"
+                        checked={toolState.goldPurchaseCounts.etchedRune !== null}
+                        onChange={(e) => setGoldPurchaseCount("etchedRune", e.target.checked ? 1 : null)}
+                      />
+                      Etched Rune (16 gold)
+                    </span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="Qty"
+                      value={toolState.goldPurchaseCounts.etchedRune === null ? "" : toolState.goldPurchaseCounts.etchedRune}
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/[^\d]/g, "");
+                        setGoldPurchaseCount("etchedRune", raw ? Number(raw) : null);
+                      }}
+                      style={{ maxWidth: 120 }}
+                      disabled={toolState.goldPurchaseCounts.etchedRune === null}
+                    />
+                  </label>
+                  <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
+                    <span style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                      <input
+                        type="checkbox"
+                        checked={toolState.goldPurchaseCounts.advancedEnchantium !== null}
+                        onChange={(e) => setGoldPurchaseCount("advancedEnchantium", e.target.checked ? 1 : null)}
+                      />
+                      Advanced Enchantium (18 gold)
+                    </span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="Qty"
+                      value={toolState.goldPurchaseCounts.advancedEnchantium === null ? "" : toolState.goldPurchaseCounts.advancedEnchantium}
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/[^\d]/g, "");
+                        setGoldPurchaseCount("advancedEnchantium", raw ? Number(raw) : null);
+                      }}
+                      style={{ maxWidth: 120 }}
+                      disabled={toolState.goldPurchaseCounts.advancedEnchantium === null}
+                    />
+                  </label>
+                  <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
+                    <span style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                      <input
+                        type="checkbox"
+                        checked={toolState.goldPurchaseCounts.ruinShovelBundle !== null}
+                        onChange={(e) => setGoldPurchaseCount("ruinShovelBundle", e.target.checked ? 1 : null)}
+                      />
+                      Ruin Shovels (3 for 1 gold)
+                    </span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="Bundles"
+                      value={toolState.goldPurchaseCounts.ruinShovelBundle === null ? "" : toolState.goldPurchaseCounts.ruinShovelBundle}
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/[^\d]/g, "");
+                        setGoldPurchaseCount("ruinShovelBundle", raw ? Number(raw) : null);
+                      }}
+                      style={{ maxWidth: 120 }}
+                      disabled={toolState.goldPurchaseCounts.ruinShovelBundle === null}
+                    />
+                  </label>
+                  <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
+                    <span style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                      <input
+                        type="checkbox"
+                        checked={toolState.goldPurchaseCounts.promisedShovelBundle !== null}
+                        onChange={(e) => setGoldPurchaseCount("promisedShovelBundle", e.target.checked ? 1 : null)}
+                      />
+                      Promised Shovels (2 for 1 gold)
+                    </span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="Bundles"
+                      value={toolState.goldPurchaseCounts.promisedShovelBundle === null ? "" : toolState.goldPurchaseCounts.promisedShovelBundle}
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/[^\d]/g, "");
+                        setGoldPurchaseCount("promisedShovelBundle", raw ? Number(raw) : null);
+                      }}
+                      style={{ maxWidth: 120 }}
+                      disabled={toolState.goldPurchaseCounts.promisedShovelBundle === null}
+                    />
+                  </label>
+                  <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
+                    <span style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                      <input
+                        type="checkbox"
+                        checked={toolState.goldPurchaseCounts.chromaticKeyBundle !== null}
+                        onChange={(e) => setGoldPurchaseCount("chromaticKeyBundle", e.target.checked ? 1 : null)}
+                      />
+                      Chromatic Keys (5 for 4 gold)
+                    </span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="Bundles"
+                      value={toolState.goldPurchaseCounts.chromaticKeyBundle === null ? "" : toolState.goldPurchaseCounts.chromaticKeyBundle}
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/[^\d]/g, "");
+                        setGoldPurchaseCount("chromaticKeyBundle", raw ? Number(raw) : null);
+                      }}
+                      style={{ maxWidth: 120 }}
+                      disabled={toolState.goldPurchaseCounts.chromaticKeyBundle === null}
+                    />
+                  </label>
+                </div>
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10, fontSize: 12 }}>
+                <span>
+                  Computed silver target: <b>{suggestedSilverTarget ? formatNumber(suggestedSilverTarget) : "—"}</b>
+                </span>
+                {suggestedSilverTarget ? (
+                  <button type="button" className="ghost" onClick={() => setTargetTicketValue("targetSilverTickets", suggestedSilverTarget)}>
+                    Override Target
+                  </button>
+                ) : null}
+              </div>
+              <div style={{ fontSize: 12 }}>
+                Computed gold target: <b>{goldTarget ? formatNumber(goldTarget) : "—"}</b>
+              </div>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
+                  Current Silver Tickets
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Current"
+                    value={silverCurrent === null ? "" : silverCurrent}
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/[^\d]/g, "");
+                      setTicketValue("currentSilverTickets", raw ? Number(raw) : null);
+                    }}
+                    style={{ maxWidth: 160 }}
+                  />
+                </label>
+                <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
+                  Current Golden Tickets
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Current"
+                    value={goldCurrent === null ? "" : goldCurrent}
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/[^\d]/g, "");
+                      setTicketValue("currentGoldTickets", raw ? Number(raw) : null);
+                    }}
+                    style={{ maxWidth: 160 }}
+                  />
+                </label>
+              </div>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
+                  Current Lures
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="On hand"
+                    value={currentLures === null ? "" : currentLures}
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/[^\d]/g, "");
+                      setResourceValue("currentLures", raw ? Number(raw) : null);
+                    }}
+                    style={{ maxWidth: 160 }}
+                  />
+                </label>
+                <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
+                  Lures Bought
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Purchased"
+                    value={purchasedLures === null ? "" : purchasedLures}
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/[^\d]/g, "");
+                      setResourceValue("purchasedLures", raw ? Number(raw) : null);
+                    }}
+                    style={{ maxWidth: 160 }}
+                  />
+                </label>
+                <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
+                  Current Gems
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Gems"
+                    value={currentGems === null ? "" : currentGems}
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/[^\d]/g, "");
+                      setResourceValue("currentGems", raw ? Number(raw) : null);
+                    }}
+                    style={{ maxWidth: 160 }}
+                  />
+                </label>
+              </div>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+                <label style={{ fontSize: 12, color: "var(--text-muted)" }}>Estimate lake</label>
+                <select value={silverEstimateLakeId ?? ""} onChange={(e) => setSilverEstimateLake(e.target.value)}>
+                  {set.lakes.map((entry) => (
+                    <option key={entry.lakeId} value={entry.lakeId}>
+                      {entry.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gap: 10,
+                padding: 10,
+                borderRadius: 10,
+                background: "var(--surface-2)",
+                border: "1px solid var(--border)",
+              }}
+            >
+              <div style={{ fontWeight: 700 }}>Recommendations</div>
+              <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
+                {goldRemaining === null
+                  ? "Select gold purchases and enter your current golden tickets."
+                  : goldRemaining === 0
+                    ? "Goal reached."
+                    : lakeRecommendations?.quickPick && lakeRecommendations.restLakeId
+                      ? `Quick legendary in ${set.lakes.find((entry) => entry.lakeId === lakeRecommendations.lakeId)?.label ?? lakeRecommendations.lakeId}, then switch to ${set.lakes.find((entry) => entry.lakeId === lakeRecommendations.restLakeId)?.label ?? lakeRecommendations.restLakeId}.`
+                      : lakeRecommendations
+                        ? `Recommended lake: ${set.lakes.find((entry) => entry.lakeId === lakeRecommendations.lakeId)?.label ?? lakeRecommendations.lakeId}.`
+                        : "Add a goal to see a recommended lake."}
+              </div>
+              {goldRemaining && goldRange ? (
+                <div style={{ display: "grid", gap: 6, fontSize: 13 }}>
+                  <div>
+                    Estimated fish needed (best / expected / worst):{" "}
+                    <b>
+                      {formatNumber(Math.ceil(goldRange.best))} / {formatNumber(Math.ceil(goldRange.expected))} /{" "}
+                      {formatNumber(Math.ceil(goldRange.worst))}
+                    </b>
+                  </div>
+                  <div>
+                    Estimated gem cost (expected): <b>{formatNumber(Math.ceil(goldRange.expected) * 150)}</b>
+                  </div>
+                  <div>
+                    Lures available (now + tasks + bought): <b>{totalAvailableLures !== null ? formatNumber(totalAvailableLures) : "—"}</b>
+                  </div>
+                  <div>
+                    Max possible lures (incl. gems): <b>{maxPossibleLures !== null ? formatNumber(maxPossibleLures) : "—"}</b>
+                  </div>
+                  <div>
+                    Estimated silver tickets gained (expected):{" "}
+                    <b>{lakeRecommendations?.avgTicketsPerFish ? formatNumber(goldRange.expected * lakeRecommendations.avgTicketsPerFish, 0) : "—"}</b>
+                  </div>
+                  {silverRemaining !== null ? (
+                    <>
+                      <div>
+                        Estimated fish needed for purchase gap: <b>{silverFishNeeded !== null ? formatNumber(silverFishNeeded) : "—"}</b>
+                      </div>
+                      <div>
+                        Lure shortfall (purchase gap): <b>{silverLureShortfall !== null ? formatNumber(silverLureShortfall) : "—"}</b>
+                      </div>
+                      <div>
+                        Estimated gem cost (purchase gap): <b>{silverGemCost !== null ? formatNumber(silverGemCost) : "—"}</b>
+                      </div>
+                    </>
+                  ) : null}
+                  {currentGems !== null && goldGemCost !== null && currentGems < goldGemCost ? (
+                    <div style={{ color: "var(--danger)" }}>Not enough gems for the golden goal with current lures.</div>
+                  ) : null}
+                  {currentGems !== null && silverGemCost !== null && currentGems < silverGemCost ? (
+                    <div style={{ color: "var(--danger)" }}>Not enough gems for the purchase gap with current lures.</div>
+                  ) : null}
+                  <div style={{ color: "var(--text-muted)" }}>
+                    Weighted by silver value (weight {formatNumber(lakeRecommendations?.silverWeight ?? 0, 2)} using baseline{" "}
+                    {formatNumber(silverGoalBaseline)}). Best-case assumes full pools between legendaries.
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
