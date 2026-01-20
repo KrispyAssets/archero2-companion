@@ -52,8 +52,13 @@ export default function AboutPage() {
   return (
     <AppShell>
       <h1>About</h1>
-      <p>Archero 2 Companion</p>
-      <p style={{ color: "var(--text-subtle)" }}>Not affiliated with Habby.</p>
+      <p>Archero 2 Companion — Not affiliated with Habby.</p>
+      <p style={{ color: "var(--text-subtle)" }}>
+        Inspired by the Archero 2 Discord community, this project brings community research together to help new and veteran players with guides,
+        tools, FAQ, and more across every aspect of the game
+      </p>
+      <p style={{ color: "var(--text-subtle)" }}>All guides and data come from resources gathered by the Archero 2 Discord community.</p>
+      <p style={{ color: "var(--text-subtle)" }}>Created by Zerkzis (KrispyAssets).</p>
 
       <section style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 12 }}>
         <h2>Export / Import Save Code</h2>
@@ -70,13 +75,7 @@ export default function AboutPage() {
           </button>
         </div>
 
-        <textarea
-          value={exportCode}
-          readOnly
-          rows={4}
-          placeholder="Your export code will appear here."
-          style={{ width: "100%", maxWidth: 840 }}
-        />
+        <textarea value={exportCode} readOnly rows={4} placeholder="Your export code will appear here." style={{ width: "100%", maxWidth: 840 }} />
 
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           <textarea
