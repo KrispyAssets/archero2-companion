@@ -221,6 +221,7 @@ export default function FishingToolView({
   tasks,
   guidedRoutePath,
   variant = "companion",
+  showTitle = true,
 }: {
   tool: ToolFishingCalculator | ToolPurchaseGoals;
   eventId?: string;
@@ -228,6 +229,7 @@ export default function FishingToolView({
   tasks?: TaskDefinition[];
   guidedRoutePath?: string;
   variant?: "companion" | "purchase";
+  showTitle?: boolean;
 }) {
   const showCompanion = variant !== "purchase";
   const showPurchase = variant !== "companion";
@@ -1334,17 +1336,7 @@ export default function FishingToolView({
       {showCompanion ? (
         <div style={{ border: "1px solid var(--border)", borderRadius: 16, padding: 16, background: "var(--surface)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-            <div style={{ fontSize: 18, fontWeight: 800 }}>{tool.title}</div>
-            <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-              <label style={{ fontSize: 12, color: "var(--text-muted)" }}>Set</label>
-              <select value={set.setId} onChange={(e) => setActiveSet(e.target.value)}>
-                {data.sets.map((option) => (
-                  <option key={option.setId} value={option.setId}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {showTitle ? <div style={{ fontSize: 18, fontWeight: 800 }}>{tool.title}</div> : null}
           </div>
           {tool.description ? <p style={{ marginTop: 6 }}>{tool.description}</p> : null}
 
@@ -1468,56 +1460,66 @@ export default function FishingToolView({
           )}
         </div>
         <div style={{ display: "grid", gap: 8 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-muted)" }}>Select a Lake</div>
-            <div ref={resetMenuRef} style={{ position: "relative" }}>
-              <button type="button" className="secondary" onClick={() => setResetMenuOpen((prev) => !prev)}>
-                Reset Options
-              </button>
-              {resetMenuOpen ? (
-                <div
-                  style={{
-                    position: "absolute",
-                    right: 0,
-                    top: "100%",
-                    marginTop: 6,
-                    display: "grid",
-                    gap: 6,
-                    padding: 8,
-                    minWidth: 180,
-                    background: "var(--surface)",
-                    border: "1px solid var(--border)",
-                    borderRadius: 10,
-                    zIndex: 5,
-                  }}
-                >
-                  {set.lakes.map((entry, index) => (
+            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+              <label style={{ fontSize: 12, color: "var(--text-muted)" }}>Set</label>
+              <select className="secondary" value={set.setId} onChange={(e) => setActiveSet(e.target.value)}>
+                {data.sets.map((option) => (
+                  <option key={option.setId} value={option.setId}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <div ref={resetMenuRef} style={{ position: "relative" }}>
+                <button type="button" className="secondary" onClick={() => setResetMenuOpen((prev) => !prev)}>
+                  Reset Options
+                </button>
+                {resetMenuOpen ? (
+                  <div
+                    style={{
+                      position: "absolute",
+                      right: 0,
+                      top: "100%",
+                      marginTop: 6,
+                      display: "grid",
+                      gap: 6,
+                      padding: 8,
+                      minWidth: 180,
+                      background: "var(--surface)",
+                      border: "1px solid var(--border)",
+                      borderRadius: 10,
+                      zIndex: 5,
+                    }}
+                  >
+                    {set.lakes.map((entry, index) => (
+                      <button
+                        key={entry.lakeId}
+                        type="button"
+                        className="ghost"
+                        onClick={() => {
+                          resetLakeProgress(entry.lakeId);
+                          closeResetMenu();
+                        }}
+                      >
+                        Reset Lake {index + 1}
+                      </button>
+                    ))}
                     <button
-                      key={entry.lakeId}
                       type="button"
                       className="ghost"
                       onClick={() => {
-                        resetLakeProgress(entry.lakeId);
+                        const confirmed = window.confirm("Reset all progress? You can undo this with Undo Last.");
+                        if (!confirmed) return;
+                        resetAllProgress();
                         closeResetMenu();
                       }}
                     >
-                      Reset Lake {index + 1}
+                      Reset All Progress
                     </button>
-                  ))}
-                  <button
-                    type="button"
-                    className="ghost"
-                    onClick={() => {
-                      const confirmed = window.confirm("Reset all progress? You can undo this with Undo Last.");
-                      if (!confirmed) return;
-                      resetAllProgress();
-                      closeResetMenu();
-                    }}
-                  >
-                    Reset All Progress
-                  </button>
-                </div>
-              ) : null}
+                  </div>
+                ) : null}
+              </div>
             </div>
           </div>
           <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))" }}>
@@ -1742,7 +1744,7 @@ export default function FishingToolView({
       {showPurchase ? (
         <div style={{ border: "1px solid var(--border)", borderRadius: 16, padding: 16, background: "var(--surface)" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-            <div style={{ fontSize: 18, fontWeight: 800 }}>{tool.title}</div>
+            {showTitle ? <div style={{ fontSize: 18, fontWeight: 800 }}>{tool.title}</div> : null}
           </div>
           {tool.description ? <p style={{ marginTop: 6 }}>{tool.description}</p> : null}
           <div style={{ display: "grid", gap: 12, marginTop: 12 }}>

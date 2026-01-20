@@ -80,6 +80,7 @@ export default function ToolsHost({
               tasks={tasks}
               guidedRoutePath={guidedRoutePath}
               variant="companion"
+              showTitle={false}
             />
           );
         } else if (tool.toolType === "purchase_goals") {
@@ -91,6 +92,7 @@ export default function ToolsHost({
               tasks={tasks}
               guidedRoutePath={guidedRoutePath}
               variant="purchase"
+              showTitle={false}
             />
           );
         } else {
