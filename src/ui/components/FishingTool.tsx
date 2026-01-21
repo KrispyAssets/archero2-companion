@@ -714,10 +714,11 @@ export default function FishingToolView({
         step,
         steps,
         lakeStateForStep,
-        progressLabel: "Skipped (legendary target already met)",
-        progressLines: ["Skipped (legendary target already met)"],
-        completed: false,
-        shouldSkip: true,
+        progressLabel: "Legendary target already met",
+        progressLines: ["Legendary target already met"],
+        progressEntries: [{ label: "Legendary target already met", completed: true }],
+        completed: true,
+        shouldSkip: false,
         skipThreshold,
         offPathWarning: offPathWarning ?? warnMessage,
         wrongLakeId,
@@ -781,6 +782,7 @@ export default function FishingToolView({
         lakeStateForStep,
         progressLabel,
         progressLines,
+        progressEntries: statuses,
         completed,
         shouldSkip,
         skipThreshold,
@@ -797,6 +799,7 @@ export default function FishingToolView({
       lakeStateForStep,
       progressLabel,
       progressLines: [progressLabel],
+      progressEntries: [{ label: progressLabel, completed }],
       completed,
       shouldSkip,
       skipThreshold,
@@ -1504,17 +1507,17 @@ export default function FishingToolView({
                             Lake: {set.lakes.find((entry) => entry.lakeId === guidedStepData.step.lakeId)?.label ?? guidedStepData.step.lakeId}
                           </div>
                           <div style={{ display: "grid", gap: 4, fontSize: 12, marginTop: 6 }}>
-                            {guidedStepData.progressLines.map((line, index) => (
-                              <div key={`${guidedStepData.step.stepId}-progress-${index}`}>{line}</div>
+                            {(guidedStepData.progressEntries ?? []).map((entry, index) => (
+                              <div
+                                key={`${guidedStepData.step.stepId}-progress-${index}`}
+                                style={{ color: entry.completed ? "var(--success)" : "var(--warning)" }}
+                              >
+                                {entry.label}
+                              </div>
                             ))}
                           </div>
                           {guidedStepData.step.notes ? (
                             <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 6 }}>{guidedStepData.step.notes}</div>
-                          ) : null}
-                          {guidedStepData.shouldSkip ? (
-                            <div style={{ color: "var(--warning)", fontSize: 12, marginTop: 6 }}>
-                              Broken lines are over {guidedStepData.skipThreshold}. This step should be skipped.
-                            </div>
                           ) : null}
                           {guidedStepData.wrongLakeId ? (
                             <div style={{ color: "var(--danger)", fontSize: 13, fontWeight: 600, marginTop: 6 }}>

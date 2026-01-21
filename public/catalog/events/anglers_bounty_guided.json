@@ -196,7 +196,7 @@
           "stepId": "opt1_l4_finish",
           "lakeId": "lake_4",
           "goal": { "type": "manual_confirm", "count": 0 },
-          "action": "Congratulations! You should have at least 16 Golden Tickets and a hefty chunk of Silver Tickets for all of your purchasing needs!",
+          "action": "Congratulations! You should have at least 16 Golden Tickets and plenty of Silver Tickets for all of your purchasing needs!",
           "notes": "If you decide to continue fishing, it is almost always recommended to do it on Polar Glacier as it provides the highest Silver Tickets per lure by far."
         }
       ]
@@ -371,7 +371,7 @@
           "stepId": "opt2_l4_finish",
           "lakeId": "lake_4",
           "goal": { "type": "manual_confirm", "count": 0 },
-          "action": "Congratulations! You should have at least 16 Golden Tickets and a hefty chunk of Silver Tickets for all of your purchasing needs!",
+          "action": "Congratulations! You should have at least 16 Golden Tickets and plenty of Silver Tickets for all of your purchasing needs!",
           "notes": "If you decide to continue fishing, it is almost always recommended to do it on Polar Glacier as it provides the highest Silver Tickets per lure by far."
         }
       ]
