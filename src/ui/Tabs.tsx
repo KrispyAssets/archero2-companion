@@ -28,10 +28,11 @@ export default function Tabs({
 
   useEffect(() => {
     if (isControlled) return;
-    if (initialActiveId && initialActiveId !== internalActiveId) {
+    const hasActive = visibleTabs.some((tab) => tab.id === internalActiveId);
+    if (!hasActive && initialActiveId) {
       setInternalActiveId(initialActiveId);
     }
-  }, [initialActiveId, internalActiveId, isControlled]);
+  }, [initialActiveId, internalActiveId, isControlled, visibleTabs]);
 
   return (
     <div>
