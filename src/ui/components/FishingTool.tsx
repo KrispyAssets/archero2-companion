@@ -255,6 +255,8 @@ export default function FishingToolView({
   const [resetMenuOpen, setResetMenuOpen] = useState(false);
   const [showBreakOdds, setShowBreakOdds] = useState(false);
   const [openLakeInfoId, setOpenLakeInfoId] = useState<"pool" | "totals" | null>(null);
+  const [guidedWeightInput, setGuidedWeightInput] = useState("");
+  const guidedWeightEditingRef = useRef(false);
   const resetMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -441,6 +443,12 @@ export default function FishingToolView({
     window.addEventListener(TOOL_STATE_EVENT, handleToolStateEvent);
     return () => window.removeEventListener(TOOL_STATE_EVENT, handleToolStateEvent);
   }, [stateKey]);
+
+  useEffect(() => {
+    if (!toolState) return;
+    if (guidedWeightEditingRef.current) return;
+    setGuidedWeightInput(toolState.guidedCurrentWeight === null ? "" : String(toolState.guidedCurrentWeight));
+  }, [toolState?.guidedCurrentWeight]);
 
   useEffect(() => {
     function handleStateChange() {
@@ -1419,10 +1427,17 @@ export default function FishingToolView({
                             type="text"
                             inputMode="numeric"
                             placeholder="kg"
-                            value={toolState.guidedCurrentWeight === null ? "" : toolState.guidedCurrentWeight}
+                            value={guidedWeightInput}
                             onChange={(e) => {
                               const raw = e.target.value.replace(/[^\d]/g, "");
-                              setGuidedWeight(raw ? Number(raw) : null);
+                              setGuidedWeightInput(raw);
+                            }}
+                            onFocus={() => {
+                              guidedWeightEditingRef.current = true;
+                            }}
+                            onBlur={() => {
+                              guidedWeightEditingRef.current = false;
+                              setGuidedWeight(guidedWeightInput ? Number(guidedWeightInput) : null);
                             }}
                             style={{ maxWidth: 120 }}
                           />
