@@ -1374,6 +1374,20 @@ export default function FishingToolView({
 
   const outerCardStyle = showTitle ? { border: "1px solid var(--border)", borderRadius: 16, padding: 16, background: "var(--surface)" } : undefined;
 
+  const guidedStepMeta = guidedStepData
+    ? (() => {
+        const hasGoals = Boolean(guidedStepData.step.goalAll?.length || guidedStepData.step.goalAny?.length || guidedStepData.step.goal);
+        const isManualOnly =
+          guidedStepData.step.goal?.type === "manual_confirm" && !guidedStepData.step.goalAll && !guidedStepData.step.goalAny;
+        const shouldSkipClick =
+          guidedStepData.shouldSkip || (hasGoals && !isManualOnly && !guidedStepData.completed);
+        return {
+          shouldSkipClick,
+          buttonLabel: shouldSkipClick ? "Skip Step" : "Next Step",
+        };
+      })()
+    : null;
+
   return (
     <div style={{ display: "grid", gap: 12 }}>
       {showCompanion ? (
@@ -1503,7 +1517,7 @@ export default function FishingToolView({
                             </div>
                           ) : null}
                           {guidedStepData.wrongLakeId ? (
-                            <div style={{ color: "var(--danger)", fontSize: 12, marginTop: 6 }}>
+                            <div style={{ color: "var(--danger)", fontSize: 13, fontWeight: 600, marginTop: 6 }}>
                               You are on {set.lakes.find((entry) => entry.lakeId === guidedStepData.wrongLakeId)?.label ?? guidedStepData.wrongLakeId}
                               . Switch to{" "}
                               {set.lakes.find((entry) => entry.lakeId === guidedStepData.wrongLakeTargetId)?.label ??
@@ -1513,7 +1527,16 @@ export default function FishingToolView({
                           ) : guidedStepData.offPathWarning ? (
                             <div style={{ color: "var(--danger)", fontSize: 12, marginTop: 6 }}>{guidedStepData.offPathWarning}</div>
                           ) : null}
-                          <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap", alignItems: "center" }}>
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: 8,
+                              marginTop: 10,
+                              flexWrap: "nowrap",
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                          >
                             <button
                               type="button"
                               className="ghost"
@@ -1532,20 +1555,20 @@ export default function FishingToolView({
                             </button>
                             <button
                               type="button"
-                              className="secondary"
+                              className={guidedStepMeta?.shouldSkipClick ? "negative" : "positive"}
                               onClick={() => {
                                 const nextIndex = Math.min(guidedStepData.steps.length - 1, guidedStepData.stepIndex + 1);
                                 setGuidedStepIndex(nextIndex);
+                                if (guidedStepMeta?.shouldSkipClick) {
+                                  updateToolState((prev) => ({ ...prev, guidedAutoAdvance: false }));
+                                }
                                 const nextStep = guidedStepData.steps[nextIndex];
                                 if (nextStep && nextStep.lakeId && nextStep.lakeId !== lake.lakeId) {
                                   setActiveLake(nextStep.lakeId);
                                 }
                               }}
                             >
-                              {guidedStepData.shouldSkip ? "Skip Step" : "Next Step"}
-                            </button>
-                            <button type="button" className="secondary" onClick={() => setActiveLake(guidedStepData.step.lakeId)}>
-                              Go to {set.lakes.find((entry) => entry.lakeId === guidedStepData.step.lakeId)?.label ?? guidedStepData.step.lakeId}
+                              {guidedStepMeta?.buttonLabel ?? "Next Step"}
                             </button>
                           </div>
                         </div>

@@ -14,7 +14,9 @@
   --success: #1f9d5b;
   --success-contrast: #e7f6ee;
   --warning: #d4862f;
+  --warning-contrast: #2a1a05;
   --danger: #b54a4a;
+  --danger-contrast: #2b0f0f;
   --highlight: #b9f0e3;
   --overlay: rgba(5, 10, 12, 0.7);
   --content-width: 28rem;
@@ -45,7 +47,9 @@
   --success: #1f9d5b;
   --success-contrast: #e7f6ee;
   --warning: #d4862f;
+  --warning-contrast: #2a1a05;
   --danger: #b54a4a;
+  --danger-contrast: #2b0f0f;
   --highlight: #b9f0e3;
   --overlay: rgba(5, 10, 12, 0.7);
 }
@@ -66,7 +70,9 @@
   --success: #35c777;
   --success-contrast: #123324;
   --warning: #f0b25e;
+  --warning-contrast: #2a1a05;
   --danger: #ff6b6b;
+  --danger-contrast: #2b0f0f;
   --highlight: #2b6f66;
   --overlay: rgba(3, 8, 10, 0.78);
 }
@@ -87,7 +93,9 @@
   --success: #2f8f4d;
   --success-contrast: #e9f6ee;
   --warning: #c47d2e;
+  --warning-contrast: #2a1a05;
   --danger: #a84343;
+  --danger-contrast: #2b0f0f;
   --highlight: #fde2a7;
   --overlay: rgba(18, 20, 16, 0.6);
 }
@@ -108,7 +116,9 @@
   --success: #64d28a;
   --success-contrast: #0d2a17;
   --warning: #e6a24e;
+  --warning-contrast: #2a1a05;
   --danger: #ff7b7b;
+  --danger-contrast: #2b0f0f;
   --highlight: #5b512d;
   --overlay: rgba(5, 6, 5, 0.78);
 }
@@ -129,7 +139,9 @@
   --success: #2fbf71;
   --success-contrast: #e6f7ef;
   --warning: #d8824a;
+  --warning-contrast: #2a1a05;
   --danger: #d34747;
+  --danger-contrast: #2b0f0f;
   --highlight: #ffd6b0;
   --overlay: rgba(16, 16, 28, 0.6);
 }
@@ -150,7 +162,9 @@
   --success: #49d887;
   --success-contrast: #0f2f1c;
   --warning: #f1a463;
+  --warning-contrast: #2a1a05;
   --danger: #ff6b6b;
+  --danger-contrast: #2b0f0f;
   --highlight: #6a3b2b;
   --overlay: rgba(4, 5, 10, 0.8);
 }
@@ -195,6 +209,18 @@ button.secondary {
 button.ghost {
   background: transparent;
   border-color: var(--border);
+  color: var(--text);
+}
+
+button.positive {
+  background: var(--surface-2);
+  border-color: var(--success);
+  color: var(--text);
+}
+
+button.negative {
+  background: var(--surface-2);
+  border-color: var(--danger);
   color: var(--text);
 }
 
