@@ -13,12 +13,14 @@ export default function App() {
     <BrowserRouter basename={BASENAME}>
       <Routes>
         <Route path="/" element={<ContentIndex />} />
-        <Route path="/events" element={<EventsIndex />} />
+        <Route path="/events" element={<Navigate to="/" replace />} />
         <Route path="/event/:eventId" element={<EventDetail />} />
         <Route path="/event" element={<Navigate to="/events" replace />} />
+        <Route path="/event/*" element={<Navigate to="/" replace />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/credits" element={<CreditsPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );
