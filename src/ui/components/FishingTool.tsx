@@ -1384,9 +1384,11 @@ export default function FishingToolView({
           guidedStepData.step.goal?.type === "manual_confirm" && !guidedStepData.step.goalAll && !guidedStepData.step.goalAny;
         const shouldSkipClick =
           guidedStepData.shouldSkip || (hasGoals && !isManualOnly && !guidedStepData.completed);
+        const isFinalStep = guidedStepData.stepIndex >= guidedStepData.steps.length - 1;
         return {
           shouldSkipClick,
-          buttonLabel: shouldSkipClick ? "Skip Step" : "Next Step",
+          isFinalStep,
+          buttonLabel: isFinalStep ? "Close Guide" : shouldSkipClick ? "Skip Step" : "Next Step",
         };
       })()
     : null;
@@ -1560,6 +1562,10 @@ export default function FishingToolView({
                               type="button"
                               className={guidedStepMeta?.shouldSkipClick ? "negative" : "positive"}
                               onClick={() => {
+                                if (guidedStepMeta?.isFinalStep) {
+                                  updateToolState((prev) => (prev ? { ...prev, guidedCollapsed: true } : prev));
+                                  return;
+                                }
                                 const nextIndex = Math.min(guidedStepData.steps.length - 1, guidedStepData.stepIndex + 1);
                                 setGuidedStepIndex(nextIndex);
                                 if (guidedStepMeta?.shouldSkipClick) {

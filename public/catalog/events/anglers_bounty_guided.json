@@ -9,7 +9,7 @@
     {
       "optionId": "option_1",
       "title": "1. Maximize Silver Tickets",
-      "summary": "Higher gem cost (20–30k gems), yields more Silver Tickets.",
+      "summary": "Higher cost (20–30k gems), yields more Silver Tickets.",
       "disclaimer": "Untracked starts make this option unreliable. You can still start at a fresh lake unlock, but reaching 16 Golden Tickets will likely require extra gems. Choose this route if you want higher Silver Tickets at the cost of gems.",
       "steps": [
         {
@@ -204,7 +204,7 @@
     {
       "optionId": "option_2",
       "title": "2. Maximize Golden Tickets",
-      "summary": "Lower gem cost (5–15k gems), higher luck dependency on line breaks.",
+      "summary": "Lower cost (5–15k gems), requires luck on line breaks.",
       "disclaimer": "Untracked starts make this option unreliable. You can still start at a fresh lake unlock, but reaching 16 Golden Tickets will likely require extra gems. Choose this route if you still have line breaks available and limited gems. DO NOT backtrack to recover missing legendaries.",
       "steps": [
         {
