@@ -9,6 +9,22 @@
     <link rel="stylesheet" crossorigin href="/archero2-companion/assets/index-DMBVJ-Pa.css">
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root"></div>
+    <script>
+      (function () {
+        var l = window.location;
+        if (l.search && l.search.startsWith("?/")) {
+          var decoded = l.search
+            .slice(1)
+            .split("&")
+            .map(function (part) {
+              return part.replace(/~and~/g, "&");
+            })
+            .join("?");
+          var newPath = l.pathname.replace(/\/$/, "") + decoded;
+          window.history.replaceState(null, "", newPath + l.hash);
+        }
+      })();
+    </script>
   </body>
 </html>
