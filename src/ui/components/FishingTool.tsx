@@ -1760,9 +1760,22 @@ export default function FishingToolView({
               </div>
 
               <div style={{ border: "1px solid var(--border)", borderRadius: 12, padding: 12 }}>
-                <div style={{ fontWeight: 700, marginBottom: 6 }}>Broken Lines</div>
+                <div
+                  className="lakeInfoWrap"
+                  style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}
+                >
+                  <div style={{ fontWeight: 700 }}>Broken Lines</div>
+                  <button
+                    type="button"
+                    className="lakeInfoButton"
+                    aria-label="Show line break odds"
+                    onClick={() => setShowBreakOdds((prev) => !prev)}
+                  >
+                    ⓘ
+                  </button>
+                </div>
                 <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-                  <div style={{ fontWeight: 700 }}>
+                  <div className="breakCount">
                     {toolState.brokenLines ?? 0}/{brokenLinesMax}
                   </div>
                   <DropdownButton
@@ -1777,7 +1790,7 @@ export default function FishingToolView({
                     onClick={() => updateBrokenLines(breakStep)}
                     disabled={(toolState.brokenLines ?? 0) >= brokenLinesMax}
                   >
-                    Add Breaks
+                    Add
                   </button>
                   <button
                     type="button"
@@ -1785,26 +1798,28 @@ export default function FishingToolView({
                     onClick={() => updateBrokenLines(-breakStep)}
                     disabled={(toolState.brokenLines ?? 0) <= 0}
                   >
-                    Remove Breaks
-                  </button>
-                  <button
-                    type="button"
-                    className="ghost"
-                    onClick={() => updateBrokenLines(-brokenLinesMax)}
-                    disabled={(toolState.brokenLines ?? 0) <= 0}
-                  >
-                    Reset
-                  </button>
-                  <button type="button" className="ghost" onClick={() => setShowBreakOdds((prev) => !prev)}>
-                    {showBreakOdds ? "Hide Odds" : "Show Odds"}
+                    Remove
                   </button>
                 </div>
                 {showBreakOdds ? (
-                  <div style={{ marginTop: 10, display: "grid", gap: 6, fontSize: 12, color: "var(--text-muted)" }}>
-                    <div>Chance per break: {breakChance !== null ? `${(breakChance * 100).toFixed(1)}%` : "No legendary in pool"}</div>
-                    <div>50% chance by: {breakLuresForChance(0.5) ?? "—"} breaks</div>
-                    <div>90% chance by: {breakLuresForChance(0.9) ?? "—"} breaks</div>
-                    <div>95% chance by: {breakLuresForChance(0.95) ?? "—"} breaks</div>
+                  <div style={{ marginTop: 10, display: "flex", gap: 12, color: "var(--text-muted)" }}>
+                    <div style={{ display: "grid", gap: 8, fontSize: 12, flex: 1 }}>
+                      <div>Chance per break: {breakChance !== null ? `${(breakChance * 100).toFixed(1)}%` : "No legendary in pool"}</div>
+                      <div>50% chance by: {breakLuresForChance(0.5) ?? "—"} breaks</div>
+                      <div>90% chance by: {breakLuresForChance(0.9) ?? "—"} breaks</div>
+                      <div>95% chance by: {breakLuresForChance(0.95) ?? "—"} breaks</div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "flex-end" }}>
+                      <button
+                        type="button"
+                        className="secondary"
+                        style={{ padding: "6px 10px", fontSize: 11 }}
+                        onClick={() => updateBrokenLines(-brokenLinesMax)}
+                        disabled={(toolState.brokenLines ?? 0) <= 0}
+                      >
+                        Reset Broken Lines
+                      </button>
+                    </div>
                   </div>
                 ) : null}
               </div>

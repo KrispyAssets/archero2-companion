@@ -163,6 +163,12 @@
   font-size: 12px;
 }
 
+.breakCount {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  min-width: 3.75rem;
+}
+
 @media (max-width: 520px) {
   .fishingLakeButton {
     padding: 10px 6px;
