@@ -1,0 +1,79 @@
+.fishingLakeGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.fishingLakeButton {
+  padding: 10px 12px;
+  border-radius: 12px;
+  text-align: left;
+}
+
+.fishingFishGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.fishingFishButton {
+  border-radius: 12px;
+  padding: 10px 8px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.fishingFishImage {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  margin-bottom: 6px;
+}
+
+.fishLabel {
+  font-size: 12px;
+}
+
+.fishRemaining {
+  font-size: 13px;
+}
+
+.lakeTitle {
+  font-size: 14px;
+}
+
+.lakeMeta {
+  font-size: 12px;
+}
+
+@media (max-width: 520px) {
+  .fishingLakeButton {
+    padding: 8px;
+  }
+
+  .lakeTitle {
+    font-size: 12px;
+  }
+
+  .lakeMeta {
+    font-size: 10px;
+  }
+
+  .fishingFishButton {
+    padding: 8px 6px;
+  }
+
+  .fishingFishImage {
+    width: 36px;
+    height: 36px;
+    margin-bottom: 4px;
+  }
+
+  .fishLabel {
+    font-size: 11px;
+  }
+
+  .fishRemaining {
+    font-size: 12px;
+  }
+}

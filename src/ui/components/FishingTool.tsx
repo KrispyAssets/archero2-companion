@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { TaskDefinition, ToolFishingCalculator, ToolPurchaseGoals } from "../../catalog/types";
 import { buildTaskGroups, computeEarned, computeRemaining } from "../../catalog/taskGrouping";
+import "./fishingTool.css";
 import { getEventProgressState } from "../../state/userStateStore";
 import DropdownButton from "./DropdownButton";
 
@@ -1333,10 +1334,14 @@ export default function FishingToolView({
     });
   }
 
+  const outerCardStyle = showTitle
+    ? { border: "1px solid var(--border)", borderRadius: 16, padding: 16, background: "var(--surface)" }
+    : undefined;
+
   return (
     <div style={{ display: "grid", gap: 12 }}>
       {showCompanion ? (
-        <div style={{ border: "1px solid var(--border)", borderRadius: 16, padding: 16, background: "var(--surface)" }}>
+        <div style={outerCardStyle}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
             {showTitle ? <div style={{ fontSize: 18, fontWeight: 800 }}>{tool.title}</div> : null}
           </div>
@@ -1549,7 +1554,7 @@ export default function FishingToolView({
                   </div>
                 </div>
               </div>
-              <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))" }}>
+              <div className="fishingLakeGrid">
                 {set.lakes.map((entry) => {
                   const entryState = toolState.lakeStates[entry.lakeId];
                   const remaining = entryState ? Object.values(entryState.remainingByTypeId).reduce((sum, count) => sum + count, 0) : 0;
@@ -1561,16 +1566,14 @@ export default function FishingToolView({
                       key={entry.lakeId}
                       type="button"
                       onClick={() => setActiveLake(entry.lakeId)}
+                      className="fishingLakeButton"
                       style={{
                         border: active ? "2px solid var(--accent)" : "1px solid var(--border)",
                         background: active ? "var(--highlight)" : "var(--surface-2)",
                         color: "var(--text)",
-                        padding: "10px 12px",
-                        borderRadius: 12,
-                        textAlign: "left",
                       }}
                     >
-                      <div style={{ fontWeight: 700 }}>
+                      <div className="lakeTitle" style={{ fontWeight: 700 }}>
                         {entry.label}{" "}
                         {entry.lakeId.endsWith("_1")
                           ? "(Lake 1)"
@@ -1582,10 +1585,10 @@ export default function FishingToolView({
                                 ? "(Lake 4)"
                                 : ""}
                       </div>
-                      <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                      <div className="lakeMeta" style={{ color: "var(--text-muted)" }}>
                         Fish Remaining {remaining} • Legendary {odds.toFixed(1)}%
                       </div>
-                      <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>
+                      <div className="lakeMeta" style={{ color: "var(--text-muted)", marginTop: 4 }}>
                         Pools Cleared {entryState?.poolsCompleted ?? 0} • Legendaries {entryState?.legendaryCaught ?? 0}
                       </div>
                     </button>
@@ -1595,7 +1598,7 @@ export default function FishingToolView({
             </div>
 
             <div style={{ display: "grid", gap: 10 }}>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: 10 }}>
+              <div className="fishingFishGrid">
                 {data.fishTypes.map((fishType) => {
                   const fish = lake.fish.find((entry) => entry.typeId === fishType.typeId);
                   const remaining = lakeState.remainingByTypeId[fishType.typeId] ?? 0;
@@ -1612,26 +1615,27 @@ export default function FishingToolView({
                       key={fishType.typeId}
                       type="button"
                       onClick={() => catchFish(fishType.typeId)}
+                      className="fishingFishButton"
                       style={{
                         border: rarityStyle.border,
                         background: rarityStyle.background,
-                        borderRadius: 12,
-                        padding: "10px 8px",
-                        textAlign: "center",
-                        fontWeight: 600,
                       }}
                     >
                       {fish?.image ? (
                         <img
                           src={resolvePath(fish.image)}
                           alt={fish?.name ?? fishType.label}
-                          style={{ width: 44, height: 44, objectFit: "contain", marginBottom: 6 }}
+                          className="fishingFishImage"
                         />
                       ) : (
                         <div style={{ fontSize: 18, marginBottom: 6 }}>{typeLabel}</div>
                       )}
-                      <div style={{ fontSize: 12, color: "#0A0A0A" }}>{displayName}</div>
-                      <div style={{ fontSize: 13, color: "#0A0A0A" }}>{remaining} left</div>
+                      <div className="fishLabel" style={{ color: "#0A0A0A" }}>
+                        {displayName}
+                      </div>
+                      <div className="fishRemaining" style={{ color: "#0A0A0A" }}>
+                        {remaining} left
+                      </div>
                     </button>
                   );
                 })}
@@ -1780,7 +1784,7 @@ export default function FishingToolView({
       ) : null}
 
       {showPurchase ? (
-        <div style={{ border: "1px solid var(--border)", borderRadius: 16, padding: 16, background: "var(--surface)" }}>
+        <div style={outerCardStyle}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
             {showTitle ? <div style={{ fontSize: 18, fontWeight: 800 }}>{tool.title}</div> : null}
           </div>
