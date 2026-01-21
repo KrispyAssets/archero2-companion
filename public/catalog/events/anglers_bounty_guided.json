@@ -9,8 +9,8 @@
     {
       "optionId": "option_1",
       "title": "1. Maximize Silver Tickets",
-      "summary": "This option is more expensive (20–30k gems) but yields more Silver Tickets.",
-      "disclaimer": "If you have started fishing prior to this without tracking your fishes, this guide might not work correctly for you without spending more gems later on. If you are on an earlier lake, you can likely salvage your run by following the steps on your next lake unlock. Check your legendary tickets at the end of each lake to ensure you are matching the expected legendaries caught at that point, but if you are missing a legendary and haven't tracked anything at this point, DO NOT go back and try to get it as you likely don't know the current fish in the pools.",
+      "summary": "Higher gem cost (20–30k gems), yields more Silver Tickets.",
+      "disclaimer": "Untracked starts make this option unreliable. You can still start at a fresh lake unlock, but reaching 16 Golden Tickets will likely require extra gems. Choose this route if you want higher Silver Tickets at the cost of gems.",
       "steps": [
         {
           "stepId": "opt1_l1_track",
@@ -204,8 +204,8 @@
     {
       "optionId": "option_2",
       "title": "2. Maximize Golden Tickets",
-      "summary": "This option is less expensive (5–15k gems) but requires more luck on line breaks.",
-      "disclaimer": "If you have started fishing prior to this without tracking your fishes, this guide might not work correctly for you without spending more gems later on and it's likely better to just do option 1 if you have the gems available. If you are on an earlier lake, you can likely salvage your run by following the steps on your next lake unlock. Check your legendary tickets at the end of each lake to ensure you are matching the expected legendaries caught at that point, but if you are missing a legendary and haven't tracked anything at this point, DO NOT go back and try to get it as you likely don't know the current fish in the pools.",
+      "summary": "Lower gem cost (5–15k gems), higher luck dependency on line breaks.",
+      "disclaimer": "Untracked starts make this option unreliable. You can still start at a fresh lake unlock, but reaching 16 Golden Tickets will likely require extra gems. Choose this route if you still have line breaks available and limited gems. DO NOT backtrack to recover missing legendaries.",
       "steps": [
         {
           "stepId": "opt2_l1_track",

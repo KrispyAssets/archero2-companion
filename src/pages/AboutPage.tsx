@@ -55,7 +55,7 @@ export default function AboutPage() {
       <p>Archero 2 Companion — Not affiliated with Habby.</p>
       <p style={{ color: "var(--text-subtle)" }}>
         Inspired by the Archero 2 Discord community, this project brings community research together to help new and veteran players with guides,
-        tools, FAQ, and more across every aspect of the game
+        tools, FAQ, and more across every aspect of the game.
       </p>
       <p style={{ color: "var(--text-subtle)" }}>All guides and data come from resources gathered by the Archero 2 Discord community.</p>
       <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 4 }}>

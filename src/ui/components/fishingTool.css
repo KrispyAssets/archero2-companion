@@ -117,6 +117,15 @@
   position: relative;
 }
 
+.guidedInfoButton {
+  margin-top: 1px;
+}
+
+.guidedInfoPopover {
+  max-width: 360px;
+  line-height: 1.4;
+}
+
 .fishingFishGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

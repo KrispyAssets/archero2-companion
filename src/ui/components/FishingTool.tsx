@@ -257,6 +257,7 @@ export default function FishingToolView({
   const [openLakeInfoId, setOpenLakeInfoId] = useState<"pool" | "totals" | null>(null);
   const [guidedWeightInput, setGuidedWeightInput] = useState("");
   const guidedWeightEditingRef = useRef(false);
+  const [guidedInfoOpen, setGuidedInfoOpen] = useState(false);
   const resetMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -483,6 +484,20 @@ export default function FishingToolView({
     document.addEventListener("click", handleClick);
     return () => document.removeEventListener("click", handleClick);
   }, [openLakeInfoId]);
+
+  useEffect(() => {
+    if (!guidedInfoOpen) return;
+    function handleClick(event: MouseEvent) {
+      const target = event.target as HTMLElement | null;
+      if (!target) return;
+      if (target.closest(".guidedInfoButton") || target.closest(".guidedInfoPopover")) {
+        return;
+      }
+      setGuidedInfoOpen(false);
+    }
+    document.addEventListener("click", handleClick);
+    return () => document.removeEventListener("click", handleClick);
+  }, [guidedInfoOpen]);
 
   const derived = useMemo(() => {
     if (dataState.status !== "ready" || !toolState) return null;
@@ -1443,8 +1458,30 @@ export default function FishingToolView({
                           />
                         </div>
                       </div>
-                      {guidedOption.summary ? <div style={{ fontSize: 13, color: "var(--text-muted)" }}>{guidedOption.summary}</div> : null}
-                      {guidedOption.disclaimer ? <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{guidedOption.disclaimer}</div> : null}
+                      {guidedOption.summary || guidedOption.disclaimer ? (
+                        <div className="lakeInfoWrap" style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                          {guidedOption.summary ? (
+                            <div style={{ fontSize: 13, color: "var(--text-muted)" }}>{guidedOption.summary}</div>
+                          ) : null}
+                          {guidedOption.disclaimer ? (
+                            <>
+                              <button
+                                type="button"
+                                className="lakeInfoButton guidedInfoButton"
+                                aria-label="Show option disclaimer"
+                                onClick={() => setGuidedInfoOpen((prev) => !prev)}
+                              >
+                                ⓘ
+                              </button>
+                              {guidedInfoOpen ? (
+                                <div className="lakeInfoPopover guidedInfoPopover">
+                                  {guidedOption.disclaimer}
+                                </div>
+                              ) : null}
+                            </>
+                          ) : null}
+                        </div>
+                      ) : null}
                       {!toolState.guidedAutoAdvance ? <div style={{ fontSize: 12, color: "var(--warning)" }}>Auto Progress is OFF.</div> : null}
                       {guidedStepData ? (
                         <div style={{ border: "1px solid var(--border)", borderRadius: 10, padding: 10, background: "var(--surface)" }}>
@@ -1499,7 +1536,6 @@ export default function FishingToolView({
                               onClick={() => {
                                 const nextIndex = Math.min(guidedStepData.steps.length - 1, guidedStepData.stepIndex + 1);
                                 setGuidedStepIndex(nextIndex);
-                                updateToolState((prev) => ({ ...prev, guidedAutoAdvance: false }));
                                 const nextStep = guidedStepData.steps[nextIndex];
                                 if (nextStep && nextStep.lakeId && nextStep.lakeId !== lake.lakeId) {
                                   setActiveLake(nextStep.lakeId);
