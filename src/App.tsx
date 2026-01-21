@@ -1,6 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import ContentIndex from "./pages/ContentIndex";
-import EventsIndex from "./pages/EventsIndex";
 import EventDetail from "./pages/EventDetail";
 import SearchPage from "./pages/SearchPage";
 import AboutPage from "./pages/AboutPage";
