@@ -1384,10 +1384,8 @@ export default function FishingToolView({
   const guidedStepMeta = guidedStepData
     ? (() => {
         const hasGoals = Boolean(guidedStepData.step.goalAll?.length || guidedStepData.step.goalAny?.length || guidedStepData.step.goal);
-        const isManualOnly =
-          guidedStepData.step.goal?.type === "manual_confirm" && !guidedStepData.step.goalAll && !guidedStepData.step.goalAny;
-        const shouldSkipClick =
-          guidedStepData.shouldSkip || (hasGoals && !isManualOnly && !guidedStepData.completed);
+        const isManualOnly = guidedStepData.step.goal?.type === "manual_confirm" && !guidedStepData.step.goalAll && !guidedStepData.step.goalAny;
+        const shouldSkipClick = guidedStepData.shouldSkip || (hasGoals && !isManualOnly && !guidedStepData.completed);
         const isFinalStep = guidedStepData.stepIndex >= guidedStepData.steps.length - 1;
         return {
           shouldSkipClick,
@@ -1404,7 +1402,7 @@ export default function FishingToolView({
           <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
             {showTitle ? <div style={{ fontSize: 18, fontWeight: 800 }}>{tool.title}</div> : null}
           </div>
-          {tool.description ? <p style={{ marginTop: 6 }}>{tool.description}</p> : null}
+          {tool.description ? <p style={{ marginTop: 6, fontSize: 14 }}>{tool.description}</p> : null}
 
           <div style={{ display: "grid", gap: 10, marginTop: 12 }}>
             <details
@@ -1483,9 +1481,7 @@ export default function FishingToolView({
                       </div>
                       {guidedOption.summary || guidedOption.disclaimer ? (
                         <div className="lakeInfoWrap" style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-                          {guidedOption.summary ? (
-                            <div style={{ fontSize: 13, color: "var(--text-muted)" }}>{guidedOption.summary}</div>
-                          ) : null}
+                          {guidedOption.summary ? <div style={{ fontSize: 13, color: "var(--text-muted)" }}>{guidedOption.summary}</div> : null}
                           {guidedOption.disclaimer ? (
                             <>
                               <button
@@ -1496,11 +1492,7 @@ export default function FishingToolView({
                               >
                                 ⓘ
                               </button>
-                              {guidedInfoOpen ? (
-                                <div className="lakeInfoPopover guidedInfoPopover">
-                                  {guidedOption.disclaimer}
-                                </div>
-                              ) : null}
+                              {guidedInfoOpen ? <div className="lakeInfoPopover guidedInfoPopover">{guidedOption.disclaimer}</div> : null}
                             </>
                           ) : null}
                         </div>
@@ -1773,10 +1765,7 @@ export default function FishingToolView({
               </div>
 
               <div style={{ border: "1px solid var(--border)", borderRadius: 12, padding: 12 }}>
-                <div
-                  className="lakeInfoWrap"
-                  style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}
-                >
+                <div className="lakeInfoWrap" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
                   <div style={{ fontWeight: 700 }}>Broken Lines</div>
                   <button
                     type="button"
