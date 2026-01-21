@@ -253,6 +253,7 @@ export default function FishingToolView({
   const [breakStep, setBreakStep] = useState(1);
   const [taskTick, setTaskTick] = useState(0);
   const [resetMenuOpen, setResetMenuOpen] = useState(false);
+  const [confirmResetOpen, setConfirmResetOpen] = useState(false);
   const [showBreakOdds, setShowBreakOdds] = useState(false);
   const [openLakeInfoId, setOpenLakeInfoId] = useState<"pool" | "totals" | null>(null);
   const [guidedWeightInput, setGuidedWeightInput] = useState("");
@@ -424,13 +425,40 @@ export default function FishingToolView({
     toolStateCache.set(stateKey, nextState);
   }, [dataState, stateKey, tool.defaultSetId, tool.toolId]);
 
+  function buildStoredToolState(state: ToolState) {
+    const compactHistory = (state.history ?? []).slice(-50).map((entry) => {
+      const { prevAllStates, prevHistory, ...rest } = entry;
+      return rest;
+    });
+    return { ...state, history: compactHistory };
+  }
+
   useEffect(() => {
     if (!toolState) return;
     const storageKey = `${STORAGE_PREFIX}${stateKey}`;
-    localStorage.setItem(storageKey, JSON.stringify(toolState));
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(buildStoredToolState(toolState)));
+    } catch (error) {
+      console.warn("Failed to persist tool state, trimming history.", error);
+      try {
+        localStorage.setItem(storageKey, JSON.stringify({ ...toolState, history: [] }));
+      } catch (fallbackError) {
+        console.warn("Failed to persist trimmed tool state.", fallbackError);
+      }
+    }
     toolStateCache.set(stateKey, toolState);
     window.dispatchEvent(new CustomEvent(TOOL_STATE_EVENT, { detail: { stateKey } }));
   }, [stateKey, toolState]);
+
+  useEffect(() => {
+    if (!confirmResetOpen) return;
+    const { body } = document;
+    const prevOverflow = body.style.overflow;
+    body.style.overflow = "hidden";
+    return () => {
+      body.style.overflow = prevOverflow;
+    };
+  }, [confirmResetOpen]);
 
   useEffect(() => {
     function handleToolStateEvent(event: Event) {
@@ -1397,6 +1425,55 @@ export default function FishingToolView({
 
   return (
     <div style={{ display: "grid", gap: 12 }}>
+      {confirmResetOpen ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(8, 12, 20, 0.72)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+            zIndex: 20,
+          }}
+          onClick={() => setConfirmResetOpen(false)}
+        >
+          <div
+            style={{
+              width: "min(420px, 92vw)",
+              background: "var(--surface)",
+              border: "1px solid var(--border)",
+              borderRadius: 14,
+              padding: 16,
+              boxShadow: "0 16px 40px rgba(0,0,0,0.45)",
+            }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 6 }}>Reset all progress?</div>
+            <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 14 }}>
+              This clears all lake progress, broken lines, and guided route state. You can undo with Undo Last.
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+              <button type="button" className="ghost" onClick={() => setConfirmResetOpen(false)}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="negative"
+                onClick={() => {
+                  resetAllProgress();
+                  setConfirmResetOpen(false);
+                }}
+              >
+                Reset All
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
       {showCompanion ? (
         <div style={outerCardStyle}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
@@ -1644,9 +1721,7 @@ export default function FishingToolView({
                           type="button"
                           className="ghost"
                           onClick={() => {
-                            const confirmed = window.confirm("Reset all progress? You can undo this with Undo Last.");
-                            if (!confirmed) return;
-                            resetAllProgress();
+                            setConfirmResetOpen(true);
                             closeResetMenu();
                           }}
                         >
