@@ -1508,7 +1508,7 @@ export default function FishingToolView({
                     <>
                       <div style={{ display: "grid", gap: 10 }}>
                         <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
-                          <label style={{ fontSize: 12, color: "var(--text-muted)" }}>Option</label>
+                          <label style={{ fontSize: 12, color: "var(--text-muted)" }}>Route</label>
                           <DropdownButton
                             valueLabel={guidedOption.title}
                             options={guidedState.data.options.map((option) => ({ value: option.optionId, label: option.title }))}
@@ -1523,7 +1523,7 @@ export default function FishingToolView({
                             onClick={resetGuidedRoute}
                             style={{ fontSize: 13, lineHeight: 1.1, padding: "8px 10px" }}
                           >
-                            Reset Route
+                            Reset
                           </button>
                         </div>
                         <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
