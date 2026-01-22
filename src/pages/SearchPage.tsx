@@ -103,7 +103,7 @@ function buildSearchItems(events: EventCatalogFull[]): SearchItem[] {
       });
     }
 
-    const taskGroups = buildTaskGroups(event.tasks);
+    const taskGroups = buildTaskGroups(event.tasks, event.taskGroupLabels);
     for (const group of taskGroups) {
       const rewardTotal = group.tiers.reduce((sum, tier) => sum + tier.rewardAmount, 0);
       items.push({
@@ -111,7 +111,12 @@ function buildSearchItems(events: EventCatalogFull[]): SearchItem[] {
         eventId,
         eventTitle: event.title,
         kind: "task",
-        title: getGroupTitle(group.tiers[0].requirementAction, group.tiers[0].requirementObject, group.tiers[0].requirementScope),
+        title: getGroupTitle(
+          group.tiers[0].requirementAction,
+          group.tiers[0].requirementObject,
+          group.tiers[0].requirementScope,
+          event.taskGroupLabels
+        ),
         content: [group.title, `${rewardTotal} lures total`].join(" ").trim(),
         description: `Total reward: ${rewardTotal} lures`,
         anchor: `task-${group.groupId}`,

@@ -981,6 +981,7 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
             eventId={ev.eventId}
             eventVersion={ev.eventVersion}
             tasks={ev.tasks}
+            taskGroupLabels={ev.taskGroupLabels}
             guidedRoutePath={ev.guidedRoutePath}
           />
         ) : (
@@ -1120,7 +1121,14 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
       id: "tasks",
       label: `Tasks (${ev.sections.taskCount})`,
       hidden: true,
-      content: <TasksTracker eventId={ev.eventId} eventVersion={ev.eventVersion} tasks={ev.tasks} />,
+      content: (
+        <TasksTracker
+          eventId={ev.eventId}
+          eventVersion={ev.eventVersion}
+          tasks={ev.tasks}
+          taskGroupLabels={ev.taskGroupLabels}
+        />
+      ),
     },
   ];
 
@@ -1428,6 +1436,7 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
               eventId={ev.eventId}
               eventVersion={ev.eventVersion}
               tasks={ev.tasks}
+              taskGroupLabels={ev.taskGroupLabels}
               scrollContainerRef={tasksScrollRef}
             />
           </div>

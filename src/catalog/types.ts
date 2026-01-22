@@ -27,6 +27,8 @@ export type TaskDefinition = {
   rewardAmount: number;
 };
 
+export type TaskGroupLabelMap = Record<string, string>;
+
 export type GuideContentBlockParagraph = {
   type: "paragraph";
   text: string;
@@ -128,6 +130,7 @@ export type EventCatalogFull = EventCatalogItemFull & {
   faqItems: FaqItem[];
   toolRefs: ToolRef[];
   guidedRoutePath?: string;
+  taskGroupLabels?: TaskGroupLabelMap;
 };
 
 export type TaskCostItem = {

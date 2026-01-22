@@ -240,6 +240,19 @@ function parseTaskDefinition(el: Element): TaskDefinition {
   };
 }
 
+function parseTaskGroupLabels(eventEl: Element): Record<string, string> | undefined {
+  const labelsEl = eventEl.getElementsByTagName("task_group_labels")[0];
+  if (!labelsEl) return undefined;
+  const labelEls = getDirectChildElements(labelsEl, "label");
+  const labels: Record<string, string> = {};
+  for (const labelEl of labelEls) {
+    const key = getAttr(labelEl, "group_key");
+    const title = getAttr(labelEl, "title");
+    labels[key] = title;
+  }
+  return Object.keys(labels).length > 0 ? labels : undefined;
+}
+
 function parseEventDocument(doc: Document, relPath?: string): EventCatalogFull {
   const eventEl = doc.getElementsByTagName("event")[0];
   if (!eventEl) {
@@ -256,6 +269,7 @@ function parseEventDocument(doc: Document, relPath?: string): EventCatalogFull {
   const taskNodes = tasksEl ? Array.from(tasksEl.getElementsByTagName("task")) : [];
   const tasks: TaskDefinition[] = taskNodes.map((t) => parseTaskDefinition(t)).sort((a, b) => a.displayOrder - b.displayOrder);
   const taskCosts = computeTaskCosts(tasks);
+  const taskGroupLabels = parseTaskGroupLabels(eventEl);
 
   const guideSections = guideEl ? getDirectChildElements(guideEl, "section").map((section) => parseGuideSection(section)) : [];
   const dataSections: DataSection[] = dataEl ? getDirectChildElements(dataEl, "section").map((section) => parseGuideSection(section)) : [];
@@ -279,6 +293,7 @@ function parseEventDocument(doc: Document, relPath?: string): EventCatalogFull {
     lastVerifiedDate: eventEl.getAttribute("last_verified_date") ?? undefined,
     status: eventEl.getAttribute("status") ?? undefined,
     guidedRoutePath: guidedRouteRefEl ? getAttr(guidedRouteRefEl, "path") : undefined,
+    taskGroupLabels,
     sections: {
       taskCount: tasks.length,
       guideSectionCount,

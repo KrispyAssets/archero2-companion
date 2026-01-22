@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { TaskDefinition, ToolFishingCalculator, ToolPurchaseGoals } from "../../catalog/types";
+import type { TaskDefinition, TaskGroupLabelMap, ToolFishingCalculator, ToolPurchaseGoals } from "../../catalog/types";
 import { buildTaskGroups, computeEarned, computeRemaining } from "../../catalog/taskGrouping";
 import "./fishingTool.css";
 import { getEventProgressState } from "../../state/userStateStore";
@@ -222,6 +222,7 @@ export default function FishingToolView({
   eventId,
   eventVersion,
   tasks,
+  taskGroupLabels,
   guidedRoutePath,
   variant = "companion",
   showTitle = true,
@@ -230,6 +231,7 @@ export default function FishingToolView({
   eventId?: string;
   eventVersion?: number;
   tasks?: TaskDefinition[];
+  taskGroupLabels?: TaskGroupLabelMap;
   guidedRoutePath?: string;
   variant?: "companion" | "purchase";
   showTitle?: boolean;
@@ -545,7 +547,7 @@ export default function FishingToolView({
     if (!eventId || !eventVersion || !tasks?.length) return null;
     void taskTick;
     const progress = getEventProgressState(eventId, eventVersion);
-    const groups = buildTaskGroups(tasks);
+    const groups = buildTaskGroups(tasks, taskGroupLabels);
     return groups.reduce(
       (acc, group) => {
         const state = progress.tasks[group.groupId] ?? { progressValue: 0, flags: { isCompleted: false, isClaimed: false } };
@@ -555,7 +557,7 @@ export default function FishingToolView({
       },
       { earned: 0, remaining: 0 },
     );
-  }, [eventId, eventVersion, tasks, taskTick]);
+  }, [eventId, eventVersion, tasks, taskGroupLabels, taskTick]);
 
   const baselineMin = 70000;
   const baselineMax = 130000;

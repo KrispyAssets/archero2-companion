@@ -7,7 +7,28 @@
   last_verified_date="2026-01-17"
   status="coming_soon"
 >
+  <task_group_labels>
+    <label group_key="use__dice__total" title="Roll Dice" />
+    <label group_key="buy__free_pack__total" title="Island Pack 2" />
+    <label group_key="buy__gem_pack__total" title="Island Pack 3" />
+  </task_group_labels>
   <tasks>
+    <task task_id="buy_free_pack_total_tier_1" display_order="10" requirement_action="buy" requirement_object="free_pack" requirement_scope="total" requirement_target_value="1" reward_type="dice" reward_amount="1" />
+    <task task_id="buy_free_pack_total_tier_2" display_order="20" requirement_action="buy" requirement_object="free_pack" requirement_scope="total" requirement_target_value="2" reward_type="dice" reward_amount="1" />
+    <task task_id="buy_free_pack_total_tier_3" display_order="30" requirement_action="buy" requirement_object="free_pack" requirement_scope="total" requirement_target_value="3" reward_type="dice" reward_amount="1" />
+    <task task_id="buy_free_pack_total_tier_4" display_order="40" requirement_action="buy" requirement_object="free_pack" requirement_scope="total" requirement_target_value="4" reward_type="dice" reward_amount="1" />
+    <task task_id="buy_free_pack_total_tier_5" display_order="50" requirement_action="buy" requirement_object="free_pack" requirement_scope="total" requirement_target_value="5" reward_type="dice" reward_amount="1" />
+    <task task_id="buy_free_pack_total_tier_6" display_order="60" requirement_action="buy" requirement_object="free_pack" requirement_scope="total" requirement_target_value="6" reward_type="dice" reward_amount="1" />
+    <task task_id="buy_free_pack_total_tier_7" display_order="70" requirement_action="buy" requirement_object="free_pack" requirement_scope="total" requirement_target_value="7" reward_type="dice" reward_amount="1" />
+
+    <task task_id="buy_gem_pack_total_tier_1" display_order="80" requirement_action="buy" requirement_object="gem_pack" requirement_scope="total" requirement_target_value="1" reward_type="dice" reward_amount="5" />
+    <task task_id="buy_gem_pack_total_tier_2" display_order="90" requirement_action="buy" requirement_object="gem_pack" requirement_scope="total" requirement_target_value="2" reward_type="dice" reward_amount="5" />
+    <task task_id="buy_gem_pack_total_tier_3" display_order="100" requirement_action="buy" requirement_object="gem_pack" requirement_scope="total" requirement_target_value="3" reward_type="dice" reward_amount="5" />
+    <task task_id="buy_gem_pack_total_tier_4" display_order="110" requirement_action="buy" requirement_object="gem_pack" requirement_scope="total" requirement_target_value="4" reward_type="dice" reward_amount="5" />
+    <task task_id="buy_gem_pack_total_tier_5" display_order="120" requirement_action="buy" requirement_object="gem_pack" requirement_scope="total" requirement_target_value="5" reward_type="dice" reward_amount="5" />
+    <task task_id="buy_gem_pack_total_tier_6" display_order="130" requirement_action="buy" requirement_object="gem_pack" requirement_scope="total" requirement_target_value="6" reward_type="dice" reward_amount="5" />
+    <task task_id="buy_gem_pack_total_tier_7" display_order="140" requirement_action="buy" requirement_object="gem_pack" requirement_scope="total" requirement_target_value="7" reward_type="dice" reward_amount="5" />
+
     <task task_id="login_days_total_tier_1" display_order="100" requirement_action="login" requirement_object="days" requirement_scope="total" requirement_target_value="1" reward_type="dice" reward_amount="2" />
     <task task_id="login_days_total_tier_2" display_order="110" requirement_action="login" requirement_object="days" requirement_scope="total" requirement_target_value="2" reward_type="dice" reward_amount="2" />
     <task task_id="login_days_total_tier_3" display_order="120" requirement_action="login" requirement_object="days" requirement_scope="total" requirement_target_value="3" reward_type="dice" reward_amount="2" />

@@ -7,9 +7,11 @@ export type TaskGroup = {
   minDisplayOrder: number;
 };
 
+export type TaskGroupLabelMap = Record<string, string>;
+
 const GROUP_LABELS: Record<string, string> = {
-  "buy__silver_tickets__total": "Buy Silver Tickets",
-  "buy__pack__total": "Buy Free Pack",
+  "buy__free_pack__total": "Buy Free Pack",
+  "buy__gem_pack__total": "Buy Gem Pack",
   "login__days__total": "Login",
   "fight__gold_cave__total": "Gold Cave",
   "kill__minions__total": "Kill Minions",
@@ -20,7 +22,6 @@ const GROUP_LABELS: Record<string, string> = {
   "use__chromatic_keys__total": "Use Chromatic Keys",
   "use__obsidian_keys__total": "Use Obsidian Keys",
   "use__wish_tokens__total": "Use Wishes",
-  "use__dice__total": "Roll Dice",
   "use__gems__total": "Use Gems",
   "use__shovels__total": "Use Shovels",
 };
@@ -29,8 +30,15 @@ export function getGroupKey(action: string, object: string, scope: string): stri
   return `${action}__${object}__${scope}`;
 }
 
-export function getGroupTitle(action: string, object: string, scope: string): string {
+export function getGroupTitle(
+  action: string,
+  object: string,
+  scope: string,
+  overrides?: TaskGroupLabelMap
+): string {
   const key = getGroupKey(action, object, scope);
+  const eventOverride = overrides?.[key];
+  if (eventOverride) return eventOverride;
   const override = GROUP_LABELS[key];
   if (override) return override;
   const label = `${action} ${object}`.replace(/_/g, " ");
@@ -38,7 +46,7 @@ export function getGroupTitle(action: string, object: string, scope: string): st
   return `${label} (${scopeLabel})`;
 }
 
-export function buildTaskGroups(tasks: TaskDefinition[]): TaskGroup[] {
+export function buildTaskGroups(tasks: TaskDefinition[], overrides?: TaskGroupLabelMap): TaskGroup[] {
   const map = new Map<string, TaskGroup>();
 
   for (const task of tasks) {
@@ -47,7 +55,7 @@ export function buildTaskGroups(tasks: TaskDefinition[]): TaskGroup[] {
     if (!existing) {
       map.set(groupKey, {
         groupId: groupKey,
-        title: getGroupTitle(task.requirementAction, task.requirementObject, task.requirementScope),
+        title: getGroupTitle(task.requirementAction, task.requirementObject, task.requirementScope, overrides),
         tiers: [task],
         minDisplayOrder: task.displayOrder,
       });

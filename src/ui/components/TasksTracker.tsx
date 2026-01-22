@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import type { TaskDefinition } from "../../catalog/types";
+import type { TaskDefinition, TaskGroupLabelMap } from "../../catalog/types";
 import { buildTaskGroups, computeEarned, computeRemaining, getGroupPlaceholder } from "../../catalog/taskGrouping";
 import { getEventProgressState, upsertTaskState } from "../../state/userStateStore";
 
@@ -7,9 +7,10 @@ export default function TasksTracker(props: {
   eventId: string;
   eventVersion: number;
   tasks: TaskDefinition[];
+  taskGroupLabels?: TaskGroupLabelMap;
   scrollContainerRef?: React.Ref<HTMLDivElement>;
 }) {
-  const { eventId, eventVersion, tasks } = props;
+  const { eventId, eventVersion, tasks, taskGroupLabels } = props;
   const [tick, setTick] = useState(0);
   const [inputValues, setInputValues] = useState<Record<string, string>>({});
 
@@ -18,7 +19,7 @@ export default function TasksTracker(props: {
     return getEventProgressState(eventId, eventVersion);
   }, [eventId, eventVersion, tick]);
 
-  const groups = useMemo(() => buildTaskGroups(tasks), [tasks]);
+  const groups = useMemo(() => buildTaskGroups(tasks, taskGroupLabels), [tasks, taskGroupLabels]);
 
   function setProgress(groupId: string, value: number, maxValue: number) {
     const clamped = Math.max(0, Math.min(value, maxValue));

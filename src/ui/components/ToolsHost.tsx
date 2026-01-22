@@ -1,5 +1,13 @@
 import { useEffect, useState } from "react";
-import type { TaskDefinition, ToolDefinition, ToolFishingCalculator, ToolPurchaseGoals, ToolPriorityList, ToolStaticText } from "../../catalog/types";
+import type {
+  TaskDefinition,
+  TaskGroupLabelMap,
+  ToolDefinition,
+  ToolFishingCalculator,
+  ToolPurchaseGoals,
+  ToolPriorityList,
+  ToolStaticText,
+} from "../../catalog/types";
 import FishingToolView from "./FishingTool";
 
 function renderBodyText(body: string) {
@@ -41,12 +49,14 @@ export default function ToolsHost({
   eventId,
   eventVersion,
   tasks,
+  taskGroupLabels,
   guidedRoutePath,
 }: {
   tools: ToolDefinition[];
   eventId?: string;
   eventVersion?: number;
   tasks?: TaskDefinition[];
+  taskGroupLabels?: TaskGroupLabelMap;
   guidedRoutePath?: string;
 }) {
   const [openById, setOpenById] = useState<Record<string, boolean>>({});
@@ -78,6 +88,7 @@ export default function ToolsHost({
               eventId={eventId}
               eventVersion={eventVersion}
               tasks={tasks}
+              taskGroupLabels={taskGroupLabels}
               guidedRoutePath={guidedRoutePath}
               variant="companion"
               showTitle={false}
@@ -90,6 +101,7 @@ export default function ToolsHost({
               eventId={eventId}
               eventVersion={eventVersion}
               tasks={tasks}
+              taskGroupLabels={taskGroupLabels}
               guidedRoutePath={guidedRoutePath}
               variant="purchase"
               showTitle={false}
