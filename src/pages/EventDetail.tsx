@@ -5,6 +5,7 @@ import Tabs from "../ui/Tabs";
 import TasksTracker from "../ui/components/TasksTracker";
 import ToolsHost from "../ui/components/ToolsHost";
 import { useEventCatalog } from "../catalog/useEventCatalog";
+import { useSharedItems } from "../catalog/useSharedItems";
 import { useToolsCatalog } from "../catalog/useToolsCatalog";
 import type { DataSection, EventCatalogFull, FaqItem, GuideContentBlock, GuideSection } from "../catalog/types";
 
@@ -55,7 +56,9 @@ function renderTextSegmentWithAnchors(
   segment: string,
   dataTitles: Map<string, string>,
   onAnchorClick: (anchorId: string) => void,
-  keyPrefix: string
+  sharedItems: Record<string, { label: string; link?: string; linkEnabled?: boolean }>,
+  keyPrefix: string,
+  options?: { currentAnchorId?: string; disableItemLinks?: boolean }
 ) {
   const parts = segment.split(/(#data-[A-Za-z0-9_-]+)/g);
   return parts.map((part, index) => {
@@ -76,7 +79,69 @@ function renderTextSegmentWithAnchors(
         </a>
       );
     }
-    return <span key={`${keyPrefix}-text-${index}`}>{part}</span>;
+    const tokenParts = part.split(/\{item:([A-Za-z0-9_-]+(?:\|nolink)?)\}/g);
+    const nodes: JSX.Element[] = [];
+    for (let tokenIndex = 0; tokenIndex < tokenParts.length; tokenIndex += 1) {
+      const tokenPart = tokenParts[tokenIndex];
+      if (tokenIndex % 2 === 1) {
+        const [itemIdRaw, tokenFlag] = tokenPart.split("|");
+        const itemId = itemIdRaw;
+        const item = sharedItems[itemId];
+        let label = item?.label ?? itemId.replace(/_/g, " ");
+        const link = item?.link;
+        const linkEnabled = item?.linkEnabled !== false;
+        const tokenNoLink = tokenFlag === "nolink";
+        let suffix = "";
+        const nextText = tokenParts[tokenIndex + 1];
+        if (typeof nextText === "string") {
+          if (nextText.startsWith("'s")) {
+            suffix = "'s";
+            tokenParts[tokenIndex + 1] = nextText.slice(2);
+          } else if (nextText.startsWith("es")) {
+            suffix = "es";
+            tokenParts[tokenIndex + 1] = nextText.slice(2);
+          } else if (nextText.startsWith("s")) {
+            suffix = "s";
+            tokenParts[tokenIndex + 1] = nextText.slice(1);
+          }
+        }
+        if (suffix) label += suffix;
+        if (
+          link &&
+          linkEnabled &&
+          !tokenNoLink &&
+          !options?.disableItemLinks &&
+          link !== `#${options?.currentAnchorId}`
+        ) {
+          if (link.startsWith("#")) {
+            const anchorId = link.slice(1);
+            nodes.push(
+              <a
+                key={`${keyPrefix}-token-${index}-${tokenIndex}`}
+                href={link}
+                onClick={(e) => {
+                  e.preventDefault();
+                  onAnchorClick(anchorId);
+                }}
+              >
+                {label}
+              </a>
+            );
+          } else {
+            nodes.push(
+              <a key={`${keyPrefix}-token-${index}-${tokenIndex}`} href={link} target="_blank" rel="noreferrer">
+                {label}
+              </a>
+            );
+          }
+        } else {
+          nodes.push(<span key={`${keyPrefix}-token-${index}-${tokenIndex}`}>{label}</span>);
+        }
+      } else if (tokenPart) {
+        nodes.push(<span key={`${keyPrefix}-text-${index}-${tokenIndex}`}>{tokenPart}</span>);
+      }
+    }
+    return nodes;
   });
 }
 
@@ -84,6 +149,7 @@ function renderParagraphWithLinks(
   paragraph: string,
   dataTitles: Map<string, string>,
   onAnchorClick: (anchorId: string) => void,
+  sharedItems: Record<string, { label: string }>,
   keyPrefix: string
 ) {
   const nodes: Array<JSX.Element> = [];
@@ -100,6 +166,7 @@ function renderParagraphWithLinks(
           paragraph.slice(cursor, start),
           dataTitles,
           onAnchorClick,
+          sharedItems,
           `${keyPrefix}-seg-${cursor}`
         )
       );
@@ -137,6 +204,7 @@ function renderParagraphWithLinks(
         paragraph.slice(cursor),
         dataTitles,
         onAnchorClick,
+        sharedItems,
         `${keyPrefix}-seg-${cursor}`
       )
     );
@@ -149,6 +217,7 @@ function renderParagraphOrImage(
   paragraph: string,
   dataTitles: Map<string, string>,
   onAnchorClick: (anchorId: string) => void,
+  sharedItems: Record<string, { label: string }>,
   keyPrefix: string
 ) {
   const trimmed = paragraph.trim();
@@ -183,7 +252,7 @@ function renderParagraphOrImage(
   }
   return (
     <p key={`${keyPrefix}-text`} style={{ margin: "8px 0" }}>
-      {renderParagraphWithLinks(paragraph, dataTitles, onAnchorClick, keyPrefix)}
+      {renderParagraphWithLinks(paragraph, dataTitles, onAnchorClick, sharedItems, keyPrefix)}
     </p>
   );
 }
@@ -191,15 +260,16 @@ function renderParagraphOrImage(
 function renderFaqAnswer(
   item: FaqItem,
   dataTitles: Map<string, string>,
-  onAnchorClick: (anchorId: string) => void
+  onAnchorClick: (anchorId: string) => void,
+  sharedItems: Record<string, { label: string }>
 ) {
   if (item.answerBlocks?.length) {
-    return renderGuideBlocks(item.answerBlocks, dataTitles, onAnchorClick);
+    return renderGuideBlocks(item.answerBlocks, dataTitles, onAnchorClick, sharedItems);
   }
   if (!item.answer) return null;
   return item.answer
     .split(/\n{2,}/)
-    .map((paragraph, index) => renderParagraphOrImage(paragraph, dataTitles, onAnchorClick, `faq-${index}`));
+    .map((paragraph, index) => renderParagraphOrImage(paragraph, dataTitles, onAnchorClick, sharedItems, `faq-${index}`));
 }
 
 function resolveImageSrc(src: string): string {
@@ -213,12 +283,13 @@ function resolveImageSrc(src: string): string {
 function renderGuideBlocks(
   blocks: GuideContentBlock[],
   dataTitles: Map<string, string>,
-  onAnchorClick: (anchorId: string) => void
+  onAnchorClick: (anchorId: string) => void,
+  sharedItems: Record<string, { label: string }>
 ) {
   if (!blocks.length) return null;
   return blocks.map((block, index) => {
     if (block.type === "paragraph") {
-      return renderParagraphOrImage(block.text, dataTitles, onAnchorClick, `guide-${index}`);
+      return renderParagraphOrImage(block.text, dataTitles, onAnchorClick, sharedItems, `guide-${index}`);
     }
     if (block.type === "image") {
       return (
@@ -386,6 +457,7 @@ function GuideSectionView({
   openState,
   onToggleOpen,
   dataTitles,
+  sharedItems,
 }: {
   section: GuideSection;
   copiedAnchor: string;
@@ -395,6 +467,7 @@ function GuideSectionView({
   openState: Record<string, boolean>;
   onToggleOpen: (tabId: string, anchorId: string, isOpen: boolean) => void;
   dataTitles: Map<string, string>;
+  sharedItems: Record<string, { label: string }>;
 }) {
   const anchorId = getGuideAnchorId(section.sectionId);
   return (
@@ -419,7 +492,7 @@ function GuideSectionView({
           <LinkIcon />
         </button>
       </summary>
-      <div style={{ marginTop: 8 }}>{renderGuideBlocks(section.blocks, dataTitles, onAnchorClick)}</div>
+      <div style={{ marginTop: 8 }}>{renderGuideBlocks(section.blocks, dataTitles, onAnchorClick, sharedItems)}</div>
       {section.subsections && section.subsections.length > 0 ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
           {section.subsections.map((child) => (
@@ -433,6 +506,7 @@ function GuideSectionView({
               openState={openState}
               onToggleOpen={onToggleOpen}
               dataTitles={dataTitles}
+              sharedItems={sharedItems}
             />
           ))}
         </div>
@@ -491,6 +565,7 @@ function DataSectionView({
   openState,
   onToggleOpen,
   dataTitles,
+  sharedItems,
 }: {
   section: DataSection;
   copiedAnchor: string;
@@ -500,6 +575,7 @@ function DataSectionView({
   openState: Record<string, boolean>;
   onToggleOpen: (tabId: string, anchorId: string, isOpen: boolean) => void;
   dataTitles: Map<string, string>;
+  sharedItems: Record<string, { label: string }>;
 }) {
   const anchorId = getDataAnchorId(section.sectionId);
   return (
@@ -524,7 +600,7 @@ function DataSectionView({
           <LinkIcon />
         </button>
       </summary>
-      <div style={{ marginTop: 8 }}>{renderGuideBlocks(section.blocks, dataTitles, onAnchorClick)}</div>
+      <div style={{ marginTop: 8 }}>{renderGuideBlocks(section.blocks, dataTitles, onAnchorClick, sharedItems)}</div>
       {section.subsections && section.subsections.length > 0 ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
           {section.subsections.map((child) => (
@@ -538,6 +614,7 @@ function DataSectionView({
               openState={openState}
               onToggleOpen={onToggleOpen}
               dataTitles={dataTitles}
+              sharedItems={sharedItems}
             />
           ))}
         </div>
@@ -605,6 +682,8 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
   const isFreshEntry = navigationType === "PUSH" && !urlTab && !location.hash;
 
   const toolState = useToolsCatalog(event.toolRefs.map((ref) => ref.toolId));
+  const sharedItemsState = useSharedItems();
+  const sharedItems = sharedItemsState.status === "ready" ? sharedItemsState.items : {};
   const guideImages = useMemo(() => {
     const images = collectGuideImages(event.guideSections);
     return images.concat(collectFaqImages(event.faqItems));
@@ -1186,6 +1265,7 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
               openState={openDetailsByTab.guide ?? {}}
               onToggleOpen={setDetailOpen}
               dataTitles={dataTitles}
+              sharedItems={sharedItems}
             />
           ))}
         </div>
@@ -1227,7 +1307,9 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
                     <span aria-hidden="true" className="detailsChevron">
                       ▸
                     </span>
-                    <span style={{ flex: 1 }}>{item.question}</span>
+                    <span style={{ flex: 1 }}>
+                      {renderTextSegmentWithAnchors(item.question, dataTitles, navigateToAnchor, sharedItems, "faq-title")}
+                    </span>
                     <span style={{ fontSize: 12, color: "var(--text-subtle)", minWidth: 52, textAlign: "right" }}>
                       {copiedAnchor === getFaqAnchorId(item.faqId) ? "Copied" : ""}
                     </span>
@@ -1240,7 +1322,7 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
                       <LinkIcon />
                     </button>
                   </summary>
-                  <div style={{ marginTop: 8 }}>{renderFaqAnswer(item, dataTitles, navigateToAnchor)}</div>
+                  <div style={{ marginTop: 8 }}>{renderFaqAnswer(item, dataTitles, navigateToAnchor, sharedItems)}</div>
                   {item.tags && item.tags.length > 0 ? (
                     <div style={{ marginTop: 8, fontSize: 12, color: "var(--text-subtle)" }}>Tags: {item.tags.join(", ")}</div>
                   ) : null}
@@ -1284,6 +1366,7 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
               openState={openDetailsByTab.data ?? {}}
               onToggleOpen={setDetailOpen}
               dataTitles={dataTitles}
+              sharedItems={sharedItems}
             />
           ))}
         </div>
@@ -1313,7 +1396,7 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           <h1>{ev.title}</h1>
           {ev.taskCosts && ev.taskCosts.length ? (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
               {ev.taskCosts.map((cost) => (
                 <span
                   key={cost.key}
@@ -1355,7 +1438,7 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
           Tasks
         </button>
       </div>
-      {ev.subtitle ? <p>{ev.subtitle}</p> : null}
+      {ev.subtitle ? <p style={{ marginTop: 8 }}>{ev.subtitle}</p> : null}
       {ev.lastVerifiedDate ? <p style={{ fontSize: 13 }}>Last verified: {ev.lastVerifiedDate}</p> : null}
 
       <style>{`

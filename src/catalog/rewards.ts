@@ -1,4 +1,4 @@
-import type { RewardAsset } from "./types";
+import type { RewardAsset, SharedItem } from "./types";
 
 export function formatRewardLabel(value: string): string {
   return value
@@ -10,9 +10,12 @@ export function formatRewardLabel(value: string): string {
 
 export function getRewardAsset(
   rewardType: string,
-  assets?: Record<string, RewardAsset>
+  assets?: Record<string, RewardAsset>,
+  sharedItems?: Record<string, SharedItem>
 ): RewardAsset {
   const asset = assets?.[rewardType];
   if (asset) return asset;
+  const shared = sharedItems?.[rewardType];
+  if (shared) return { label: shared.label, icon: shared.icon };
   return { label: formatRewardLabel(rewardType) };
 }

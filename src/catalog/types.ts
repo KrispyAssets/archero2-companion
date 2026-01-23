@@ -34,6 +34,15 @@ export type RewardAsset = {
   icon?: string;
 };
 
+export type SharedItem = {
+  itemId: string;
+  label: string;
+  icon?: string;
+  aliases?: string[];
+  link?: string;
+  linkEnabled?: boolean;
+};
+
 export type GuideContentBlockParagraph = {
   type: "paragraph";
   text: string;

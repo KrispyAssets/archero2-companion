@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import type { TaskDefinition, TaskGroupLabelMap, RewardAsset } from "../../catalog/types";
 import { getRewardAsset } from "../../catalog/rewards";
+import { useSharedItems } from "../../catalog/useSharedItems";
 import { buildTaskGroups, computeEarned, computeRemaining, getGroupPlaceholder } from "../../catalog/taskGrouping";
 import { getEventProgressState, upsertTaskState } from "../../state/userStateStore";
 
@@ -15,6 +16,8 @@ export default function TasksTracker(props: {
   const { eventId, eventVersion, tasks, taskGroupLabels, rewardAssets } = props;
   const [tick, setTick] = useState(0);
   const [inputValues, setInputValues] = useState<Record<string, string>>({});
+  const sharedItemsState = useSharedItems();
+  const sharedItems = sharedItemsState.status === "ready" ? sharedItemsState.items : undefined;
 
   const progressState = useMemo(() => {
     void tick;
@@ -64,7 +67,7 @@ export default function TasksTracker(props: {
               (() => {
                 const rewardType = rewardTypes[0] ?? "reward";
                 const reward = totalsByReward[rewardType] ?? { earned: 0, remaining: 0 };
-                const asset = getRewardAsset(rewardType, rewardAssets);
+                const asset = getRewardAsset(rewardType, rewardAssets, sharedItems);
                 return (
                   <>
                     {reward.earned} {asset.label} Earned | {reward.remaining} {asset.label} Remaining
@@ -77,7 +80,7 @@ export default function TasksTracker(props: {
                 {rewardTypes
                   .map((rewardType) => {
                     const reward = totalsByReward[rewardType];
-                    const asset = getRewardAsset(rewardType, rewardAssets);
+                    const asset = getRewardAsset(rewardType, rewardAssets, sharedItems);
                     return `${reward.earned} ${asset.label}`;
                   })
                   .join(", ")}{" "}
@@ -85,7 +88,7 @@ export default function TasksTracker(props: {
                 {rewardTypes
                   .map((rewardType) => {
                     const reward = totalsByReward[rewardType];
-                    const asset = getRewardAsset(rewardType, rewardAssets);
+                    const asset = getRewardAsset(rewardType, rewardAssets, sharedItems);
                     return `${reward.remaining} ${asset.label}`;
                   })
                   .join(", ")}
@@ -120,7 +123,7 @@ export default function TasksTracker(props: {
           const earned = computeEarned(group.tiers, state.progressValue);
           const remaining = computeRemaining(group.tiers, state.progressValue);
           const groupRewardType = group.tiers[0]?.rewardType ?? "reward";
-          const groupRewardAsset = getRewardAsset(groupRewardType, rewardAssets);
+          const groupRewardAsset = getRewardAsset(groupRewardType, rewardAssets, sharedItems);
           const inputValue =
             inputValues[group.groupId] ?? (state.progressValue === 0 ? "" : String(state.progressValue));
           const placeholder = getGroupPlaceholder(

@@ -20,6 +20,6 @@
     </progression_models>
 
     <shared>
-        <!-- Add shared enums/copy here later -->
+        <shared_ref path="catalog/shared/items.xml" />
     </shared>
 </catalog_index>

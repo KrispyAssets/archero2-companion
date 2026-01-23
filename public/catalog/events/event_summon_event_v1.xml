@@ -82,7 +82,7 @@
       <p>• Complete All Tasks.</p>
       <p>• Use Tickets.</p>
       <p>• Spend Currency in Shop. [shop guide](#guide-shop_economy)</p>
-      <p>• Spend Eon Cores on Legendary Characters.</p>
+      <p>• Spend {item:aeon_core}s on Legendary Characters.</p>
     </section>
     <section section_id="shop_economy" title="Shop Economy">
       <p>Keys: Generally most efficient and therefore recommended.</p>
@@ -94,6 +94,12 @@
   </guide>
 
   <faq>
+    <item faq_id="aeon_core_intro" question="What are {item:aeon_core|nolink}s?">
+      <answer>
+        <p>{item:aeon_core|nolink}s are the Summon Event currency you keep in your inventory between events.</p>
+        <p>They are used in the event shop to buy Legendary Characters.</p>
+      </answer>
+    </item>
     <item faq_id="legendary_artifact" question="When is a Legendary Artifact worth it?">
       <answer>
         <p>If you can complete an artifact set, it is generally worth it.</p>
@@ -105,7 +111,7 @@
         />
       </answer>
     </item>
-    <item faq_id="eon_core_odds" question="What are the odds of getting an Eon Core before pity?">
+    <item faq_id="aeon_core_odds" question="What are the odds of getting an {item:aeon_core} before pity?">
       <answer>
         <p>Assuming a 0.12% chance per pull and pity at 400 pulls, the average is about 317.8 pulls.</p>
         <p>Before pity, the cumulative odds are roughly:</p>
@@ -113,7 +119,7 @@
         <p>• 50% at 577 pulls.</p>
         <p>• 90% at 1,918 pulls.</p>
         <p>• 99% at 3,835 pulls.</p>
-        <p>Since pity guarantees an Eon Core by 400 pulls, anything above 38% happens after pity, not before it.</p>
+        <p>Since pity guarantees an {item:aeon_core} by 400 pulls, anything above 38% happens after pity, not before it.</p>
       </answer>
     </item>
     <item faq_id="legendary_character_choice" question="What Legendary Character should I buy?">

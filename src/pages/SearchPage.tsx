@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import AppShell from "../ui/AppShell";
 import DropdownButton from "../ui/components/DropdownButton";
-import { loadAllEventsFull, loadCatalogIndex } from "../catalog/loadCatalog";
-import type { EventCatalogFull, GuideContentBlock, GuideSection } from "../catalog/types";
+import { loadAllEventsFull, loadCatalogIndex, loadSharedItems } from "../catalog/loadCatalog";
+import type { EventCatalogFull, GuideContentBlock, GuideSection, SharedItem } from "../catalog/types";
 import { getRewardAsset } from "../catalog/rewards";
 import { buildTaskGroups, getGroupTitle } from "../catalog/taskGrouping";
 
@@ -59,7 +59,7 @@ function getGuideSearchText(blocks: GuideContentBlock[]): string {
   return textParts.join(" ").trim();
 }
 
-function buildSearchItems(events: EventCatalogFull[]): SearchItem[] {
+function buildSearchItems(events: EventCatalogFull[], sharedItems?: Record<string, SharedItem>): SearchItem[] {
   const items: SearchItem[] = [];
 
   for (const event of events) {
@@ -108,7 +108,7 @@ function buildSearchItems(events: EventCatalogFull[]): SearchItem[] {
     for (const group of taskGroups) {
       const rewardTotal = group.tiers.reduce((sum, tier) => sum + tier.rewardAmount, 0);
       const rewardType = group.tiers[0]?.rewardType ?? "reward";
-      const reward = getRewardAsset(rewardType, event.rewardAssets);
+      const reward = getRewardAsset(rewardType, event.rewardAssets, sharedItems);
       items.push({
         id: `task:${eventId}:${group.groupId}`,
         eventId,
@@ -246,8 +246,9 @@ export default function SearchPage() {
       try {
         const index = await loadCatalogIndex();
         const events = await loadAllEventsFull(index.eventPaths);
+        const sharedItems = await loadSharedItems(index.sharedPaths);
         if (cancelled) return;
-        const items = buildSearchItems(events);
+        const items = buildSearchItems(events, sharedItems);
         setState({ status: "ready", items });
       } catch (e) {
         if (cancelled) return;

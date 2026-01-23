@@ -15,6 +15,7 @@ import type {
   ToolStaticText,
   TaskCostItem,
   RewardAsset,
+  SharedItem,
 } from "./types";
 import { parseXmlString, getAttr, getAttrInt } from "./parseXml";
 
@@ -367,6 +368,45 @@ export async function loadCatalogIndex(): Promise<CatalogIndex> {
     progressionModelPaths,
     sharedPaths,
   };
+}
+
+export async function loadSharedItems(sharedPaths: string[]): Promise<Record<string, SharedItem>> {
+  const items: Record<string, SharedItem> = {};
+
+  for (const relPath of sharedPaths) {
+    const fullPath = `${import.meta.env.BASE_URL}${relPath}`;
+    const xmlText = await fetchText(fullPath);
+    const doc = parseXmlString(xmlText);
+    const root = doc.documentElement;
+    if (root.tagName !== "items") continue;
+
+    const itemEls = Array.from(root.getElementsByTagName("item"));
+    for (const itemEl of itemEls) {
+      const itemId = getAttr(itemEl, "item_id");
+      const label = getAttr(itemEl, "label");
+      const icon = itemEl.getAttribute("icon") ?? undefined;
+      const aliasesAttr = itemEl.getAttribute("aliases");
+      const link = itemEl.getAttribute("link") ?? undefined;
+      const linkEnabledAttr = itemEl.getAttribute("link_enabled");
+      const linkEnabled = linkEnabledAttr === null ? undefined : linkEnabledAttr !== "false";
+      const aliases = aliasesAttr
+        ? aliasesAttr
+            .split(",")
+            .map((alias) => alias.trim())
+            .filter((alias) => alias.length > 0)
+        : undefined;
+
+      const item: SharedItem = { itemId, label, icon, aliases, link, linkEnabled };
+      items[itemId] = item;
+      if (aliases) {
+        for (const alias of aliases) {
+          if (!items[alias]) items[alias] = item;
+        }
+      }
+    }
+  }
+
+  return items;
 }
 
 export async function loadEventSummaries(eventPaths: string[]): Promise<EventCatalogItemFull[]> {
