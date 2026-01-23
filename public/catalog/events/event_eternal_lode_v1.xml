@@ -16,7 +16,6 @@
     <label group_key="use__bombs__total" title="Use Bombs" />
     <label group_key="use__drills__total" title="Use Drills" />
     <label group_key="fight__monster_invasion__total" title="Monster Invasion" />
-    <label group_key="login__days__total" title="Log In" />
   </task_group_labels>
   <tasks>
     <task task_id="charge_expedition_stars_total_tier_1" display_order="100" requirement_action="charge" requirement_object="expedition_stars" requirement_scope="total" requirement_target_value="250" reward_type="axes" reward_amount="8" />
