@@ -1111,7 +1111,12 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
       setActiveAnchor(anchorId);
     }
     const nextTab = getTabForAnchor(anchorId);
-    if (nextTab) setActiveTabId(nextTab);
+    if (nextTab) {
+      setActiveTabId(nextTab);
+      if (anchorId.startsWith(`${nextTab}-`)) {
+        setDetailOpen(nextTab, anchorId, true);
+      }
+    }
   }
 
   function handleTabChange(nextTabId: string) {

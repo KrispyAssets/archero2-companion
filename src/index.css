@@ -186,7 +186,7 @@ a {
 
 a:hover {
   color: var(--accent-strong);
-  text-decoration: underline;
+  text-decoration: none;
 }
 
 button {

@@ -78,7 +78,11 @@
 
   <guide>
     <section section_id="general_guide" title="General Guide">
-      <p>Play Trial Battle (lv4), finish tasks, pull with tickets, spend tickets in the shop, and save eon cores for characters.</p>
+      <p>• Play Trial Battle (lv4).</p>
+      <p>• Complete All Tasks.</p>
+      <p>• Use Tickets.</p>
+      <p>• Spend Currency in Shop. [shop guide](#guide-shop_economy)</p>
+      <p>• Spend Eon Cores on Legendary Characters.</p>
     </section>
     <section section_id="shop_economy" title="Shop Economy">
       <p>Keys: Generally most efficient and therefore recommended.</p>
@@ -99,6 +103,25 @@
           alt="Artifact set bonus example showing +4% ATK PWR and +4% Max HP"
           caption="Completing a set activates the bonus."
         />
+      </answer>
+    </item>
+    <item faq_id="eon_core_odds" question="What are the odds of getting an Eon Core before pity?">
+      <answer>
+        <p>Assuming a 0.12% chance per pull and pity at 400 pulls, the average is about 317.8 pulls.</p>
+        <p>Before pity, the cumulative odds are roughly:</p>
+        <p>• 25% at 240 pulls.</p>
+        <p>• 50% at 577 pulls.</p>
+        <p>• 90% at 1,918 pulls.</p>
+        <p>• 99% at 3,835 pulls.</p>
+        <p>Since pity guarantees an Eon Core by 400 pulls, anything above 38% happens after pity, not before it.</p>
+      </answer>
+    </item>
+    <item faq_id="legendary_character_choice" question="What Legendary Character should I buy?">
+      <answer>
+        <p>It depends on your needs and preferences, but generally:</p>
+        <p>• For PvE, Thor is considered the best and most game changing for most players.</p>
+        <p>• For PvP, Cleo is generally considered best for her damage output.</p>
+        <p>• For PvP, Atreus is the tankier option, but usually considered the worst of the three if you do not already own the others.</p>
       </answer>
     </item>
   </faq>
