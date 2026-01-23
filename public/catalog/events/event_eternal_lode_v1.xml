@@ -6,6 +6,7 @@
   subtitle="Coming Soon"
   last_verified_date="2026-01-17"
   status="coming_soon"
+  active="true"
 >
   <task_group_labels>
     <label group_key="charge__expedition_stars__total" title="Charge Expedition Stars" />

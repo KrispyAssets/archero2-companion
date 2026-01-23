@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import AppShell from "../ui/AppShell";
 import { Link } from "react-router-dom";
 import { useCatalogIndex } from "../catalog/useCatalogIndex";
@@ -13,6 +14,20 @@ export function EventCatalogList() {
     wish_tokens: `${iconBase}24px-Wish_Token.png`,
     shovels: `${iconBase}24px-Shovel.png`,
   };
+  const sortedEvents = useMemo(() => {
+    if (catalog.status !== "ready") return [];
+    const events = [...catalog.events];
+    events.sort((a, b) => {
+      const aActive = a.isActive ? 1 : 0;
+      const bActive = b.isActive ? 1 : 0;
+      if (aActive !== bActive) return bActive - aActive;
+      const aComing = a.status === "coming_soon" ? 1 : 0;
+      const bComing = b.status === "coming_soon" ? 1 : 0;
+      if (aComing !== bComing) return aComing - bComing;
+      return a.title.localeCompare(b.title);
+    });
+    return events;
+  }, [catalog.status, catalog.events]);
 
   return (
     <>
@@ -22,7 +37,7 @@ export function EventCatalogList() {
       {catalog.status === "ready" && (
         <>
           <div style={{ display: "grid", gap: 12 }}>
-            {catalog.events.map((ev) => {
+            {sortedEvents.map((ev) => {
               const isComingSoon = ev.status === "coming_soon";
               const card = (
                 <div
@@ -34,7 +49,25 @@ export function EventCatalogList() {
                     opacity: isComingSoon ? 0.6 : 1,
                   }}
                 >
-                  <div style={{ fontWeight: 700 }}>{ev.title}</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                    <div style={{ fontWeight: 700 }}>{ev.title}</div>
+                    {ev.isActive ? (
+                      <span
+                        style={{
+                          borderRadius: 999,
+                          padding: "2px 8px",
+                          fontSize: 11,
+                          fontWeight: 700,
+                          letterSpacing: 0.4,
+                          color: "var(--success)",
+                          background: "var(--success-contrast)",
+                          border: "1px solid var(--success)",
+                        }}
+                      >
+                        ACTIVE
+                      </span>
+                    ) : null}
+                  </div>
                   {ev.subtitle ? <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4 }}>{ev.subtitle}</div> : null}
                   {ev.taskCosts && ev.taskCosts.length ? (
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
