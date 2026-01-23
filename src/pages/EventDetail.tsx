@@ -51,47 +51,155 @@ function getTabForAnchor(anchorId: string): string | null {
   return null;
 }
 
+function renderTextSegmentWithAnchors(
+  segment: string,
+  dataTitles: Map<string, string>,
+  onAnchorClick: (anchorId: string) => void,
+  keyPrefix: string
+) {
+  const parts = segment.split(/(#data-[A-Za-z0-9_-]+)/g);
+  return parts.map((part, index) => {
+    if (part.startsWith("#data-")) {
+      const anchorId = part.slice(1);
+      const label = anchorId === "data-lake_averages" ? "See Lake Averages" : dataTitles.get(anchorId) ?? "Open Data";
+      return (
+        <a
+          key={`${keyPrefix}-data-${index}`}
+          href={`#${anchorId}`}
+          onClick={(e) => {
+            e.preventDefault();
+            onAnchorClick(anchorId);
+          }}
+          style={{ marginLeft: 6 }}
+        >
+          {label}
+        </a>
+      );
+    }
+    return <span key={`${keyPrefix}-text-${index}`}>{part}</span>;
+  });
+}
+
+function renderParagraphWithLinks(
+  paragraph: string,
+  dataTitles: Map<string, string>,
+  onAnchorClick: (anchorId: string) => void,
+  keyPrefix: string
+) {
+  const nodes: Array<JSX.Element> = [];
+  const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+  let cursor = 0;
+  let match = linkRegex.exec(paragraph);
+
+  while (match) {
+    const [full, label, href] = match;
+    const start = match.index;
+    if (start > cursor) {
+      nodes.push(
+        ...renderTextSegmentWithAnchors(
+          paragraph.slice(cursor, start),
+          dataTitles,
+          onAnchorClick,
+          `${keyPrefix}-seg-${cursor}`
+        )
+      );
+    }
+
+    if (href.startsWith("#")) {
+      const anchorId = href.slice(1);
+      nodes.push(
+        <a
+          key={`${keyPrefix}-link-${start}`}
+          href={href}
+          onClick={(e) => {
+            e.preventDefault();
+            onAnchorClick(anchorId);
+          }}
+        >
+          {label}
+        </a>
+      );
+    } else {
+      nodes.push(
+        <a key={`${keyPrefix}-link-${start}`} href={href} target="_blank" rel="noopener noreferrer">
+          {label}
+        </a>
+      );
+    }
+
+    cursor = start + full.length;
+    match = linkRegex.exec(paragraph);
+  }
+
+  if (cursor < paragraph.length) {
+    nodes.push(
+      ...renderTextSegmentWithAnchors(
+        paragraph.slice(cursor),
+        dataTitles,
+        onAnchorClick,
+        `${keyPrefix}-seg-${cursor}`
+      )
+    );
+  }
+
+  return nodes;
+}
+
+function renderParagraphOrImage(
+  paragraph: string,
+  dataTitles: Map<string, string>,
+  onAnchorClick: (anchorId: string) => void,
+  keyPrefix: string
+) {
+  const trimmed = paragraph.trim();
+  const imageMatch = trimmed.match(/^!\[([^\]]*)\]\(([^)\s]+)(?:\s+\"([^\"]+)\")?\)$/);
+  if (imageMatch) {
+    const alt = imageMatch[1] || undefined;
+    const src = imageMatch[2];
+    const caption = imageMatch[3] || undefined;
+    return (
+      <figure
+        key={`${keyPrefix}-image`}
+        style={{ margin: "12px 0", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}
+      >
+        <img
+          src={resolveImageSrc(src)}
+          alt={alt ?? ""}
+          style={{
+            maxWidth: "100%",
+            maxHeight: 420,
+            width: "100%",
+            objectFit: "contain",
+            borderRadius: 10,
+            border: "1px solid var(--border)",
+            display: "block",
+            cursor: "zoom-in",
+          }}
+          data-zoom-src={resolveImageSrc(src)}
+        />
+        {caption ? <figcaption style={{ fontSize: 12, color: "var(--text-subtle)", marginTop: 6 }}>{caption}</figcaption> : null}
+      </figure>
+    );
+  }
+  return (
+    <p key={`${keyPrefix}-text`} style={{ margin: "8px 0" }}>
+      {renderParagraphWithLinks(paragraph, dataTitles, onAnchorClick, keyPrefix)}
+    </p>
+  );
+}
+
 function renderFaqAnswer(
-  answer: string,
+  item: FaqItem,
   dataTitles: Map<string, string>,
   onAnchorClick: (anchorId: string) => void
 ) {
-  if (!answer) return null;
-  return answer.split(/\n{2,}/).map((paragraph, index) => {
-    const parts = paragraph.split(/(#data-[A-Za-z0-9_-]+)/g);
-    if (parts.length === 1) {
-      return (
-        <p key={`${index}-${paragraph.slice(0, 12)}`} style={{ margin: "8px 0" }}>
-          {paragraph}
-        </p>
-      );
-    }
-    return (
-      <p key={`${index}-${paragraph.slice(0, 12)}`} style={{ margin: "8px 0" }}>
-        {parts.map((part, partIndex) => {
-          if (part.startsWith("#data-")) {
-            const anchorId = part.slice(1);
-            const label =
-              anchorId === "data-lake_averages" ? "See Lake Averages" : dataTitles.get(anchorId) ?? "Open Data";
-            return (
-              <a
-                key={`${partIndex}-${anchorId}`}
-                href={`#${anchorId}`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  onAnchorClick(anchorId);
-                }}
-                style={{ marginLeft: 6 }}
-              >
-                {label}
-              </a>
-            );
-          }
-          return <span key={`${partIndex}-${part}`}>{part}</span>;
-        })}
-      </p>
-    );
-  });
+  if (item.answerBlocks?.length) {
+    return renderGuideBlocks(item.answerBlocks, dataTitles, onAnchorClick);
+  }
+  if (!item.answer) return null;
+  return item.answer
+    .split(/\n{2,}/)
+    .map((paragraph, index) => renderParagraphOrImage(paragraph, dataTitles, onAnchorClick, `faq-${index}`));
 }
 
 function resolveImageSrc(src: string): string {
@@ -102,15 +210,15 @@ function resolveImageSrc(src: string): string {
   return `${import.meta.env.BASE_URL}${src}`;
 }
 
-function renderGuideBlocks(blocks: GuideContentBlock[]) {
+function renderGuideBlocks(
+  blocks: GuideContentBlock[],
+  dataTitles: Map<string, string>,
+  onAnchorClick: (anchorId: string) => void
+) {
   if (!blocks.length) return null;
   return blocks.map((block, index) => {
     if (block.type === "paragraph") {
-      return (
-        <p key={`p-${index}-${block.text.slice(0, 12)}`} style={{ margin: "8px 0" }}>
-          {block.text}
-        </p>
-      );
+      return renderParagraphOrImage(block.text, dataTitles, onAnchorClick, `guide-${index}`);
     }
     if (block.type === "image") {
       return (
@@ -217,6 +325,48 @@ function collectGuideAnchorIds(sections: GuideSection[], out: string[] = []): st
   return out;
 }
 
+function collectFaqImages(items: FaqItem[]): GuideImageItem[] {
+  const images: GuideImageItem[] = [];
+  for (const item of items) {
+    if (item.answerBlocks?.length) {
+      for (const block of item.answerBlocks) {
+        if (block.type === "image") {
+          images.push({
+            src: resolveImageSrc(block.src),
+            alt: block.alt ?? "",
+            caption: block.caption,
+          });
+        } else if (block.type === "image_row") {
+          for (const image of block.images) {
+            images.push({
+              src: resolveImageSrc(image.src),
+              alt: image.alt ?? "",
+              caption: image.caption,
+            });
+          }
+        }
+      }
+      continue;
+    }
+
+    const paragraphs = item.answer.split(/\n{2,}/);
+    for (const paragraph of paragraphs) {
+      const trimmed = paragraph.trim();
+      const imageMatch = trimmed.match(/^!\[([^\]]*)\]\(([^)\s]+)(?:\s+\"([^\"]+)\")?\)$/);
+      if (!imageMatch) continue;
+      const alt = imageMatch[1] || "";
+      const src = imageMatch[2];
+      const caption = imageMatch[3] || undefined;
+      images.push({
+        src: resolveImageSrc(src),
+        alt,
+        caption,
+      });
+    }
+  }
+  return images;
+}
+
 function collectDataAnchorIds(sections: DataSection[], out: string[] = []): string[] {
   for (const section of sections) {
     out.push(getDataAnchorId(section.sectionId));
@@ -231,16 +381,20 @@ function GuideSectionView({
   section,
   copiedAnchor,
   onCopyLink,
+  onAnchorClick,
   tabId,
   openState,
   onToggleOpen,
+  dataTitles,
 }: {
   section: GuideSection;
   copiedAnchor: string;
   onCopyLink: (anchorId: string) => void;
+  onAnchorClick: (anchorId: string) => void;
   tabId: string;
   openState: Record<string, boolean>;
   onToggleOpen: (tabId: string, anchorId: string, isOpen: boolean) => void;
+  dataTitles: Map<string, string>;
 }) {
   const anchorId = getGuideAnchorId(section.sectionId);
   return (
@@ -265,7 +419,7 @@ function GuideSectionView({
           <LinkIcon />
         </button>
       </summary>
-      <div style={{ marginTop: 8 }}>{renderGuideBlocks(section.blocks)}</div>
+      <div style={{ marginTop: 8 }}>{renderGuideBlocks(section.blocks, dataTitles, onAnchorClick)}</div>
       {section.subsections && section.subsections.length > 0 ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
           {section.subsections.map((child) => (
@@ -274,9 +428,11 @@ function GuideSectionView({
               section={child}
               copiedAnchor={copiedAnchor}
               onCopyLink={onCopyLink}
+              onAnchorClick={onAnchorClick}
               tabId={tabId}
               openState={openState}
               onToggleOpen={onToggleOpen}
+              dataTitles={dataTitles}
             />
           ))}
         </div>
@@ -330,16 +486,20 @@ function DataSectionView({
   section,
   copiedAnchor,
   onCopyLink,
+  onAnchorClick,
   tabId,
   openState,
   onToggleOpen,
+  dataTitles,
 }: {
   section: DataSection;
   copiedAnchor: string;
   onCopyLink: (anchorId: string) => void;
+  onAnchorClick: (anchorId: string) => void;
   tabId: string;
   openState: Record<string, boolean>;
   onToggleOpen: (tabId: string, anchorId: string, isOpen: boolean) => void;
+  dataTitles: Map<string, string>;
 }) {
   const anchorId = getDataAnchorId(section.sectionId);
   return (
@@ -364,7 +524,7 @@ function DataSectionView({
           <LinkIcon />
         </button>
       </summary>
-      <div style={{ marginTop: 8 }}>{renderGuideBlocks(section.blocks)}</div>
+      <div style={{ marginTop: 8 }}>{renderGuideBlocks(section.blocks, dataTitles, onAnchorClick)}</div>
       {section.subsections && section.subsections.length > 0 ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
           {section.subsections.map((child) => (
@@ -373,9 +533,11 @@ function DataSectionView({
               section={child}
               copiedAnchor={copiedAnchor}
               onCopyLink={onCopyLink}
+              onAnchorClick={onAnchorClick}
               tabId={tabId}
               openState={openState}
               onToggleOpen={onToggleOpen}
+              dataTitles={dataTitles}
             />
           ))}
         </div>
@@ -443,7 +605,10 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
   const isFreshEntry = navigationType === "PUSH" && !urlTab && !location.hash;
 
   const toolState = useToolsCatalog(event.toolRefs.map((ref) => ref.toolId));
-  const guideImages = useMemo(() => collectGuideImages(event.guideSections), [event]);
+  const guideImages = useMemo(() => {
+    const images = collectGuideImages(event.guideSections);
+    return images.concat(collectFaqImages(event.faqItems));
+  }, [event]);
 
   useEffect(() => {
     const key = `archero2_event_ui_${event.eventId}`;
@@ -1011,9 +1176,11 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
               section={section}
               copiedAnchor={copiedAnchor}
               onCopyLink={copyAnchorLink}
+              onAnchorClick={navigateToAnchor}
               tabId="guide"
               openState={openDetailsByTab.guide ?? {}}
               onToggleOpen={setDetailOpen}
+              dataTitles={dataTitles}
             />
           ))}
         </div>
@@ -1025,7 +1192,7 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
       id: "faq",
       label: `FAQ (${ev.sections.faqCount})`,
       content: ev.faqItems.length ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }} onClick={handleGuideImageClick}>
           <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
             <button
               type="button"
@@ -1068,7 +1235,7 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
                       <LinkIcon />
                     </button>
                   </summary>
-                  <div style={{ marginTop: 8 }}>{renderFaqAnswer(item.answer, dataTitles, navigateToAnchor)}</div>
+                  <div style={{ marginTop: 8 }}>{renderFaqAnswer(item, dataTitles, navigateToAnchor)}</div>
                   {item.tags && item.tags.length > 0 ? (
                     <div style={{ marginTop: 8, fontSize: 12, color: "var(--text-subtle)" }}>Tags: {item.tags.join(", ")}</div>
                   ) : null}
@@ -1107,9 +1274,11 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
               section={section}
               copiedAnchor={copiedAnchor}
               onCopyLink={copyAnchorLink}
+              onAnchorClick={navigateToAnchor}
               tabId="data"
               openState={openDetailsByTab.data ?? {}}
               onToggleOpen={setDetailOpen}
+              dataTitles={dataTitles}
             />
           ))}
         </div>

@@ -71,6 +71,7 @@ export type FaqItem = {
   faqId: string;
   question: string;
   answer: string;
+  answerBlocks?: GuideContentBlock[];
   tags?: string[];
 };
 

@@ -75,4 +75,31 @@
     <task task_id="use_gems_total_tier_5" display_order="1140" requirement_action="use" requirement_object="gems" requirement_scope="total" requirement_target_value="10000" reward_type="tickets" reward_amount="2" />
     <task task_id="use_gems_total_tier_6" display_order="1150" requirement_action="use" requirement_object="gems" requirement_scope="total" requirement_target_value="15000" reward_type="tickets" reward_amount="2" />
   </tasks>
+
+  <guide>
+    <section section_id="general_guide" title="General Guide">
+      <p>Play Trial Battle (lv4), finish tasks, pull with tickets, spend tickets in the shop, and save eon cores for characters.</p>
+    </section>
+    <section section_id="shop_economy" title="Shop Economy">
+      <p>Keys: Generally most efficient and therefore recommended.</p>
+      <p>Here are some other options.</p>
+      <p>Legendary Artifact: If you can complete an artifact set. [explained here](#faq-legendary_artifact)</p>
+      <p>Discounted S-Tier Gear: It changes between events. If you use them, you might want to get them.</p>
+      <p>Character Shards: Not efficient, but if you can unlock or star-up a character, it's not a completely bad option.</p>
+    </section>
+  </guide>
+
+  <faq>
+    <item faq_id="legendary_artifact" question="When is a Legendary Artifact worth it?">
+      <answer>
+        <p>If you can complete an artifact set, it is generally worth it.</p>
+        <p>For example, purchasing the feather would activate the set bonus, resulting in a 4% increase to Attack Power and Max Health.</p>
+        <image
+          src="catalog/shared/misc/legendary_artifact_example.png"
+          alt="Artifact set bonus example showing +4% ATK PWR and +4% Max HP"
+          caption="Completing a set activates the bonus."
+        />
+      </answer>
+    </item>
+  </faq>
 </event>

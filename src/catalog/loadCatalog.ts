@@ -43,12 +43,11 @@ function collectParagraphText(el: Element): string {
   return directText.join("\n\n");
 }
 
-function parseGuideSection(sectionEl: Element): GuideSection {
-  const subsections = getDirectChildElements(sectionEl, "section").map((child) => parseGuideSection(child));
+function parseContentBlocks(containerEl: Element): { blocks: GuideContentBlock[]; text: string } {
   const blocks: GuideContentBlock[] = [];
   const paragraphs: string[] = [];
 
-  for (const node of Array.from(sectionEl.childNodes)) {
+  for (const node of Array.from(containerEl.childNodes)) {
     if (node.nodeType !== 1) continue;
     const el = node as Element;
     if (el.tagName === "section") continue;
@@ -75,10 +74,25 @@ function parseGuideSection(sectionEl: Element): GuideSection {
         caption: imageEl.getAttribute("caption") ?? undefined,
       }));
       blocks.push({ type: "image_row", images });
+      continue;
     }
   }
 
-  const body = paragraphs.join("\n\n");
+  if (blocks.length === 0) {
+    const text = collectParagraphText(containerEl);
+    if (text) {
+      blocks.push({ type: "paragraph", text });
+      paragraphs.push(text);
+    }
+  }
+
+  return { blocks, text: paragraphs.join("\n\n") };
+}
+
+function parseGuideSection(sectionEl: Element): GuideSection {
+  const subsections = getDirectChildElements(sectionEl, "section").map((child) => parseGuideSection(child));
+  const { blocks, text } = parseContentBlocks(sectionEl);
+  const body = text;
   return {
     sectionId: getAttr(sectionEl, "section_id"),
     title: getAttr(sectionEl, "title"),
@@ -92,12 +106,14 @@ function parseFaqItem(itemEl: Element): FaqItem {
   const tagsAttr = itemEl.getAttribute("tags");
   const tags = tagsAttr ? tagsAttr.split(",").map((t) => t.trim()).filter((t) => t.length > 0) : undefined;
   const answerEl = itemEl.getElementsByTagName("answer")[0];
-  const answer = answerEl ? collectParagraphText(answerEl) : "";
+  const answerBlocks = answerEl ? parseContentBlocks(answerEl) : null;
+  const answer = answerBlocks ? answerBlocks.text : "";
 
   return {
     faqId: getAttr(itemEl, "faq_id"),
     question: getAttr(itemEl, "question"),
     answer,
+    answerBlocks: answerBlocks?.blocks ?? undefined,
     tags,
   };
 }

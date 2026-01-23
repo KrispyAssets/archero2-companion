@@ -51,6 +51,21 @@ export default function CreditsPage() {
             </a>
           </p>
         </div>
+
+        <div style={{ border: "1px solid var(--border)", borderRadius: 12, padding: 12, background: "var(--surface)" }}>
+          <div style={{ fontWeight: 800 }}>Summon Event Guide</div>
+          <p style={{ marginTop: 6 }}>
+            Created by EpicJapan.{" "}
+            <a
+              className="linkButton"
+              href="https://discord.com/channels/1268830572743102505/1375803689691779122/1375803689691779122"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Open in Discord
+            </a>
+          </p>
+        </div>
       </section>
     </AppShell>
   );
