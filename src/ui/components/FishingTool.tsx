@@ -69,11 +69,17 @@ type GuidedGoal = {
   warnMessage?: string;
 };
 
+type GuidedRouteMedia = {
+  label?: string;
+  images: Array<{ src: string; alt?: string; caption?: string }>;
+};
+
 type GuidedRouteStep = {
   stepId: string;
   lakeId: string;
   action: string;
   notes?: string;
+  media?: GuidedRouteMedia;
   goal?: GuidedGoal;
   goalAll?: GuidedGoal[];
   goalAny?: GuidedGoal[];
@@ -263,6 +269,7 @@ export default function FishingToolView({
   const [guidedWeightInput, setGuidedWeightInput] = useState("");
   const guidedWeightEditingRef = useRef(false);
   const [guidedInfoOpen, setGuidedInfoOpen] = useState(false);
+  const [guidedMediaOpen, setGuidedMediaOpen] = useState(false);
   const resetMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -530,6 +537,20 @@ export default function FishingToolView({
     document.addEventListener("click", handleClick);
     return () => document.removeEventListener("click", handleClick);
   }, [guidedInfoOpen]);
+
+  useEffect(() => {
+    if (!guidedMediaOpen) return;
+    function handleClick(event: MouseEvent) {
+      const target = event.target as HTMLElement | null;
+      if (!target) return;
+      if (target.closest(".guidedMediaButton") || target.closest(".guidedMediaPopover")) {
+        return;
+      }
+      setGuidedMediaOpen(false);
+    }
+    document.addEventListener("click", handleClick);
+    return () => document.removeEventListener("click", handleClick);
+  }, [guidedMediaOpen]);
 
   const derived = useMemo(() => {
     if (dataState.status !== "ready" || !toolState) return null;
@@ -840,6 +861,10 @@ export default function FishingToolView({
       wrongLakeTargetId,
     };
   }, [guidedOption, guidedState, toolState, goldTarget]);
+
+  useEffect(() => {
+    setGuidedMediaOpen(false);
+  }, [guidedStepData?.step.stepId]);
 
   useEffect(() => {
     if (!guidedStepData || !toolState?.guidedAutoAdvance) return;
@@ -1252,34 +1277,6 @@ export default function FishingToolView({
     });
   }
 
-  function setGoalPreset(preset: ToolState["goalPreset"]) {
-    if (preset === "custom") {
-      updateToolState((prev) => ({ ...prev, goalPreset: "custom" }));
-      return;
-    }
-    const presetValues =
-      preset === "silver-heavy"
-        ? { etchedRune: 3, blessedRune: 4, artifact: null, goldEtched: 1 }
-        : { etchedRune: 2, blessedRune: 4, artifact: null, goldEtched: 1 };
-    updateToolState((prev) => ({
-      ...prev,
-      goalPreset: preset,
-      targetSilverTickets: null,
-      purchaseCounts: {
-        etchedRune: presetValues.etchedRune,
-        blessedRune: presetValues.blessedRune,
-        artifact: presetValues.artifact,
-      },
-      goldPurchaseCounts: {
-        etchedRune: presetValues.goldEtched,
-        advancedEnchantium: null,
-        ruinShovelBundle: null,
-        promisedShovelBundle: null,
-        chromaticKeyBundle: null,
-      },
-    }));
-  }
-
   function setSilverEstimateLake(lakeId: string) {
     updateToolState((prev) => ({
       ...prev,
@@ -1598,6 +1595,41 @@ export default function FishingToolView({
                           {guidedStepData.step.notes ? (
                             <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 6 }}>{guidedStepData.step.notes}</div>
                           ) : null}
+                          <div className="lakeInfoWrap" style={{ display: "flex", justifyContent: "flex-end", marginTop: 6 }}>
+                            <button
+                              type="button"
+                              className="lakeInfoButton guidedMediaButton"
+                              onClick={() => {
+                                if (!guidedStepData.step.media?.images?.length) return;
+                                setGuidedMediaOpen((prev) => !prev);
+                              }}
+                              disabled={!guidedStepData.step.media?.images?.length}
+                              style={{
+                                opacity: guidedStepData.step.media?.images?.length ? 1 : 0.4,
+                                cursor: guidedStepData.step.media?.images?.length ? "pointer" : "not-allowed",
+                              }}
+                            >
+                              {guidedStepData.step.media?.label ?? "Media"}
+                            </button>
+                            {guidedMediaOpen && guidedStepData.step.media?.images?.length ? (
+                              <div className="lakeInfoPopover guidedMediaPopover">
+                                <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}>
+                                  {guidedStepData.step.media.images.map((image) => (
+                                    <figure key={image.src} style={{ margin: 0, display: "grid", gap: 4, justifyItems: "center" }}>
+                                      <img
+                                        src={resolvePath(image.src)}
+                                        alt={image.alt ?? ""}
+                                        style={{ width: 72, height: 72, objectFit: "contain" }}
+                                      />
+                                      {image.caption ? (
+                                        <figcaption style={{ fontSize: 11, color: "var(--text-subtle)" }}>{image.caption}</figcaption>
+                                      ) : null}
+                                    </figure>
+                                  ))}
+                                </div>
+                              </div>
+                            ) : null}
+                          </div>
                           {guidedStepData.wrongLakeId ? (
                             <div style={{ color: "var(--danger)", fontSize: 13, fontWeight: 600, marginTop: 6 }}>
                               You are on {set.lakes.find((entry) => entry.lakeId === guidedStepData.wrongLakeId)?.label ?? guidedStepData.wrongLakeId}
@@ -2032,26 +2064,6 @@ export default function FishingToolView({
           </div>
           {tool.description ? <p style={{ marginTop: 6 }}>{tool.description}</p> : null}
           <div style={{ display: "grid", gap: 12, marginTop: 12 }}>
-            <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-              <label style={{ fontSize: 12, color: "var(--text-muted)" }}>Preset</label>
-              <DropdownButton
-                valueLabel={
-                  toolState.goalPreset === "silver-heavy"
-                    ? "Silver-heavy (120k + 16 gold)"
-                    : toolState.goalPreset === "gold-efficient"
-                      ? "Gold-efficient (80k + 16 gold)"
-                      : "Custom"
-                }
-                options={[
-                  { value: "silver-heavy", label: "Silver-heavy (120k + 16 gold)" },
-                  { value: "gold-efficient", label: "Gold-efficient (80k + 16 gold)" },
-                  { value: "custom", label: "Custom" },
-                ]}
-                onSelect={(value) => setGoalPreset(value as ToolState["goalPreset"])}
-                minWidth={220}
-              />
-            </div>
-
             <div
               style={{
                 display: "grid",
@@ -2062,66 +2074,57 @@ export default function FishingToolView({
                 border: "1px solid var(--border)",
               }}
             >
-              <div style={{ fontWeight: 700 }}>Inputs</div>
+              <div style={{ fontWeight: 700 }}>Purchase Goals</div>
               <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                Etched runes can be purchased with 16 gold or 32,400 silver each. Add them under the purchase type you plan to use.
-              </div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-                <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
-                  Etched Rune (32,400)
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="Qty"
-                    value={toolState.purchaseCounts.etchedRune === null ? "" : toolState.purchaseCounts.etchedRune}
-                    onChange={(e) => {
-                      const raw = e.target.value.replace(/[^\d]/g, "");
-                      setPurchaseCount("etchedRune", raw ? Number(raw) : null);
-                    }}
-                    style={{ maxWidth: 120 }}
-                  />
-                </label>
-                <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
-                  Blessed Rune (4,050)
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="Qty"
-                    value={toolState.purchaseCounts.blessedRune === null ? "" : toolState.purchaseCounts.blessedRune}
-                    onChange={(e) => {
-                      const raw = e.target.value.replace(/[^\d]/g, "");
-                      setPurchaseCount("blessedRune", raw ? Number(raw) : null);
-                    }}
-                    style={{ maxWidth: 120 }}
-                  />
-                </label>
-                <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
-                  Artifact (184,000)
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="Qty"
-                    value={toolState.purchaseCounts.artifact === null ? "" : toolState.purchaseCounts.artifact}
-                    onChange={(e) => {
-                      const raw = e.target.value.replace(/[^\d]/g, "");
-                      setPurchaseCount("artifact", raw ? Number(raw) : null);
-                    }}
-                    style={{ maxWidth: 120 }}
-                  />
-                </label>
+                Add the quantities you want to buy. These targets drive the recommendations below.
               </div>
               <div style={{ display: "grid", gap: 8 }}>
-                <div style={{ fontWeight: 600, fontSize: 12 }}>Golden Ticket Purchases</div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                <div style={{ fontWeight: 600, fontSize: 12 }}>Silver Ticket Shop</div>
+                <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))" }}>
                   <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
-                    <span style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                      <input
-                        type="checkbox"
-                        checked={toolState.goldPurchaseCounts.etchedRune !== null}
-                        onChange={(e) => setGoldPurchaseCount("etchedRune", e.target.checked ? 1 : null)}
-                      />
-                      Etched Rune (16 gold)
-                    </span>
+                    Etched Rune (32,400)
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="Qty"
+                      value={toolState.purchaseCounts.etchedRune === null ? "" : toolState.purchaseCounts.etchedRune}
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/[^\d]/g, "");
+                        setPurchaseCount("etchedRune", raw ? Number(raw) : null);
+                      }}
+                    />
+                  </label>
+                  <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
+                    Blessed Rune (4,050)
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="Qty"
+                      value={toolState.purchaseCounts.blessedRune === null ? "" : toolState.purchaseCounts.blessedRune}
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/[^\d]/g, "");
+                        setPurchaseCount("blessedRune", raw ? Number(raw) : null);
+                      }}
+                    />
+                  </label>
+                  <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
+                    Artifact (184,000)
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="Qty"
+                      value={toolState.purchaseCounts.artifact === null ? "" : toolState.purchaseCounts.artifact}
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/[^\d]/g, "");
+                        setPurchaseCount("artifact", raw ? Number(raw) : null);
+                      }}
+                    />
+                  </label>
+                </div>
+                <div style={{ fontWeight: 600, fontSize: 12 }}>Golden Ticket Shop</div>
+                <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))" }}>
+                  <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
+                    Etched Rune (16 gold)
                     <input
                       type="text"
                       inputMode="numeric"
@@ -2131,19 +2134,10 @@ export default function FishingToolView({
                         const raw = e.target.value.replace(/[^\d]/g, "");
                         setGoldPurchaseCount("etchedRune", raw ? Number(raw) : null);
                       }}
-                      style={{ maxWidth: 120 }}
-                      disabled={toolState.goldPurchaseCounts.etchedRune === null}
                     />
                   </label>
                   <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
-                    <span style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                      <input
-                        type="checkbox"
-                        checked={toolState.goldPurchaseCounts.advancedEnchantium !== null}
-                        onChange={(e) => setGoldPurchaseCount("advancedEnchantium", e.target.checked ? 1 : null)}
-                      />
-                      Advanced Enchantium (18 gold)
-                    </span>
+                    Advanced Enchantium (18 gold)
                     <input
                       type="text"
                       inputMode="numeric"
@@ -2153,19 +2147,10 @@ export default function FishingToolView({
                         const raw = e.target.value.replace(/[^\d]/g, "");
                         setGoldPurchaseCount("advancedEnchantium", raw ? Number(raw) : null);
                       }}
-                      style={{ maxWidth: 120 }}
-                      disabled={toolState.goldPurchaseCounts.advancedEnchantium === null}
                     />
                   </label>
                   <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
-                    <span style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                      <input
-                        type="checkbox"
-                        checked={toolState.goldPurchaseCounts.ruinShovelBundle !== null}
-                        onChange={(e) => setGoldPurchaseCount("ruinShovelBundle", e.target.checked ? 1 : null)}
-                      />
-                      Ruin Shovels (3 for 1 gold)
-                    </span>
+                    Ruin Shovels (3 for 1 gold)
                     <input
                       type="text"
                       inputMode="numeric"
@@ -2175,19 +2160,10 @@ export default function FishingToolView({
                         const raw = e.target.value.replace(/[^\d]/g, "");
                         setGoldPurchaseCount("ruinShovelBundle", raw ? Number(raw) : null);
                       }}
-                      style={{ maxWidth: 120 }}
-                      disabled={toolState.goldPurchaseCounts.ruinShovelBundle === null}
                     />
                   </label>
                   <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
-                    <span style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                      <input
-                        type="checkbox"
-                        checked={toolState.goldPurchaseCounts.promisedShovelBundle !== null}
-                        onChange={(e) => setGoldPurchaseCount("promisedShovelBundle", e.target.checked ? 1 : null)}
-                      />
-                      Promised Shovels (2 for 1 gold)
-                    </span>
+                    Promised Shovels (2 for 1 gold)
                     <input
                       type="text"
                       inputMode="numeric"
@@ -2197,19 +2173,10 @@ export default function FishingToolView({
                         const raw = e.target.value.replace(/[^\d]/g, "");
                         setGoldPurchaseCount("promisedShovelBundle", raw ? Number(raw) : null);
                       }}
-                      style={{ maxWidth: 120 }}
-                      disabled={toolState.goldPurchaseCounts.promisedShovelBundle === null}
                     />
                   </label>
                   <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
-                    <span style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                      <input
-                        type="checkbox"
-                        checked={toolState.goldPurchaseCounts.chromaticKeyBundle !== null}
-                        onChange={(e) => setGoldPurchaseCount("chromaticKeyBundle", e.target.checked ? 1 : null)}
-                      />
-                      Chromatic Keys (5 for 4 gold)
-                    </span>
+                    Chromatic Keys (5 for 4 gold)
                     <input
                       type="text"
                       inputMode="numeric"
@@ -2219,8 +2186,6 @@ export default function FishingToolView({
                         const raw = e.target.value.replace(/[^\d]/g, "");
                         setGoldPurchaseCount("chromaticKeyBundle", raw ? Number(raw) : null);
                       }}
-                      style={{ maxWidth: 120 }}
-                      disabled={toolState.goldPurchaseCounts.chromaticKeyBundle === null}
                     />
                   </label>
                 </div>

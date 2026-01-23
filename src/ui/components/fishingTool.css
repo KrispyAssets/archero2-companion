@@ -126,6 +126,11 @@
   line-height: 1.4;
 }
 
+.guidedMediaPopover {
+  min-width: 260px;
+  max-width: 360px;
+}
+
 .fishingFishGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
