@@ -5,8 +5,7 @@
   title="Eternal Lode"
   subtitle="Coming Soon"
   last_verified_date="2026-01-24"
-  status="coming_soon"
-  active="true"
+  active="false"
 >
   <task_group_labels>
     <label group_key="charge__expedition_stars__total" title="Charge Expedition Stars" />
@@ -90,4 +89,14 @@
     <task task_id="login_days_total_tier_2" display_order="1010" requirement_action="login" requirement_object="days" requirement_scope="total" requirement_target_value="3" reward_type="axes" reward_amount="15" />
     <task task_id="login_days_total_tier_3" display_order="1020" requirement_action="login" requirement_object="days" requirement_scope="total" requirement_target_value="5" reward_type="axes" reward_amount="15" />
   </tasks>
+  <guide>
+    <section section_id="overview" title="Overview">
+      <p>• Goal: reach at least 500 depth.</p>
+      <p>• Tools: Pickaxe mines 1 block, Drill mines a full line, Bomb clears 5 wide and 5 tall, plus the four corner blocks.</p>
+      <p>• You can find gems, extra tools, lucky chests (with durability), and event currency while mining.</p>
+      <p>• Shop costs: Pickaxe 30, Drill 90, Bomb 90 (currency).</p>
+      <p>• Recommendation: buy pickaxes only, and save drills/bombs for stone or when they can earn tools or currency back.</p>
+      <p>• Use drills/bombs to break through stone (2 hits) and save pickaxes for dirt (1 hit).</p>
+    </section>
+  </guide>
 </event>
