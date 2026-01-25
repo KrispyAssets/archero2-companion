@@ -96,13 +96,27 @@
       <p>• Tools: Pickaxe mines 1 block, Drill mines a full line, Bomb clears 5 wide and 5 tall, plus the four corner blocks.</p>
       <p>• You can find gems, extra tools, lucky chests (with durability), and event currency while mining.</p>
       <p>• Shop costs: Pickaxe 30, Drill 90, Bomb 90.</p>
-      <p>• Recommendation: buy pickaxes only, and save drills/bombs for stone or when they can earn tools or currency back.</p>
-      <p>• Use drills/bombs to collect multiple treasures at once and break through stone (2 hits).</p>
-      <p>• Use pickaxes for dirt (1 hit) or easy to grab treasures worth more than a pickaxe.</p>
-      <p>• Always open the lucky chests, it's a good source of extra tools and currency for free.</p>
-      <p>• Complete tasks to earn extra tools.</p>
-      <p>• Don't go for every bit of treasure you see, make sure the value outweights the cost.</p>
+      <p>• Tool usage: buy pickaxes; save drills/bombs for stone (2 hits) or clustered pickups, and use pickaxes for dirt (1 hit) or easy high value pickups.</p>
+      <p>• Value rule: always open lucky chests, and skip low value treasures unless they pay back a pickaxe.</p>
       <p>• Dig down, buy pickaxes, ???, profit!</p>
     </section>
   </guide>
+  <faq>
+    <item faq_id="what_should_i_buy" question="What should I buy?">
+      <answer>
+        <p>From experience, it is best to only buy pickaxes and save drills/bombs for drops or task rewards.</p>
+      </answer>
+    </item>
+    <item faq_id="lucky_chests" question="How do lucky chests work?">
+      <answer>
+        <p>Lucky chests have limited durability. Each click gives tools, event currency, or gems until it runs out, then the chest disappears.</p>
+        <p>It does not cost anything to open them, so always open them.</p>
+      </answer>
+    </item>
+    <item faq_id="depth_goal" question="What depth should I aim for?">
+      <answer>
+        <p>Reach at least 550 depth to get all rewards.</p>
+      </answer>
+    </item>
+  </faq>
 </event>
