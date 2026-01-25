@@ -137,6 +137,7 @@ export type EventCatalogItemFull = {
   scheduleStart?: string;
   scheduleEnd?: string;
   dateRangeLabel?: string;
+  tier?: "primary" | "secondary";
   sections: EventSectionSummary;
   taskCosts?: TaskCostItem[];
 };

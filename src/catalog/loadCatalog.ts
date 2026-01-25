@@ -47,16 +47,21 @@ type EventScheduleFile = {
   events: EventScheduleEntry[];
 };
 
-let scheduleCache: EventScheduleEntry[] | null = null;
+type ScheduleCache = {
+  entries: EventScheduleEntry[];
+} | null;
 
-async function loadEventSchedule(): Promise<EventScheduleEntry[]> {
+let scheduleCache: ScheduleCache = null;
+
+async function loadEventSchedule(): Promise<ScheduleCache> {
   if (scheduleCache) return scheduleCache;
   const path = `${import.meta.env.BASE_URL}catalog/shared/event_schedule.json`;
   try {
     const data = await fetchJson<EventScheduleFile>(path);
-    scheduleCache = Array.isArray(data.events) ? data.events : [];
+    const entries = Array.isArray(data.events) ? data.events : [];
+    scheduleCache = { entries };
   } catch {
-    scheduleCache = [];
+    scheduleCache = { entries: [] };
   }
   return scheduleCache;
 }
@@ -78,14 +83,9 @@ function formatDateRangeLabel(start: string, end: string): string | undefined {
   return `${startParts.month}/${startParts.day} - ${endParts.month}/${endParts.day}`;
 }
 
-function isActiveForUtcRange(start: string, end: string): boolean | undefined {
-  const startParts = parseUtcDate(start);
-  const endParts = parseUtcDate(end);
-  if (!startParts || !endParts) return undefined;
-  const startMs = Date.UTC(startParts.year, startParts.month - 1, startParts.day, 0, 0, 0, 0);
-  const endMs = Date.UTC(endParts.year, endParts.month - 1, endParts.day, 23, 59, 59, 999);
+function getUtcNowMs(): number {
   const now = new Date();
-  const nowUtc = Date.UTC(
+  return Date.UTC(
     now.getUTCFullYear(),
     now.getUTCMonth(),
     now.getUTCDate(),
@@ -94,17 +94,53 @@ function isActiveForUtcRange(start: string, end: string): boolean | undefined {
     now.getUTCSeconds(),
     now.getUTCMilliseconds()
   );
-  return nowUtc >= startMs && nowUtc <= endMs;
+}
+
+function isActiveForUtcRange(start: string, end: string, nowUtcMs: number): boolean | undefined {
+  const startParts = parseUtcDate(start);
+  const endParts = parseUtcDate(end);
+  if (!startParts || !endParts) return undefined;
+  const startMs = Date.UTC(startParts.year, startParts.month - 1, startParts.day, 0, 0, 0, 0);
+  const endMs = Date.UTC(endParts.year, endParts.month - 1, endParts.day, 23, 59, 59, 999);
+  return nowUtcMs >= startMs && nowUtcMs <= endMs;
+}
+
+function selectScheduleEntry(entries: EventScheduleEntry[], nowUtcMs: number): EventScheduleEntry | undefined {
+  const current: { entry: EventScheduleEntry; endMs: number }[] = [];
+  const upcoming: { entry: EventScheduleEntry; startMs: number }[] = [];
+
+  for (const entry of entries) {
+    const startParts = parseUtcDate(entry.start);
+    const endParts = parseUtcDate(entry.end);
+    if (!startParts || !endParts) continue;
+    const startMs = Date.UTC(startParts.year, startParts.month - 1, startParts.day, 0, 0, 0, 0);
+    const endMs = Date.UTC(endParts.year, endParts.month - 1, endParts.day, 23, 59, 59, 999);
+    if (nowUtcMs >= startMs && nowUtcMs <= endMs) {
+      current.push({ entry, endMs });
+    } else if (nowUtcMs < startMs) {
+      upcoming.push({ entry, startMs });
+    }
+  }
+
+  if (current.length) {
+    current.sort((a, b) => a.endMs - b.endMs);
+    return current[0].entry;
+  }
+  if (upcoming.length) {
+    upcoming.sort((a, b) => a.startMs - b.startMs);
+    return upcoming[0].entry;
+  }
+  return undefined;
 }
 
 function applyScheduleToEvent<T extends EventCatalogItemFull>(event: T, schedule?: EventScheduleEntry): T {
-  if (!schedule) return event;
-  const label = schedule.label ?? formatDateRangeLabel(schedule.start, schedule.end);
-  const isActive = isActiveForUtcRange(schedule.start, schedule.end);
+  const label = schedule ? schedule.label ?? formatDateRangeLabel(schedule.start, schedule.end) : undefined;
+  const nowUtcMs = getUtcNowMs();
+  const isActive = schedule ? isActiveForUtcRange(schedule.start, schedule.end, nowUtcMs) : undefined;
   return {
     ...event,
-    scheduleStart: schedule.start,
-    scheduleEnd: schedule.end,
+    scheduleStart: schedule?.start,
+    scheduleEnd: schedule?.end,
     dateRangeLabel: label,
     isActive: isActive ?? event.isActive,
   };
@@ -409,6 +445,7 @@ function parseEventDocument(doc: Document, relPath?: string): EventCatalogFull {
     lastVerifiedDate: eventEl.getAttribute("last_verified_date") ?? undefined,
     isActive: eventEl.getAttribute("active") === "true" ? true : undefined,
     status: eventEl.getAttribute("status") ?? undefined,
+    tier: (eventEl.getAttribute("tier") as "primary" | "secondary" | null) ?? undefined,
     guidedRoutePath: guidedRouteRefEl ? getAttr(guidedRouteRefEl, "path") : undefined,
     taskGroupLabels,
     rewardAssets,
@@ -494,8 +531,15 @@ export async function loadSharedItems(sharedPaths: string[]): Promise<Record<str
 
 export async function loadEventSummaries(eventPaths: string[]): Promise<EventCatalogItemFull[]> {
   const events: EventCatalogItemFull[] = [];
-  const scheduleEntries = await loadEventSchedule();
-  const scheduleMap = new Map(scheduleEntries.map((entry) => [entry.eventId, entry]));
+  const schedule = await loadEventSchedule();
+  const scheduleEntries = schedule?.entries ?? [];
+  const scheduleByEvent = new Map<string, EventScheduleEntry[]>();
+  for (const entry of scheduleEntries) {
+    const list = scheduleByEvent.get(entry.eventId) ?? [];
+    list.push(entry);
+    scheduleByEvent.set(entry.eventId, list);
+  }
+  const nowUtcMs = getUtcNowMs();
 
   for (const relPath of eventPaths) {
     const fullPath = `${import.meta.env.BASE_URL}${relPath}`;
@@ -529,19 +573,28 @@ export async function loadEventSummaries(eventPaths: string[]): Promise<EventCat
       lastVerifiedDate: eventEl.getAttribute("last_verified_date") ?? undefined,
       isActive: eventEl.getAttribute("active") === "true" ? true : undefined,
       status: eventEl.getAttribute("status") ?? undefined,
+      tier: (eventEl.getAttribute("tier") as "primary" | "secondary" | null) ?? undefined,
       sections: { taskCount, guideSectionCount, dataSectionCount, faqCount, toolCount },
       taskCosts,
     };
-    const schedule = scheduleMap.get(summary.eventId);
-    events.push(applyScheduleToEvent(summary, schedule));
+    const scheduleEntriesForEvent = scheduleByEvent.get(summary.eventId) ?? [];
+    const selected = selectScheduleEntry(scheduleEntriesForEvent, nowUtcMs);
+    events.push(applyScheduleToEvent(summary, selected));
   }
 
   return events;
 }
 
 export async function loadEventById(eventPaths: string[], eventId: string): Promise<EventCatalogFull | null> {
-  const scheduleEntries = await loadEventSchedule();
-  const scheduleMap = new Map(scheduleEntries.map((entry) => [entry.eventId, entry]));
+  const schedule = await loadEventSchedule();
+  const scheduleEntries = schedule?.entries ?? [];
+  const scheduleByEvent = new Map<string, EventScheduleEntry[]>();
+  for (const entry of scheduleEntries) {
+    const list = scheduleByEvent.get(entry.eventId) ?? [];
+    list.push(entry);
+    scheduleByEvent.set(entry.eventId, list);
+  }
+  const nowUtcMs = getUtcNowMs();
   for (const relPath of eventPaths) {
     const fullPath = `${import.meta.env.BASE_URL}${relPath}`;
     const xmlText = await fetchText(fullPath);
@@ -554,8 +607,9 @@ export async function loadEventById(eventPaths: string[], eventId: string): Prom
     if (thisId !== eventId) continue;
 
     const full = parseEventDocument(doc, relPath);
-    const schedule = scheduleMap.get(full.eventId);
-    return applyScheduleToEvent(full, schedule);
+    const scheduleEntriesForEvent = scheduleByEvent.get(full.eventId) ?? [];
+    const selected = selectScheduleEntry(scheduleEntriesForEvent, nowUtcMs);
+    return applyScheduleToEvent(full, selected);
   }
 
   return null;
@@ -563,15 +617,23 @@ export async function loadEventById(eventPaths: string[], eventId: string): Prom
 
 export async function loadAllEventsFull(eventPaths: string[]): Promise<EventCatalogFull[]> {
   const events: EventCatalogFull[] = [];
-  const scheduleEntries = await loadEventSchedule();
-  const scheduleMap = new Map(scheduleEntries.map((entry) => [entry.eventId, entry]));
+  const schedule = await loadEventSchedule();
+  const scheduleEntries = schedule?.entries ?? [];
+  const scheduleByEvent = new Map<string, EventScheduleEntry[]>();
+  for (const entry of scheduleEntries) {
+    const list = scheduleByEvent.get(entry.eventId) ?? [];
+    list.push(entry);
+    scheduleByEvent.set(entry.eventId, list);
+  }
+  const nowUtcMs = getUtcNowMs();
   for (const relPath of eventPaths) {
     const fullPath = `${import.meta.env.BASE_URL}${relPath}`;
     const xmlText = await fetchText(fullPath);
     const doc = parseXmlString(xmlText);
     const full = parseEventDocument(doc, relPath);
-    const schedule = scheduleMap.get(full.eventId);
-    events.push(applyScheduleToEvent(full, schedule));
+    const scheduleEntriesForEvent = scheduleByEvent.get(full.eventId) ?? [];
+    const selected = selectScheduleEntry(scheduleEntriesForEvent, nowUtcMs);
+    events.push(applyScheduleToEvent(full, selected));
   }
   return events;
 }

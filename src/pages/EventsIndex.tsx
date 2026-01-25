@@ -23,6 +23,11 @@ export function EventCatalogList() {
       const aActive = a.isActive ? 1 : 0;
       const bActive = b.isActive ? 1 : 0;
       if (aActive !== bActive) return bActive - aActive;
+      if (aActive && bActive) {
+        const aDate = a.scheduleStart ?? "";
+        const bDate = b.scheduleStart ?? "";
+        if (aDate !== bDate) return aDate.localeCompare(bDate);
+      }
       const aComing = a.status === "coming_soon" ? 1 : 0;
       const bComing = b.status === "coming_soon" ? 1 : 0;
       if (aComing !== bComing) return aComing - bComing;
