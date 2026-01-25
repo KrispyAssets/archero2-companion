@@ -174,17 +174,17 @@
       <p>Example tension patterns for Lake 1 in the current lake.</p>
       <image_row>
         <image
-          src="catalog/shared/fishing/images/current_lake_tension/zone_1-1.png"
+          src="catalog/shared/fishing_event/images/current_lake_tension/zone_1-1.png"
           alt="Lake 1 rare tension pattern (current lake)"
           caption="Rare"
         />
         <image
-          src="catalog/shared/fishing/images/current_lake_tension/zone_1-2.png"
+          src="catalog/shared/fishing_event/images/current_lake_tension/zone_1-2.png"
           alt="Lake 1 epic tension pattern (current lake)"
           caption="Epic"
         />
         <image
-          src="catalog/shared/fishing/images/current_lake_tension/zone_1-3.png"
+          src="catalog/shared/fishing_event/images/current_lake_tension/zone_1-3.png"
           alt="Lake 1 legendary tension pattern (current lake)"
           caption="Legendary"
         />

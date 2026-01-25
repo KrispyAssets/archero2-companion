@@ -151,7 +151,8 @@ function renderParagraphWithLinks(
   dataTitles: Map<string, string>,
   onAnchorClick: (anchorId: string) => void,
   sharedItems: Record<string, { label: string }>,
-  keyPrefix: string
+  keyPrefix: string,
+  onImageClick?: (src: string) => void
 ) {
   const nodes: ReactNode[] = [];
   const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
@@ -173,7 +174,20 @@ function renderParagraphWithLinks(
       );
     }
 
-    if (href.startsWith("#")) {
+    if (href.startsWith("image:")) {
+      const imageSrc = href.slice("image:".length);
+      nodes.push(
+        <button
+          key={`${keyPrefix}-link-${start}`}
+          type="button"
+          className="ghost"
+          onClick={() => onImageClick?.(imageSrc)}
+          style={{ padding: 0, fontSize: "inherit" }}
+        >
+          {label}
+        </button>
+      );
+    } else if (href.startsWith("#")) {
       const anchorId = href.slice(1);
       nodes.push(
         <a
@@ -219,7 +233,8 @@ function renderParagraphOrImage(
   dataTitles: Map<string, string>,
   onAnchorClick: (anchorId: string) => void,
   sharedItems: Record<string, { label: string }>,
-  keyPrefix: string
+  keyPrefix: string,
+  onImageClick?: (src: string) => void
 ) {
   const trimmed = paragraph.trim();
   const imageMatch = trimmed.match(/^!\[([^\]]*)\]\(([^)\s]+)(?:\s+\"([^\"]+)\")?\)$/);
@@ -253,7 +268,7 @@ function renderParagraphOrImage(
   }
   return (
     <p key={`${keyPrefix}-text`} style={{ margin: "8px 0" }}>
-      {renderParagraphWithLinks(paragraph, dataTitles, onAnchorClick, sharedItems, keyPrefix)}
+      {renderParagraphWithLinks(paragraph, dataTitles, onAnchorClick, sharedItems, keyPrefix, onImageClick)}
     </p>
   );
 }
@@ -262,15 +277,18 @@ function renderFaqAnswer(
   item: FaqItem,
   dataTitles: Map<string, string>,
   onAnchorClick: (anchorId: string) => void,
-  sharedItems: Record<string, { label: string }>
+  sharedItems: Record<string, { label: string }>,
+  onImageClick?: (src: string) => void
 ) {
   if (item.answerBlocks?.length) {
-    return renderGuideBlocks(item.answerBlocks, dataTitles, onAnchorClick, sharedItems);
+    return renderGuideBlocks(item.answerBlocks, dataTitles, onAnchorClick, sharedItems, onImageClick);
   }
   if (!item.answer) return null;
   return item.answer
     .split(/\n{2,}/)
-    .map((paragraph, index) => renderParagraphOrImage(paragraph, dataTitles, onAnchorClick, sharedItems, `faq-${index}`));
+    .map((paragraph, index) =>
+      renderParagraphOrImage(paragraph, dataTitles, onAnchorClick, sharedItems, `faq-${index}`, onImageClick)
+    );
 }
 
 function resolveImageSrc(src: string): string {
@@ -285,12 +303,13 @@ function renderGuideBlocks(
   blocks: GuideContentBlock[],
   dataTitles: Map<string, string>,
   onAnchorClick: (anchorId: string) => void,
-  sharedItems: Record<string, { label: string }>
+  sharedItems: Record<string, { label: string }>,
+  onImageClick?: (src: string) => void
 ) {
   if (!blocks.length) return null;
   return blocks.map((block, index) => {
     if (block.type === "paragraph") {
-      return renderParagraphOrImage(block.text, dataTitles, onAnchorClick, sharedItems, `guide-${index}`);
+      return renderParagraphOrImage(block.text, dataTitles, onAnchorClick, sharedItems, `guide-${index}`, onImageClick);
     }
     if (block.type === "image") {
       return (
@@ -378,6 +397,17 @@ function collectGuideImages(sections: GuideSection[], out: GuideImageItem[] = []
             caption: image.caption,
           });
         }
+      } else if (block.type === "paragraph") {
+        const inlineMatches = [...block.text.matchAll(/\[([^\]]+)\]\(image:([^)]+)\)/g)];
+        for (const match of inlineMatches) {
+          const alt = match[1] ?? "";
+          const src = match[2] ?? "";
+          if (!src) continue;
+          out.push({
+            src: resolveImageSrc(src),
+            alt,
+          });
+        }
       }
     }
     if (section.subsections?.length) {
@@ -416,6 +446,17 @@ function collectFaqImages(items: FaqItem[]): GuideImageItem[] {
               caption: image.caption,
             });
           }
+        } else if (block.type === "paragraph") {
+          const inlineMatches = [...block.text.matchAll(/\[([^\]]+)\]\(image:([^)]+)\)/g)];
+          for (const match of inlineMatches) {
+            const alt = match[1] ?? "";
+            const src = match[2] ?? "";
+            if (!src) continue;
+            images.push({
+              src: resolveImageSrc(src),
+              alt,
+            });
+          }
         }
       }
       continue;
@@ -433,6 +474,16 @@ function collectFaqImages(items: FaqItem[]): GuideImageItem[] {
         src: resolveImageSrc(src),
         alt,
         caption,
+      });
+    }
+    const inlineMatches = [...item.answer.matchAll(/\[([^\]]+)\]\(image:([^)]+)\)/g)];
+    for (const match of inlineMatches) {
+      const alt = match[1] ?? "";
+      const src = match[2] ?? "";
+      if (!src) continue;
+      images.push({
+        src: resolveImageSrc(src),
+        alt,
       });
     }
   }
@@ -459,6 +510,7 @@ function GuideSectionView({
   onToggleOpen,
   dataTitles,
   sharedItems,
+  onImageClick,
 }: {
   section: GuideSection;
   copiedAnchor: string;
@@ -469,6 +521,7 @@ function GuideSectionView({
   onToggleOpen: (tabId: string, anchorId: string, isOpen: boolean) => void;
   dataTitles: Map<string, string>;
   sharedItems: Record<string, { label: string }>;
+  onImageClick?: (src: string) => void;
 }) {
   const anchorId = getGuideAnchorId(section.sectionId);
   return (
@@ -493,7 +546,7 @@ function GuideSectionView({
           <LinkIcon />
         </button>
       </summary>
-      <div style={{ marginTop: 8 }}>{renderGuideBlocks(section.blocks, dataTitles, onAnchorClick, sharedItems)}</div>
+      <div style={{ marginTop: 8 }}>{renderGuideBlocks(section.blocks, dataTitles, onAnchorClick, sharedItems, onImageClick)}</div>
       {section.subsections && section.subsections.length > 0 ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
           {section.subsections.map((child) => (
@@ -508,6 +561,7 @@ function GuideSectionView({
               onToggleOpen={onToggleOpen}
               dataTitles={dataTitles}
               sharedItems={sharedItems}
+              onImageClick={onImageClick}
             />
           ))}
         </div>
@@ -568,6 +622,7 @@ function DataSectionView({
   onToggleOpen,
   dataTitles,
   sharedItems,
+  onImageClick,
 }: {
   section: DataSection;
   copiedAnchor: string;
@@ -578,6 +633,7 @@ function DataSectionView({
   onToggleOpen: (tabId: string, anchorId: string, isOpen: boolean) => void;
   dataTitles: Map<string, string>;
   sharedItems: Record<string, { label: string }>;
+  onImageClick?: (src: string) => void;
 }) {
   const anchorId = getDataAnchorId(section.sectionId);
   return (
@@ -602,7 +658,7 @@ function DataSectionView({
           <LinkIcon />
         </button>
       </summary>
-      <div style={{ marginTop: 8 }}>{renderGuideBlocks(section.blocks, dataTitles, onAnchorClick, sharedItems)}</div>
+      <div style={{ marginTop: 8 }}>{renderGuideBlocks(section.blocks, dataTitles, onAnchorClick, sharedItems, onImageClick)}</div>
       {section.subsections && section.subsections.length > 0 ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
           {section.subsections.map((child) => (
@@ -617,6 +673,7 @@ function DataSectionView({
               onToggleOpen={onToggleOpen}
               dataTitles={dataTitles}
               sharedItems={sharedItems}
+              onImageClick={onImageClick}
             />
           ))}
         </div>
@@ -690,6 +747,18 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
     const images = collectGuideImages(event.guideSections);
     return images.concat(collectFaqImages(event.faqItems));
   }, [event]);
+
+  function openGuideImageBySrc(src: string) {
+    if (!src) return;
+    const resolved = resolveImageSrc(src);
+    const index = guideImages.findIndex((item) => item.src === resolved);
+    setLightboxIndex(index >= 0 ? index : 0);
+    setLightboxScale(1);
+    touchStartXRef.current = null;
+    touchDeltaXRef.current = 0;
+    pinchStartDistanceRef.current = null;
+    pinchStartScaleRef.current = 1;
+  }
 
   useEffect(() => {
     const key = `archero2_event_ui_${event.eventId}`;
@@ -1268,6 +1337,7 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
               onToggleOpen={setDetailOpen}
               dataTitles={dataTitles}
               sharedItems={sharedItems}
+              onImageClick={openGuideImageBySrc}
             />
           ))}
         </div>
@@ -1324,7 +1394,7 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
                       <LinkIcon />
                     </button>
                   </summary>
-                  <div style={{ marginTop: 8 }}>{renderFaqAnswer(item, dataTitles, navigateToAnchor, sharedItems)}</div>
+                  <div style={{ marginTop: 8 }}>{renderFaqAnswer(item, dataTitles, navigateToAnchor, sharedItems, openGuideImageBySrc)}</div>
                   {item.tags && item.tags.length > 0 ? (
                     <div style={{ marginTop: 8, fontSize: 12, color: "var(--text-subtle)" }}>Tags: {item.tags.join(", ")}</div>
                   ) : null}
@@ -1369,6 +1439,7 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
               onToggleOpen={setDetailOpen}
               dataTitles={dataTitles}
               sharedItems={sharedItems}
+              onImageClick={openGuideImageBySrc}
             />
           ))}
         </div>
