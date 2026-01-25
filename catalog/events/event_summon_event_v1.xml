@@ -4,7 +4,7 @@
   event_version="1"
   title="Summon Event"
   subtitle="Event guide and tasks"
-  last_verified_date="2026-01-17"
+  last_verified_date="2026-01-24"
   active="true"
 >
   <task_group_labels>
@@ -128,6 +128,26 @@
           alt="Artifact set bonus example showing +4% ATK PWR and +4% Max HP"
           caption="Completing a set activates the bonus."
         />
+      </answer>
+    </item>
+    <item faq_id="ticket_total_per_event" question="How many Tickets can you get per event?">
+      <answer>
+        <p>You can get up to 55 from tasks and the free fund, meaning it can take up to 8 events to get an {item:aeon_core} if you are unlucky.</p>
+      </answer>
+    </item>
+    <item faq_id="best_spend_money" question="What should I buy with money to speed up my progress?">
+      <answer>
+        <p>The Fund is the best value per ticket (50 tickets), followed by the daily packs.</p>
+      </answer>
+    </item>
+    <item faq_id="progress_carry_over" question="Does progress save between events?">
+      <answer>
+        <p>Only your luck/pity carries over to the next event. Make sure to spend your tickets and currency before the event ends.</p>
+      </answer>
+    </item>
+    <item faq_id="buy_tickets_with_gems" question="Can I buy tickets with gems?">
+      <answer>
+        <p>No, you cannot buy tickets with any in-game currencies.</p>
       </answer>
     </item>
   </faq>

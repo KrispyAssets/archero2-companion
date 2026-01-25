@@ -4,9 +4,9 @@
   event_version="1"
   title="Eternal Lode"
   subtitle="Coming Soon"
-  last_verified_date="2026-01-17"
+  last_verified_date="2026-01-24"
+  active="false"
   status="coming_soon"
-  active="true"
 >
   <task_group_labels>
     <label group_key="charge__expedition_stars__total" title="Charge Expedition Stars" />
@@ -16,7 +16,6 @@
     <label group_key="use__bombs__total" title="Use Bombs" />
     <label group_key="use__drills__total" title="Use Drills" />
     <label group_key="fight__monster_invasion__total" title="Monster Invasion" />
-    <label group_key="login__days__total" title="Log In" />
   </task_group_labels>
   <tasks>
     <task task_id="charge_expedition_stars_total_tier_1" display_order="100" requirement_action="charge" requirement_object="expedition_stars" requirement_scope="total" requirement_target_value="250" reward_type="axes" reward_amount="8" />
@@ -91,4 +90,33 @@
     <task task_id="login_days_total_tier_2" display_order="1010" requirement_action="login" requirement_object="days" requirement_scope="total" requirement_target_value="3" reward_type="axes" reward_amount="15" />
     <task task_id="login_days_total_tier_3" display_order="1020" requirement_action="login" requirement_object="days" requirement_scope="total" requirement_target_value="5" reward_type="axes" reward_amount="15" />
   </tasks>
+  <guide>
+    <section section_id="overview" title="Overview">
+      <p>• Goal: reach at least 550 depth.</p>
+      <p>• Tools: Pickaxe mines 1 block, Drill mines a full line, Bomb clears 5 wide and 5 tall, plus the four corner blocks.</p>
+      <p>• You can find gems, extra tools, lucky chests (with durability), and event currency while mining.</p>
+      <p>• Shop costs: Pickaxe 30, Drill 90, Bomb 90.</p>
+      <p>• Tool usage: buy pickaxes; save drills/bombs for stone (2 hits) or clustered pickups, and use pickaxes for dirt (1 hit) or easy high value pickups.</p>
+      <p>• Value rule: always open lucky chests, and skip low value treasures unless they pay back a pickaxe.</p>
+      <p>• Dig down, buy pickaxes, ???, profit!</p>
+    </section>
+  </guide>
+  <faq>
+    <item faq_id="what_should_i_buy" question="What should I buy?">
+      <answer>
+        <p>From experience, it is best to only buy pickaxes and save drills/bombs for drops or task rewards.</p>
+      </answer>
+    </item>
+    <item faq_id="lucky_chests" question="How do lucky chests work?">
+      <answer>
+        <p>Lucky chests have limited durability. Each click gives tools, event currency, or gems until it runs out, then the chest disappears.</p>
+        <p>It does not cost anything to open them, so always open them.</p>
+      </answer>
+    </item>
+    <item faq_id="depth_goal" question="What depth should I aim for?">
+      <answer>
+        <p>Reach at least 550 depth to get all rewards.</p>
+      </answer>
+    </item>
+  </faq>
 </event>

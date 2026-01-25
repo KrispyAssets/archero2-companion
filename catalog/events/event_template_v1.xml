@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<event
+  event_id="archero2.event.example_event.v1"
+  event_version="1"
+  title="Example Event"
+  subtitle="Event guide and tasks"
+  last_verified_date="YYYY-MM-DD"
+  active="false"
+  status="coming_soon"
+>
+  <task_group_labels>
+    <!-- Optional: override group labels for this event -->
+    <!-- <label group_key="login__days__total" title="Log In" /> -->
+  </task_group_labels>
+
+  <tasks>
+    <!-- Add tasks here -->
+    <!--
+    <task
+      task_id="login_days_total_tier_1"
+      display_order="100"
+      requirement_action="login"
+      requirement_object="days"
+      requirement_scope="total"
+      requirement_target_value="1"
+      reward_type="tickets"
+      reward_amount="1"
+    />
+    -->
+  </tasks>
+
+  <guide>
+    <section section_id="overview" title="Overview">
+      <p>Brief overview of the event.</p>
+    </section>
+  </guide>
+
+  <faq>
+    <item faq_id="example_faq" question="Example question?">
+      <answer>
+        <p>Example answer.</p>
+      </answer>
+    </item>
+  </faq>
+
+  <data>
+    <section section_id="example_data" title="Example Data">
+      <p>Optional data section.</p>
+    </section>
+  </data>
+</event>
