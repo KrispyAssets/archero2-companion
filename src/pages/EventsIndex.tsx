@@ -52,22 +52,40 @@ export function EventCatalogList() {
                     opacity: isComingSoon ? 0.6 : 1,
                   }}
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                    <div style={{ fontWeight: 700 }}>{ev.title}</div>
-                    {ev.isActive ? (
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                      <div style={{ fontWeight: 700 }}>{ev.title}</div>
+                      {ev.isActive ? (
+                        <span
+                          style={{
+                            borderRadius: 999,
+                            padding: "2px 8px",
+                            fontSize: 11,
+                            fontWeight: 700,
+                            letterSpacing: 0.4,
+                            color: "var(--success)",
+                            background: "var(--success-contrast)",
+                            border: "1px solid var(--success)",
+                          }}
+                        >
+                          ACTIVE
+                        </span>
+                      ) : null}
+                    </div>
+                    {ev.dateRangeLabel ? (
                       <span
                         style={{
                           borderRadius: 999,
                           padding: "2px 8px",
                           fontSize: 11,
-                          fontWeight: 700,
-                          letterSpacing: 0.4,
-                          color: "var(--success)",
-                          background: "var(--success-contrast)",
-                          border: "1px solid var(--success)",
+                          fontWeight: 600,
+                          color: "var(--text-subtle)",
+                          background: "var(--surface-2)",
+                          border: "1px solid var(--border)",
+                          whiteSpace: "nowrap",
                         }}
                       >
-                        ACTIVE
+                        {ev.dateRangeLabel}
                       </span>
                     ) : null}
                   </div>

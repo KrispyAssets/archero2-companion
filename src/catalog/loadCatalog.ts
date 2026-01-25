@@ -27,6 +27,89 @@ async function fetchText(path: string): Promise<string> {
   return await res.text();
 }
 
+async function fetchJson<T>(path: string): Promise<T> {
+  const res = await fetch(path, { cache: "no-cache" });
+  if (!res.ok) {
+    throw new Error(`Failed to fetch ${path}: ${res.status} ${res.statusText}`);
+  }
+  return (await res.json()) as T;
+}
+
+type EventScheduleEntry = {
+  eventId: string;
+  start: string;
+  end: string;
+  label?: string;
+};
+
+type EventScheduleFile = {
+  timeZone?: string;
+  events: EventScheduleEntry[];
+};
+
+let scheduleCache: EventScheduleEntry[] | null = null;
+
+async function loadEventSchedule(): Promise<EventScheduleEntry[]> {
+  if (scheduleCache) return scheduleCache;
+  const path = `${import.meta.env.BASE_URL}catalog/shared/event_schedule.json`;
+  try {
+    const data = await fetchJson<EventScheduleFile>(path);
+    scheduleCache = Array.isArray(data.events) ? data.events : [];
+  } catch {
+    scheduleCache = [];
+  }
+  return scheduleCache;
+}
+
+function parseUtcDate(dateStr: string): { year: number; month: number; day: number } | null {
+  const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  if (!year || !month || !day) return null;
+  return { year, month, day };
+}
+
+function formatDateRangeLabel(start: string, end: string): string | undefined {
+  const startParts = parseUtcDate(start);
+  const endParts = parseUtcDate(end);
+  if (!startParts || !endParts) return undefined;
+  return `${startParts.month}/${startParts.day} - ${endParts.month}/${endParts.day}`;
+}
+
+function isActiveForUtcRange(start: string, end: string): boolean | undefined {
+  const startParts = parseUtcDate(start);
+  const endParts = parseUtcDate(end);
+  if (!startParts || !endParts) return undefined;
+  const startMs = Date.UTC(startParts.year, startParts.month - 1, startParts.day, 0, 0, 0, 0);
+  const endMs = Date.UTC(endParts.year, endParts.month - 1, endParts.day, 23, 59, 59, 999);
+  const now = new Date();
+  const nowUtc = Date.UTC(
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    now.getUTCDate(),
+    now.getUTCHours(),
+    now.getUTCMinutes(),
+    now.getUTCSeconds(),
+    now.getUTCMilliseconds()
+  );
+  return nowUtc >= startMs && nowUtc <= endMs;
+}
+
+function applyScheduleToEvent<T extends EventCatalogItemFull>(event: T, schedule?: EventScheduleEntry): T {
+  if (!schedule) return event;
+  const label = schedule.label ?? formatDateRangeLabel(schedule.start, schedule.end);
+  const isActive = isActiveForUtcRange(schedule.start, schedule.end);
+  return {
+    ...event,
+    scheduleStart: schedule.start,
+    scheduleEnd: schedule.end,
+    dateRangeLabel: label,
+    isActive: isActive ?? event.isActive,
+  };
+}
+
 function getDirectChildElements(el: Element, tagName: string): Element[] {
   return Array.from(el.childNodes)
     .filter((node) => node.nodeType === 1)
@@ -411,6 +494,8 @@ export async function loadSharedItems(sharedPaths: string[]): Promise<Record<str
 
 export async function loadEventSummaries(eventPaths: string[]): Promise<EventCatalogItemFull[]> {
   const events: EventCatalogItemFull[] = [];
+  const scheduleEntries = await loadEventSchedule();
+  const scheduleMap = new Map(scheduleEntries.map((entry) => [entry.eventId, entry]));
 
   for (const relPath of eventPaths) {
     const fullPath = `${import.meta.env.BASE_URL}${relPath}`;
@@ -436,7 +521,7 @@ export async function loadEventSummaries(eventPaths: string[]): Promise<EventCat
     const faqCount = faqEl ? faqEl.getElementsByTagName("item").length : 0;
     const toolCount = toolsEl ? toolsEl.getElementsByTagName("tool_ref").length : 0;
 
-    events.push({
+    const summary: EventCatalogItemFull = {
       eventId: getAttr(eventEl, "event_id"),
       eventVersion: getAttrInt(eventEl, "event_version"),
       title: getAttr(eventEl, "title"),
@@ -446,13 +531,17 @@ export async function loadEventSummaries(eventPaths: string[]): Promise<EventCat
       status: eventEl.getAttribute("status") ?? undefined,
       sections: { taskCount, guideSectionCount, dataSectionCount, faqCount, toolCount },
       taskCosts,
-    });
+    };
+    const schedule = scheduleMap.get(summary.eventId);
+    events.push(applyScheduleToEvent(summary, schedule));
   }
 
   return events;
 }
 
 export async function loadEventById(eventPaths: string[], eventId: string): Promise<EventCatalogFull | null> {
+  const scheduleEntries = await loadEventSchedule();
+  const scheduleMap = new Map(scheduleEntries.map((entry) => [entry.eventId, entry]));
   for (const relPath of eventPaths) {
     const fullPath = `${import.meta.env.BASE_URL}${relPath}`;
     const xmlText = await fetchText(fullPath);
@@ -464,7 +553,9 @@ export async function loadEventById(eventPaths: string[], eventId: string): Prom
     const thisId = eventEl.getAttribute("event_id");
     if (thisId !== eventId) continue;
 
-    return parseEventDocument(doc, relPath);
+    const full = parseEventDocument(doc, relPath);
+    const schedule = scheduleMap.get(full.eventId);
+    return applyScheduleToEvent(full, schedule);
   }
 
   return null;
@@ -472,11 +563,15 @@ export async function loadEventById(eventPaths: string[], eventId: string): Prom
 
 export async function loadAllEventsFull(eventPaths: string[]): Promise<EventCatalogFull[]> {
   const events: EventCatalogFull[] = [];
+  const scheduleEntries = await loadEventSchedule();
+  const scheduleMap = new Map(scheduleEntries.map((entry) => [entry.eventId, entry]));
   for (const relPath of eventPaths) {
     const fullPath = `${import.meta.env.BASE_URL}${relPath}`;
     const xmlText = await fetchText(fullPath);
     const doc = parseXmlString(xmlText);
-    events.push(parseEventDocument(doc, relPath));
+    const full = parseEventDocument(doc, relPath);
+    const schedule = scheduleMap.get(full.eventId);
+    events.push(applyScheduleToEvent(full, schedule));
   }
   return events;
 }

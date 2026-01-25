@@ -134,6 +134,9 @@ export type EventCatalogItemFull = {
   lastVerifiedDate?: string;
   isActive?: boolean;
   status?: string;
+  scheduleStart?: string;
+  scheduleEnd?: string;
+  dateRangeLabel?: string;
   sections: EventSectionSummary;
   taskCosts?: TaskCostItem[];
 };

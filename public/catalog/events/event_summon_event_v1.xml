@@ -5,7 +5,6 @@
   title="Summon Event"
   subtitle="Event guide, tips, and task list. Everything you'll need for the Summon Event."
   last_verified_date="2026-01-24"
-  active="true"
 >
   <task_group_labels>
     <label group_key="win__trial_battle__total" title="Trial Battle Won" />
