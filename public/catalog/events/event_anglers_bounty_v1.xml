@@ -4,7 +4,8 @@
   event_version="1"
   title="Angler's Bounty"
   subtitle="Fishing tools, event guide, tasks, and strategy reference."
-  last_verified_date="2026-01-24">
+  last_verified_date="2026-01-24"
+  tier="primary">
   <guided_route_ref path="catalog/events/anglers_bounty_guided.json" />
   <task_group_labels>
     <label group_key="buy__silver_tickets__total" title="Buy Silver Tickets" />

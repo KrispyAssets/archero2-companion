@@ -23,10 +23,18 @@ export function EventCatalogList() {
       const aActive = a.isActive ? 1 : 0;
       const bActive = b.isActive ? 1 : 0;
       if (aActive !== bActive) return bActive - aActive;
-      if (aActive && bActive) {
+      const aHasDate = Boolean(a.scheduleStart);
+      const bHasDate = Boolean(b.scheduleStart);
+      if (aHasDate !== bHasDate) return aHasDate ? -1 : 1;
+      if (aHasDate && bHasDate) {
         const aDate = a.scheduleStart ?? "";
         const bDate = b.scheduleStart ?? "";
         if (aDate !== bDate) return aDate.localeCompare(bDate);
+      }
+      if (a.scheduleStart && b.scheduleStart) {
+        const aTier = a.tier === "secondary" ? 1 : 0;
+        const bTier = b.tier === "secondary" ? 1 : 0;
+        if (aTier !== bTier) return aTier - bTier;
       }
       const aComing = a.status === "coming_soon" ? 1 : 0;
       const bComing = b.status === "coming_soon" ? 1 : 0;

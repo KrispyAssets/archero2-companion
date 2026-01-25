@@ -5,6 +5,7 @@
   title="Vibrant Voyage"
   subtitle="Bingo event guide and tasks"
   last_verified_date="2026-01-24"
+  tier="primary"
 >
   <tasks>
     <task task_id="buy_free_pack_total_tier_1" display_order="10" requirement_action="buy" requirement_object="free_pack" requirement_scope="total" requirement_target_value="1" reward_type="tickets" reward_amount="1" />
