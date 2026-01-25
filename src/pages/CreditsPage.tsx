@@ -66,6 +66,11 @@ export default function CreditsPage() {
             </a>
           </p>
         </div>
+
+        <div style={{ border: "1px solid var(--border)", borderRadius: 12, padding: 12, background: "var(--surface)" }}>
+          <div style={{ fontWeight: 800 }}>Guide Images & Pricing Charts</div>
+          <p style={{ marginTop: 6 }}>Thanks to Sebas for providing reference images (pricing charts, Trial Lv4, and more).</p>
+        </div>
       </section>
     </AppShell>
   );
