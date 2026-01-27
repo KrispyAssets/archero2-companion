@@ -499,6 +499,28 @@ export default function FishingToolView({
   }, [stateKey]);
 
   useEffect(() => {
+    function handlePurchaseGoalsApply(event: Event) {
+      const detail = (event as CustomEvent<{
+        stateKey?: string;
+        purchaseCounts?: ToolState["purchaseCounts"];
+        goldPurchaseCounts?: ToolState["goldPurchaseCounts"];
+      }>).detail;
+      if (!detail?.stateKey || detail.stateKey !== stateKey) return;
+      setToolState((prev) =>
+        prev
+          ? {
+              ...prev,
+              purchaseCounts: detail.purchaseCounts ?? prev.purchaseCounts,
+              goldPurchaseCounts: detail.goldPurchaseCounts ?? prev.goldPurchaseCounts,
+            }
+          : prev
+      );
+    }
+    window.addEventListener("purchase-goals-apply", handlePurchaseGoalsApply);
+    return () => window.removeEventListener("purchase-goals-apply", handlePurchaseGoalsApply);
+  }, [stateKey]);
+
+  useEffect(() => {
     if (!toolState) return;
     if (guidedWeightEditingRef.current) return;
     setGuidedWeightInput(toolState.guidedCurrentWeight === null ? "" : String(toolState.guidedCurrentWeight));

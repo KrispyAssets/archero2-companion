@@ -762,6 +762,9 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
   const [tasksOpen, setTasksOpen] = useState(false);
   const [tasksSheetOffset, setTasksSheetOffset] = useState(0);
   const [tasksSheetDragging, setTasksSheetDragging] = useState(false);
+  const [shopOpen, setShopOpen] = useState(false);
+  const [shopQuantities, setShopQuantities] = useState<Record<string, number>>({});
+  const [activeShopItemId, setActiveShopItemId] = useState<string | null>(null);
   const [openDetailsByTab, setOpenDetailsByTab] = useState<Record<string, Record<string, boolean>>>({});
   const [lastActiveTabByEvent, setLastActiveTabByEvent] = useState<Record<string, string>>({});
   const tasksScrollRef = useRef<HTMLDivElement | null>(null);
@@ -805,6 +808,87 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
     const images = collectGuideImages(event.guideSections);
     return images.concat(collectFaqImages(event.faqItems));
   }, [event]);
+  const shopSections = event.shop?.sections ?? [];
+
+  function setShopQuantity(shopItemId: string, value: number) {
+    const next = Math.max(0, value);
+    setShopQuantities((prev) => ({ ...prev, [shopItemId]: next }));
+  }
+
+  const shopTotals = useMemo(() => {
+    const totals: Record<string, number> = {};
+    for (const section of shopSections) {
+      for (const item of section.items) {
+        const qty = shopQuantities[item.shopItemId] ?? 0;
+        if (qty <= 0) continue;
+        totals[item.costItemId] = (totals[item.costItemId] ?? 0) + qty * item.cost;
+      }
+    }
+    return totals;
+  }, [shopQuantities, shopSections]);
+
+  function applyShopToPurchaseGoals() {
+    const numericPurchase: Record<string, number> = {};
+    const numericGold: Record<string, number> = {};
+    for (const section of shopSections) {
+      for (const item of section.items) {
+        if (!item.goalGroup || !item.goalKey) continue;
+        const qty = shopQuantities[item.shopItemId] ?? 0;
+        if (qty <= 0) continue;
+        if (item.goalGroup === "silver") {
+          numericPurchase[item.goalKey] = (numericPurchase[item.goalKey] ?? 0) + qty;
+        } else if (item.goalGroup === "gold") {
+          numericGold[item.goalKey] = (numericGold[item.goalKey] ?? 0) + qty;
+        }
+      }
+    }
+
+    const purchaseCounts = {
+      etchedRune: numericPurchase.etchedRune ?? 0,
+      blessedRune: numericPurchase.blessedRune ?? 0,
+      artifact: numericPurchase.artifact ?? 0,
+    };
+    const goldPurchaseCounts = {
+      etchedRune: numericGold.etchedRune ?? 0,
+      advancedEnchantium: numericGold.advancedEnchantium ?? 0,
+      ruinShovelBundle: numericGold.ruinShovelBundle ?? 0,
+      promisedShovelBundle: numericGold.promisedShovelBundle ?? 0,
+      chromaticKeyBundle: numericGold.chromaticKeyBundle ?? 0,
+    };
+
+    const normalizedPurchase = {
+      etchedRune: purchaseCounts.etchedRune > 0 ? purchaseCounts.etchedRune : null,
+      blessedRune: purchaseCounts.blessedRune > 0 ? purchaseCounts.blessedRune : null,
+      artifact: purchaseCounts.artifact > 0 ? purchaseCounts.artifact : null,
+    };
+    const normalizedGold = {
+      etchedRune: goldPurchaseCounts.etchedRune > 0 ? goldPurchaseCounts.etchedRune : null,
+      advancedEnchantium: goldPurchaseCounts.advancedEnchantium > 0 ? goldPurchaseCounts.advancedEnchantium : null,
+      ruinShovelBundle: goldPurchaseCounts.ruinShovelBundle > 0 ? goldPurchaseCounts.ruinShovelBundle : null,
+      promisedShovelBundle: goldPurchaseCounts.promisedShovelBundle > 0 ? goldPurchaseCounts.promisedShovelBundle : null,
+      chromaticKeyBundle: goldPurchaseCounts.chromaticKeyBundle > 0 ? goldPurchaseCounts.chromaticKeyBundle : null,
+    };
+
+    const stateKey = "archero2.tool.fishing_companion.v1";
+    const storageKey = `archero2_tool_state_${stateKey}`;
+    try {
+      const existingRaw = localStorage.getItem(storageKey);
+      const existing = existingRaw ? (JSON.parse(existingRaw) as Record<string, unknown>) : {};
+      const nextState = {
+        ...existing,
+        purchaseCounts: normalizedPurchase,
+        goldPurchaseCounts: normalizedGold,
+      };
+      localStorage.setItem(storageKey, JSON.stringify(nextState));
+      window.dispatchEvent(
+        new CustomEvent("purchase-goals-apply", {
+          detail: { stateKey, purchaseCounts: normalizedPurchase, goldPurchaseCounts: normalizedGold },
+        })
+      );
+    } catch (error) {
+      console.error("Failed to apply purchase goals from shop.", error);
+    }
+  }
 
   function openGuideImageBySrc(src: string) {
     if (!src) return;
@@ -1201,7 +1285,7 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
   }, [tasksOpen]);
 
   useEffect(() => {
-    const shouldLock = tasksOpen || lightboxIndex !== null || inlinePreviewSrc !== null;
+    const shouldLock = tasksOpen || lightboxIndex !== null || inlinePreviewSrc !== null || shopOpen;
     if (!shouldLock) {
       if (scrollLockRef.current) {
         const lockedScrollY = scrollLockRef.current.scrollY;
@@ -1236,7 +1320,7 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
     document.body.style.position = "fixed";
     document.body.style.top = `-${scrollLockRef.current.scrollY}px`;
     document.body.style.width = "100%";
-  }, [tasksOpen, lightboxIndex, inlinePreviewSrc]);
+  }, [tasksOpen, lightboxIndex, inlinePreviewSrc, shopOpen]);
 
   function openTasksSheet() {
     const height = Math.round(window.innerHeight * 0.8);
@@ -1578,9 +1662,16 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
             </div>
           ) : null}
         </div>
-        <button type="button" className="secondary" onClick={openTasksSheet}>
-          Tasks
-        </button>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {shopSections.length ? (
+            <button type="button" className="secondary" onClick={() => setShopOpen(true)}>
+              Shop
+            </button>
+          ) : null}
+          <button type="button" className="secondary" onClick={openTasksSheet}>
+            Tasks
+          </button>
+        </div>
       </div>
       {(ev.status === "coming_soon" ? "Coming Soon" : ev.subtitle) ? (
         <p style={{ marginTop: 8 }}>{ev.status === "coming_soon" ? "Coming Soon" : ev.subtitle}</p>
@@ -1811,6 +1902,216 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
             <div className="inlinePreviewActions">
               <button type="button" className="secondary" onClick={closeInlinePreview}>
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {shopOpen ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShopOpen(false);
+          }}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "var(--overlay)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 20,
+            zIndex: 45,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: "min(980px, 96vw)",
+              maxHeight: "90vh",
+              overflow: "auto",
+              background: "var(--surface)",
+              border: "1px solid var(--border)",
+              borderRadius: 12,
+              padding: 16,
+              display: "grid",
+              gap: 14,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+              <div style={{ fontSize: 18, fontWeight: 800 }}>Event Shop</div>
+              <button type="button" className="secondary" onClick={() => setShopOpen(false)}>
+                Close
+              </button>
+            </div>
+            {shopSections.length ? (
+              shopSections.map((section) => (
+                <div key={section.sectionId} style={{ display: "grid", gap: 10 }}>
+                  {section.title ? <div style={{ fontWeight: 700 }}>{section.title}</div> : null}
+                  <div
+                    style={{
+                      display: "grid",
+                      gap: 12,
+                      gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                    }}
+                  >
+                    {section.items.map((item) => {
+                      const qty = shopQuantities[item.shopItemId] ?? 0;
+                      const shared = item.itemId ? sharedItems[item.itemId] : undefined;
+                      const label = item.label ?? shared?.label ?? item.shopItemId;
+                      const bundle = item.bundleSize ?? 1;
+                      const description =
+                        item.description ?? (bundle > 1 ? `Bundle: ${bundle} ${label}` : `Purchase: 1 ${label}`);
+                      const costLabel = sharedItems[item.costItemId]?.label ?? item.costItemId.replace(/_/g, " ");
+                      return (
+                        <div
+                          key={item.shopItemId}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() =>
+                            setActiveShopItemId((prev) => (prev === item.shopItemId ? null : item.shopItemId))
+                          }
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              setActiveShopItemId((prev) => (prev === item.shopItemId ? null : item.shopItemId));
+                            }
+                          }}
+                          style={{
+                            textAlign: "left",
+                            padding: 12,
+                            borderRadius: 10,
+                            border: "1px solid var(--border)",
+                            background: "var(--surface-2)",
+                            display: "grid",
+                            gap: 8,
+                            cursor: "pointer",
+                          }}
+                        >
+                          <div style={{ display: "grid", gap: 6 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                              {shared?.icon ? (
+                                <img
+                                  src={`${import.meta.env.BASE_URL}${shared.icon}`}
+                                  alt=""
+                                  width={32}
+                                  height={32}
+                                  style={{ display: "block" }}
+                                />
+                              ) : (
+                                <div
+                                  style={{
+                                    width: 32,
+                                    height: 32,
+                                    borderRadius: 8,
+                                    border: "1px solid var(--border)",
+                                    display: "grid",
+                                    placeItems: "center",
+                                    fontWeight: 700,
+                                    background: "var(--surface)",
+                                  }}
+                                >
+                                  {label.slice(0, 1)}
+                                </div>
+                              )}
+                              <div style={{ fontWeight: 700 }}>{label}</div>
+                            </div>
+                            <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                              {bundle > 1 ? `Bundle x${bundle}` : "Single purchase"}
+                            </div>
+                            <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                              Cost: {item.cost.toLocaleString()} {costLabel}
+                            </div>
+                            {activeShopItemId === item.shopItemId ? (
+                              <div style={{ fontSize: 12 }}>{description}</div>
+                            ) : null}
+                          </div>
+                          <div
+                            style={{ display: "flex", alignItems: "center", gap: 8 }}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <button
+                              type="button"
+                              className="secondary"
+                              disabled={qty <= 0}
+                              onClick={() => setShopQuantity(item.shopItemId, qty - 1)}
+                            >
+                              -
+                            </button>
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              value={qty ? qty : ""}
+                              placeholder="0"
+                              onChange={(e) => {
+                                const raw = e.target.value.replace(/[^\d]/g, "");
+                                setShopQuantity(item.shopItemId, raw ? Number(raw) : 0);
+                              }}
+                              style={{ width: 70, textAlign: "center" }}
+                            />
+                            <button
+                              type="button"
+                              className="secondary"
+                              onClick={() => setShopQuantity(item.shopItemId, qty + 1)}
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div style={{ color: "var(--text-muted)" }}>No shop items configured for this event.</div>
+            )}
+            <div style={{ display: "grid", gap: 8, paddingTop: 6 }}>
+              <div style={{ fontWeight: 700 }}>Total Costs</div>
+              {Object.keys(shopTotals).length ? (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {Object.entries(shopTotals).map(([itemId, amount]) => {
+                    const item = sharedItems[itemId];
+                    const label = item?.label ?? itemId.replace(/_/g, " ");
+                    return (
+                      <div
+                        key={itemId}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 6,
+                          border: "1px solid var(--border)",
+                          borderRadius: 999,
+                          padding: "4px 10px",
+                          background: "var(--surface-2)",
+                          fontSize: 12,
+                        }}
+                      >
+                        {item?.icon ? (
+                          <img
+                            src={`${import.meta.env.BASE_URL}${item.icon}`}
+                            alt=""
+                            width={16}
+                            height={16}
+                            style={{ display: "block" }}
+                          />
+                        ) : (
+                          <span style={{ fontWeight: 700 }}>{label.slice(0, 1)}</span>
+                        )}
+                        {amount.toLocaleString()}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Select items to see totals.</div>
+              )}
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+              <button type="button" className="secondary" onClick={applyShopToPurchaseGoals}>
+                Set Purchase Goals
               </button>
             </div>
           </div>

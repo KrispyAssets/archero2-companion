@@ -152,10 +152,33 @@ export type EventCatalogFull = EventCatalogItemFull & {
   guidedRoutePath?: string;
   taskGroupLabels?: TaskGroupLabelMap;
   rewardAssets?: Record<string, RewardAsset>;
+  shop?: EventShop;
 };
 
 export type TaskCostItem = {
   key: string;
   label: string;
   amount: number;
+};
+
+export type EventShopItem = {
+  shopItemId: string;
+  itemId?: string;
+  label: string;
+  description?: string;
+  cost: number;
+  costItemId: string;
+  bundleSize?: number;
+  goalGroup?: "silver" | "gold";
+  goalKey?: string;
+};
+
+export type EventShopSection = {
+  sectionId: string;
+  title?: string;
+  items: EventShopItem[];
+};
+
+export type EventShop = {
+  sections: EventShopSection[];
 };

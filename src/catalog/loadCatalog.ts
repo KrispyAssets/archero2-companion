@@ -16,6 +16,9 @@ import type {
   TaskCostItem,
   RewardAsset,
   SharedItem,
+  EventShop,
+  EventShopSection,
+  EventShopItem,
 } from "./types";
 import { parseXmlString, getAttr, getAttrInt } from "./parseXml";
 
@@ -404,6 +407,33 @@ function parseRewardAssets(eventEl: Element): Record<string, RewardAsset> | unde
   return Object.keys(assets).length > 0 ? assets : undefined;
 }
 
+function parseShop(eventEl: Element): EventShop | undefined {
+  const shopEl = eventEl.getElementsByTagName("shop")[0];
+  if (!shopEl) return undefined;
+  const sectionEls = getDirectChildElements(shopEl, "section");
+  const sections: EventShopSection[] = sectionEls.map((sectionEl) => {
+    const itemEls = getDirectChildElements(sectionEl, "item");
+    const items: EventShopItem[] = itemEls.map((itemEl, index) => ({
+      shopItemId: itemEl.getAttribute("shop_item_id") ?? `${getAttr(itemEl, "item_id")}_${index + 1}`,
+      itemId: itemEl.getAttribute("item_id") ?? undefined,
+      label: itemEl.getAttribute("label") ?? getAttr(itemEl, "item_id"),
+      description: itemEl.getAttribute("description") ?? undefined,
+      cost: getAttrInt(itemEl, "cost"),
+      costItemId: getAttr(itemEl, "cost_item"),
+      bundleSize: itemEl.getAttribute("bundle") ? getAttrInt(itemEl, "bundle") : undefined,
+      goalGroup: (itemEl.getAttribute("goal_group") as "silver" | "gold" | null) ?? undefined,
+      goalKey: itemEl.getAttribute("goal_key") ?? undefined,
+    }));
+    return {
+      sectionId: getAttr(sectionEl, "section_id"),
+      title: sectionEl.getAttribute("title") ?? undefined,
+      items,
+    };
+  });
+  if (!sections.length) return undefined;
+  return { sections };
+}
+
 function parseEventDocument(doc: Document, relPath?: string): EventCatalogFull {
   const eventEl = doc.getElementsByTagName("event")[0];
   if (!eventEl) {
@@ -422,6 +452,7 @@ function parseEventDocument(doc: Document, relPath?: string): EventCatalogFull {
   const taskCosts = computeTaskCosts(tasks);
   const taskGroupLabels = parseTaskGroupLabels(eventEl);
   const rewardAssets = parseRewardAssets(eventEl);
+  const shop = parseShop(eventEl);
 
   const guideSections = guideEl ? getDirectChildElements(guideEl, "section").map((section) => parseGuideSection(section)) : [];
   const dataSections: DataSection[] = dataEl ? getDirectChildElements(dataEl, "section").map((section) => parseGuideSection(section)) : [];
@@ -462,6 +493,7 @@ function parseEventDocument(doc: Document, relPath?: string): EventCatalogFull {
     dataSections,
     faqItems,
     toolRefs,
+    shop,
   };
 }
 
