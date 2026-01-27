@@ -1954,7 +1954,9 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
                     style={{
                       display: "grid",
                       gap: 12,
-                      gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                      gridTemplateColumns: "repeat(auto-fit, 160px)",
+                      justifyContent: "start",
+                      alignItems: "stretch",
                     }}
                   >
                     {section.items.map((item) => {
@@ -1964,21 +1966,12 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
                       const bundle = item.bundleSize ?? 1;
                       const description =
                         item.description ?? (bundle > 1 ? `Bundle: ${bundle} ${label}` : `Purchase: 1 ${label}`);
-                      const costLabel = sharedItems[item.costItemId]?.label ?? item.costItemId.replace(/_/g, " ");
+                      const costShared = sharedItems[item.costItemId];
+                      const maxQty = item.maxQty ?? null;
+                      const canIncrement = maxQty === null || qty < maxQty;
                       return (
                         <div
                           key={item.shopItemId}
-                          role="button"
-                          tabIndex={0}
-                          onClick={() =>
-                            setActiveShopItemId((prev) => (prev === item.shopItemId ? null : item.shopItemId))
-                          }
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
-                              e.preventDefault();
-                              setActiveShopItemId((prev) => (prev === item.shopItemId ? null : item.shopItemId));
-                            }
-                          }}
                           style={{
                             textAlign: "left",
                             padding: 12,
@@ -1987,25 +1980,35 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
                             background: "var(--surface-2)",
                             display: "grid",
                             gap: 8,
-                            cursor: "pointer",
+                            minHeight: 210,
+                            height: "100%",
                           }}
                         >
-                          <div style={{ display: "grid", gap: 6 }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <div style={{ display: "grid", gap: 8, justifyItems: "center", textAlign: "center" }}>
+                            <div style={{ fontWeight: 700 }}>{label}</div>
+                            <button
+                              type="button"
+                              className="ghost"
+                              onClick={() =>
+                                setActiveShopItemId((prev) => (prev === item.shopItemId ? null : item.shopItemId))
+                              }
+                              style={{ padding: 0, border: "none", background: "transparent" }}
+                              aria-label={`Show details for ${label}`}
+                            >
                               {shared?.icon ? (
                                 <img
                                   src={`${import.meta.env.BASE_URL}${shared.icon}`}
                                   alt=""
-                                  width={32}
-                                  height={32}
+                                  width={40}
+                                  height={40}
                                   style={{ display: "block" }}
                                 />
                               ) : (
                                 <div
                                   style={{
-                                    width: 32,
-                                    height: 32,
-                                    borderRadius: 8,
+                                    width: 40,
+                                    height: 40,
+                                    borderRadius: 10,
                                     border: "1px solid var(--border)",
                                     display: "grid",
                                     placeItems: "center",
@@ -2016,27 +2019,44 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
                                   {label.slice(0, 1)}
                                 </div>
                               )}
-                              <div style={{ fontWeight: 700 }}>{label}</div>
-                            </div>
+                            </button>
                             <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                              {bundle > 1 ? `Bundle x${bundle}` : "Single purchase"}
+                              Purchases left: {maxQty ?? 999}
                             </div>
-                            <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                              Cost: {item.cost.toLocaleString()} {costLabel}
+                            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--text-muted)" }}>
+                              {costShared?.icon ? (
+                                <img
+                                  src={`${import.meta.env.BASE_URL}${costShared.icon}`}
+                                  alt=""
+                                  width={16}
+                                  height={16}
+                                  style={{ display: "block" }}
+                                />
+                              ) : (
+                                <span style={{ fontWeight: 700 }}>{(costShared?.label ?? item.costItemId).slice(0, 1)}</span>
+                              )}
+                              {item.cost.toLocaleString()}
                             </div>
                             {activeShopItemId === item.shopItemId ? (
-                              <div style={{ fontSize: 12 }}>{description}</div>
+                              <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{description}</div>
                             ) : null}
                           </div>
                           <div
-                            style={{ display: "flex", alignItems: "center", gap: 8 }}
-                            onClick={(e) => e.stopPropagation()}
+                            style={{
+                              display: "grid",
+                              gridTemplateColumns: "32px minmax(0, 1fr) 32px",
+                              alignItems: "center",
+                              justifyItems: "center",
+                              gap: 8,
+                              width: "100%",
+                            }}
                           >
                             <button
                               type="button"
                               className="secondary"
                               disabled={qty <= 0}
                               onClick={() => setShopQuantity(item.shopItemId, qty - 1)}
+                              style={{ width: 32, padding: "4px 0" }}
                             >
                               -
                             </button>
@@ -2047,14 +2067,17 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
                               placeholder="0"
                               onChange={(e) => {
                                 const raw = e.target.value.replace(/[^\d]/g, "");
-                                setShopQuantity(item.shopItemId, raw ? Number(raw) : 0);
+                                const next = raw ? Number(raw) : 0;
+                                setShopQuantity(item.shopItemId, maxQty !== null ? Math.min(maxQty, next) : next);
                               }}
-                              style={{ width: 70, textAlign: "center" }}
+                              style={{ width: "100%", minWidth: 0, textAlign: "center" }}
                             />
                             <button
                               type="button"
                               className="secondary"
+                              disabled={!canIncrement}
                               onClick={() => setShopQuantity(item.shopItemId, qty + 1)}
+                              style={{ width: 32, padding: "4px 0" }}
                             >
                               +
                             </button>
