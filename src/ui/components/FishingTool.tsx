@@ -129,7 +129,7 @@ type ToolState = {
   currentGems: number | null;
   purchaseCounts: {
     etchedRune: number | null;
-    blessedRune: number | null;
+    blessingRune: number | null;
     artifact: number | null;
   };
   goldPurchaseCounts: {
@@ -362,6 +362,16 @@ export default function FishingToolView({
     const activeSetId = stored?.activeSetId && data.sets.some((set) => set.setId === stored?.activeSetId) ? stored.activeSetId : defaultSetId;
 
     const baseSet = data.sets[0];
+    const normalizedPurchaseCounts = stored?.purchaseCounts
+      ? {
+          etchedRune: stored.purchaseCounts.etchedRune ?? null,
+          blessingRune:
+            (stored.purchaseCounts as { blessingRune?: number | null }).blessingRune ??
+            (stored.purchaseCounts as { blessedRune?: number | null }).blessedRune ??
+            null,
+          artifact: stored.purchaseCounts.artifact ?? null,
+        }
+      : { etchedRune: null, blessingRune: null, artifact: null };
     const nextState: ToolState = {
       activeSetId,
       activeLakeId: "",
@@ -378,7 +388,7 @@ export default function FishingToolView({
       currentLures: stored?.currentLures ?? null,
       purchasedLures: stored?.purchasedLures ?? null,
       currentGems: stored?.currentGems ?? null,
-      purchaseCounts: stored?.purchaseCounts ?? { etchedRune: null, blessedRune: null, artifact: null },
+      purchaseCounts: normalizedPurchaseCounts,
       goldPurchaseCounts: stored?.goldPurchaseCounts ?? {
         etchedRune: 1,
         advancedEnchantium: null,
@@ -422,7 +432,7 @@ export default function FishingToolView({
     nextState.currentLures = stored?.currentLures ?? null;
     nextState.purchasedLures = stored?.purchasedLures ?? null;
     nextState.currentGems = stored?.currentGems ?? null;
-    nextState.purchaseCounts = stored?.purchaseCounts ?? { etchedRune: null, blessedRune: null, artifact: null };
+    nextState.purchaseCounts = normalizedPurchaseCounts;
     nextState.goldPurchaseCounts = stored?.goldPurchaseCounts ?? {
       etchedRune: 1,
       advancedEnchantium: null,
@@ -642,7 +652,7 @@ export default function FishingToolView({
     const etchedCount = counts.etchedRune ?? 0;
     let total = 0;
     if (etchedCount) total += etchedCount * 32400;
-    if (counts.blessedRune) total += counts.blessedRune * 4050;
+    if (counts.blessingRune) total += counts.blessingRune * 4050;
     if (counts.artifact) total += counts.artifact * 184000;
     return total || null;
   }, [toolState?.purchaseCounts]);
@@ -1339,22 +1349,6 @@ export default function FishingToolView({
     updateToolState((prev) => ({
       ...prev,
       [key]: value,
-    }));
-  }
-
-  function setPurchaseCount(key: keyof ToolState["purchaseCounts"], value: number | null) {
-    updateToolState((prev) => ({
-      ...prev,
-      purchaseCounts: { ...prev.purchaseCounts, [key]: value },
-      goalPreset: "custom",
-    }));
-  }
-
-  function setGoldPurchaseCount(key: keyof ToolState["goldPurchaseCounts"], value: number | null) {
-    updateToolState((prev) => ({
-      ...prev,
-      goldPurchaseCounts: { ...prev.goldPurchaseCounts, [key]: value },
-      goalPreset: "custom",
     }));
   }
 
@@ -2120,119 +2114,7 @@ export default function FishingToolView({
             >
               <div style={{ fontWeight: 700 }}>Purchase Goals</div>
               <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                Add the quantities you want to buy. These targets drive the recommendations below.
-              </div>
-              <div style={{ display: "grid", gap: 8 }}>
-                <div style={{ fontWeight: 600, fontSize: 12 }}>Silver Ticket Shop</div>
-                <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))" }}>
-                  <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
-                    Epic Etched Rune (32,400)
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="Qty"
-                      value={toolState.purchaseCounts.etchedRune === null ? "" : toolState.purchaseCounts.etchedRune}
-                      onChange={(e) => {
-                        const raw = e.target.value.replace(/[^\d]/g, "");
-                        setPurchaseCount("etchedRune", raw ? Number(raw) : null);
-                      }}
-                    />
-                  </label>
-                  <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
-                    Epic Blessing Rune (4,050)
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="Qty"
-                      value={toolState.purchaseCounts.blessedRune === null ? "" : toolState.purchaseCounts.blessedRune}
-                      onChange={(e) => {
-                        const raw = e.target.value.replace(/[^\d]/g, "");
-                        setPurchaseCount("blessedRune", raw ? Number(raw) : null);
-                      }}
-                    />
-                  </label>
-                  <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
-                    Artifact (184,000)
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="Qty"
-                      value={toolState.purchaseCounts.artifact === null ? "" : toolState.purchaseCounts.artifact}
-                      onChange={(e) => {
-                        const raw = e.target.value.replace(/[^\d]/g, "");
-                        setPurchaseCount("artifact", raw ? Number(raw) : null);
-                      }}
-                    />
-                  </label>
-                </div>
-                <div style={{ fontWeight: 600, fontSize: 12 }}>Golden Ticket Shop</div>
-                <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))" }}>
-                  <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
-                    Epic Etched Rune (16 gold)
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="Qty"
-                      value={toolState.goldPurchaseCounts.etchedRune === null ? "" : toolState.goldPurchaseCounts.etchedRune}
-                      onChange={(e) => {
-                        const raw = e.target.value.replace(/[^\d]/g, "");
-                        setGoldPurchaseCount("etchedRune", raw ? Number(raw) : null);
-                      }}
-                    />
-                  </label>
-                  <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
-                    Advanced Enchantium (18 gold)
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="Qty"
-                      value={toolState.goldPurchaseCounts.advancedEnchantium === null ? "" : toolState.goldPurchaseCounts.advancedEnchantium}
-                      onChange={(e) => {
-                        const raw = e.target.value.replace(/[^\d]/g, "");
-                        setGoldPurchaseCount("advancedEnchantium", raw ? Number(raw) : null);
-                      }}
-                    />
-                  </label>
-                  <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
-                    Ruin Shovel (3 for 1 gold)
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="Bundles"
-                      value={toolState.goldPurchaseCounts.ruinShovelBundle === null ? "" : toolState.goldPurchaseCounts.ruinShovelBundle}
-                      onChange={(e) => {
-                        const raw = e.target.value.replace(/[^\d]/g, "");
-                        setGoldPurchaseCount("ruinShovelBundle", raw ? Number(raw) : null);
-                      }}
-                    />
-                  </label>
-                  <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
-                    Promised Shovel (2 for 1 gold)
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="Bundles"
-                      value={toolState.goldPurchaseCounts.promisedShovelBundle === null ? "" : toolState.goldPurchaseCounts.promisedShovelBundle}
-                      onChange={(e) => {
-                        const raw = e.target.value.replace(/[^\d]/g, "");
-                        setGoldPurchaseCount("promisedShovelBundle", raw ? Number(raw) : null);
-                      }}
-                    />
-                  </label>
-                  <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
-                    Chromatic Key (5 for 4 gold)
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="Bundles"
-                      value={toolState.goldPurchaseCounts.chromaticKeyBundle === null ? "" : toolState.goldPurchaseCounts.chromaticKeyBundle}
-                      onChange={(e) => {
-                        const raw = e.target.value.replace(/[^\d]/g, "");
-                        setGoldPurchaseCount("chromaticKeyBundle", raw ? Number(raw) : null);
-                      }}
-                    />
-                  </label>
-                </div>
+                Set what you want to buy in the Event Shop. The selections drive these targets and recommendations.
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10, fontSize: 12 }}>
                 <span>

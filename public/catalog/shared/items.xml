@@ -1,14 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <items>
   <item item_id="aeon_core" label="Aeon Core" fallback_label="Aeon Core" short_label="AC" aliases="eon_core, aeoncore, eoncore" link="#faq-aeon_core_intro" />
+  <item item_id="legendary_character" label="Legendary Character" fallback_label="Legendary Character" short_label="LC" />
   <item item_id="dice" label="Dice" fallback_label="Dice" short_label="D" />
   <item item_id="summon_tickets" label="Summon Ticket" fallback_label="Summon Ticket" short_label="ST" />
   <item item_id="silver_tickets" label="Silver Ticket" fallback_label="Silver Ticket" short_label="ST" />
   <item item_id="golden_tickets" label="Golden Ticket" fallback_label="Golden Ticket" short_label="GT" />
   <item item_id="lures" label="Lure" fallback_label="Lure" short_label="L" />
-  <item item_id="etched_rune" label="Epic Etched Rune" fallback_label="Epic Etched Rune" short_label="ER" frame="Epic" />
-  <item item_id="blessed_rune" label="Epic Blessing Rune" fallback_label="Epic Blessing Rune" short_label="EBR" frame="Epic" />
-  <item item_id="artifact" label="Mythic Artifact" fallback_label="Mythic Artifact" short_label="MA" frame="Mythic" />
+  <item item_id="etched_rune" label="Etched Rune" fallback_label="Etched Rune" short_label="ER" frame="Epic" />
+  <item item_id="blessing_rune" label="Blessing Rune" fallback_label="Blessing Rune" short_label="BR" frame="Epic" />
+  <item item_id="artifact" label="Artifact" fallback_label="Artifact" short_label="A" frame="Mythic" />
   <item item_id="advanced_enchantium" label="Advanced Enchantium" fallback_label="Advanced Enchantium" short_label="AE" frame="Mythic" />
   <item item_id="promised_shovels" label="Promised Shovel" fallback_label="Promised Shovel" short_label="PS" icon="catalog/shared/items/currencies/icon_promised_shovel.png" frame="Epic" />
   <item item_id="gems" label="Gems" fallback_label="Gems" short_label="G" icon="catalog/shared/items/currencies/icon_gem.png" />

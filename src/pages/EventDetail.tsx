@@ -845,7 +845,7 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
 
     const purchaseCounts = {
       etchedRune: numericPurchase.etchedRune ?? 0,
-      blessedRune: numericPurchase.blessedRune ?? 0,
+      blessingRune: numericPurchase.blessingRune ?? 0,
       artifact: numericPurchase.artifact ?? 0,
     };
     const goldPurchaseCounts = {
@@ -858,7 +858,7 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
 
     const normalizedPurchase = {
       etchedRune: purchaseCounts.etchedRune > 0 ? purchaseCounts.etchedRune : null,
-      blessedRune: purchaseCounts.blessedRune > 0 ? purchaseCounts.blessedRune : null,
+      blessingRune: purchaseCounts.blessingRune > 0 ? purchaseCounts.blessingRune : null,
       artifact: purchaseCounts.artifact > 0 ? purchaseCounts.artifact : null,
     };
     const normalizedGold = {
@@ -889,6 +889,14 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
       console.error("Failed to apply purchase goals from shop.", error);
     }
   }
+
+  useEffect(() => {
+    if (!shopSections.length) return;
+    const timeout = window.setTimeout(() => {
+      applyShopToPurchaseGoals();
+    }, 120);
+    return () => window.clearTimeout(timeout);
+  }, [shopQuantities, shopSections]);
 
   function openGuideImageBySrc(src: string) {
     if (!src) return;
@@ -1969,11 +1977,18 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
                       const costShared = sharedItems[item.costItemId];
                       const maxQty = item.maxQty ?? null;
                       const canIncrement = maxQty === null || qty < maxQty;
-                      const fallbackLabel = shared?.fallbackLabel ?? shared?.label ?? label;
+                      const sharedLabel = shared?.label;
+                      const baseLabel =
+                        item.label && (!item.itemId || item.label !== item.itemId) ? item.label : sharedLabel ?? item.label;
+                      const fallbackLabel = shared?.fallbackLabel ?? baseLabel ?? label;
                       const shortLabel = shared?.shortLabel ?? fallbackLabel?.slice(0, 1) ?? label.slice(0, 1);
                       const costFallbackLabel = costShared?.fallbackLabel ?? costShared?.label ?? item.costItemId;
                       const costShortLabel = costShared?.shortLabel ?? costFallbackLabel.slice(0, 1);
                       const frame = item.frame ?? shared?.frame;
+                      const displayLabel =
+                        frame && !baseLabel.toLowerCase().startsWith(frame.toLowerCase())
+                          ? `${frame} ${baseLabel}`
+                          : baseLabel;
 
                       return (
                         <div
@@ -2002,7 +2017,7 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
                                 textAlign: "center",
                               }}
                             >
-                              {label}
+                              {displayLabel}
                             </div>
                             <button
                               type="button"
@@ -2190,11 +2205,6 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
               ) : (
                 <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Select items to see totals.</div>
               )}
-            </div>
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-              <button type="button" className="secondary" onClick={applyShopToPurchaseGoals}>
-                Set Purchase Goals
-              </button>
             </div>
           </div>
         </div>
