@@ -416,12 +416,13 @@ function parseShop(eventEl: Element): EventShop | undefined {
     const items: EventShopItem[] = itemEls.map((itemEl, index) => ({
       shopItemId: itemEl.getAttribute("shop_item_id") ?? `${getAttr(itemEl, "item_id")}_${index + 1}`,
       itemId: itemEl.getAttribute("item_id") ?? undefined,
-      label: itemEl.getAttribute("label") ?? getAttr(itemEl, "item_id"),
+      label: itemEl.getAttribute("label") ?? undefined,
       description: itemEl.getAttribute("description") ?? undefined,
       cost: getAttrInt(itemEl, "cost"),
       costItemId: getAttr(itemEl, "cost_item"),
       bundleSize: itemEl.getAttribute("bundle") ? getAttrInt(itemEl, "bundle") : undefined,
-      frame: itemEl.getAttribute("frame") ?? undefined,
+      rarity: itemEl.getAttribute("rarity") ?? undefined,
+      showRarity: itemEl.getAttribute("show_rarity") === "true" ? true : undefined,
       maxQty: itemEl.getAttribute("max_qty") ? getAttrInt(itemEl, "max_qty") : undefined,
       goalGroup: (itemEl.getAttribute("goal_group") as "silver" | "gold" | null) ?? undefined,
       goalKey: itemEl.getAttribute("goal_key") ?? undefined,
@@ -542,7 +543,7 @@ export async function loadSharedItems(sharedPaths: string[]): Promise<Record<str
       const aliasesAttr = itemEl.getAttribute("aliases");
       const fallbackLabel = itemEl.getAttribute("fallback_label") ?? undefined;
       const shortLabel = itemEl.getAttribute("short_label") ?? undefined;
-      const frame = itemEl.getAttribute("frame") ?? undefined;
+      const rarity = itemEl.getAttribute("rarity") ?? undefined;
       const link = itemEl.getAttribute("link") ?? undefined;
       const linkEnabledAttr = itemEl.getAttribute("link_enabled");
       const linkEnabled = linkEnabledAttr === null ? undefined : linkEnabledAttr !== "false";
@@ -553,7 +554,7 @@ export async function loadSharedItems(sharedPaths: string[]): Promise<Record<str
             .filter((alias) => alias.length > 0)
         : undefined;
 
-      const item: SharedItem = { itemId, label, icon, fallbackLabel, shortLabel, frame, aliases, link, linkEnabled };
+      const item: SharedItem = { itemId, label, icon, fallbackLabel, shortLabel, rarity, aliases, link, linkEnabled };
       items[itemId] = item;
       if (aliases) {
         for (const alias of aliases) {

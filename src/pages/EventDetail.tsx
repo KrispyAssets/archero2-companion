@@ -1984,10 +1984,11 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
                       const shortLabel = shared?.shortLabel ?? fallbackLabel?.slice(0, 1) ?? label.slice(0, 1);
                       const costFallbackLabel = costShared?.fallbackLabel ?? costShared?.label ?? item.costItemId;
                       const costShortLabel = costShared?.shortLabel ?? costFallbackLabel.slice(0, 1);
-                      const frame = item.frame ?? shared?.frame;
+                      const rarity = item.rarity ?? shared?.rarity;
+                      const showRarity = item.showRarity ?? false;
                       const displayLabel =
-                        frame && !baseLabel.toLowerCase().startsWith(frame.toLowerCase())
-                          ? `${frame} ${baseLabel}`
+                        showRarity && rarity && baseLabel && !baseLabel.toLowerCase().startsWith(rarity.toLowerCase())
+                          ? `${rarity} ${baseLabel}`
                           : baseLabel;
 
                       return (
@@ -2029,9 +2030,9 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
                               aria-label={`Show details for ${label}`}
                             >
                               <div style={{ position: "relative", width: 48, height: 48 }}>
-                                {frame ? (
+                                {rarity ? (
                                   <img
-                                    src={`${import.meta.env.BASE_URL}catalog/shared/items/frames/Frame_Quality_${frame}.png`}
+                                    src={`${import.meta.env.BASE_URL}catalog/shared/items/frames/Frame_Quality_${rarity}.png`}
                                     alt=""
                                     width={48}
                                     height={48}

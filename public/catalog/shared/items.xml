@@ -7,14 +7,14 @@
   <item item_id="silver_tickets" label="Silver Ticket" fallback_label="Silver Ticket" short_label="ST" />
   <item item_id="golden_tickets" label="Golden Ticket" fallback_label="Golden Ticket" short_label="GT" />
   <item item_id="lures" label="Lure" fallback_label="Lure" short_label="L" />
-  <item item_id="etched_rune" label="Etched Rune" fallback_label="Etched Rune" short_label="ER" frame="Epic" />
-  <item item_id="blessing_rune" label="Blessing Rune" fallback_label="Blessing Rune" short_label="BR" frame="Epic" />
-  <item item_id="artifact" label="Artifact" fallback_label="Artifact" short_label="A" frame="Mythic" />
-  <item item_id="advanced_enchantium" label="Advanced Enchantium" fallback_label="Advanced Enchantium" short_label="AE" frame="Mythic" />
-  <item item_id="promised_shovels" label="Promised Shovel" fallback_label="Promised Shovel" short_label="PS" icon="catalog/shared/items/currencies/icon_promised_shovel.png" frame="Epic" />
+  <item item_id="etched_rune" label="Etched Rune" fallback_label="Etched Rune" short_label="ER" />
+  <item item_id="blessing_rune" label="Blessing Rune" fallback_label="Blessing Rune" short_label="BR" />
+  <item item_id="artifact" label="Artifact" fallback_label="Artifact" short_label="A" />
+  <item item_id="advanced_enchantium" label="Advanced Enchantium" fallback_label="Advanced Enchantium" short_label="AE" />
+  <item item_id="promised_shovels" label="Promised Shovel" fallback_label="Promised Shovel" short_label="PS" icon="catalog/shared/items/currencies/icon_promised_shovel.png" rarity="Epic" />
   <item item_id="gems" label="Gems" fallback_label="Gems" short_label="G" icon="catalog/shared/items/currencies/icon_gem.png" />
-  <item item_id="chromatic_keys" label="Chromatic Key" fallback_label="Chromatic Key" short_label="CK" icon="catalog/shared/items/currencies/icon_chromatic_key.png" frame="Legendary" />
+  <item item_id="chromatic_keys" label="Chromatic Key" fallback_label="Chromatic Key" short_label="CK" icon="catalog/shared/items/currencies/icon_chromatic_key.png" rarity="Legendary" />
   <item item_id="obsidian_keys" label="Obsidian Key" fallback_label="Obsidian Key" short_label="OK" icon="catalog/shared/items/currencies/icon_obsidian_key.png" />
-  <item item_id="wish_tokens" label="Wish Coin" fallback_label="Wish Coin" short_label="WC" icon="catalog/shared/items/currencies/icon_wish_coin.png" frame="Legendary" />
-  <item item_id="shovels" label="Shovel" fallback_label="Shovel" short_label="S" icon="catalog/shared/items/currencies/icon_shovel.png" frame="Epic" />
+  <item item_id="wish_tokens" label="Wish Coin" fallback_label="Wish Coin" short_label="WC" icon="catalog/shared/items/currencies/icon_wish_coin.png" rarity="Legendary" />
+  <item item_id="shovels" label="Shovel" fallback_label="Shovel" short_label="S" icon="catalog/shared/items/currencies/icon_shovel.png" rarity="Epic" />
 </items>

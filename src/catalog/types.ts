@@ -40,7 +40,7 @@ export type SharedItem = {
   icon?: string;
   fallbackLabel?: string;
   shortLabel?: string;
-  frame?: string;
+  rarity?: string;
   aliases?: string[];
   link?: string;
   linkEnabled?: boolean;
@@ -167,12 +167,13 @@ export type TaskCostItem = {
 export type EventShopItem = {
   shopItemId: string;
   itemId?: string;
-  label: string;
+  label?: string;
   description?: string;
   cost: number;
   costItemId: string;
   bundleSize?: number;
-  frame?: string;
+  rarity?: string;
+  showRarity?: boolean;
   maxQty?: number;
   goalGroup?: "silver" | "gold";
   goalKey?: string;
