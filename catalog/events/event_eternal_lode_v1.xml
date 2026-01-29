@@ -11,7 +11,7 @@
     <label group_key="charge__expedition_stars__total" title="Charge Expedition Stars" />
     <label group_key="donate__guild__total" title="Guild Donations" />
     <label group_key="buy__guild_shop__total" title="Guild Shop Purchases" />
-    <label group_key="use__axes__total" title="Use Axes" />
+    <label group_key="use__axes__total" title="Use Pickaxes" />
     <label group_key="use__bombs__total" title="Use Bombs" />
     <label group_key="use__drills__total" title="Use Drills" />
     <label group_key="fight__monster_invasion__total" title="Monster Invasion" />
