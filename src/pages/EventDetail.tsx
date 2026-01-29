@@ -809,6 +809,12 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
     return images.concat(collectFaqImages(event.faqItems));
   }, [event]);
   const shopSections = event.shop?.sections ?? [];
+  const prevShopOpenRef = useRef(false);
+
+  function normalizeRarity(value?: string) {
+    if (!value) return undefined;
+    return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+  }
 
   function setShopQuantity(shopItemId: string, value: number) {
     const next = Math.max(0, value);
@@ -891,12 +897,14 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
   }
 
   useEffect(() => {
-    if (!shopSections.length) return;
+    const wasOpen = prevShopOpenRef.current;
+    prevShopOpenRef.current = shopOpen;
+    if (!wasOpen || shopOpen || !shopSections.length) return;
     const timeout = window.setTimeout(() => {
       applyShopToPurchaseGoals();
     }, 120);
     return () => window.clearTimeout(timeout);
-  }, [shopQuantities, shopSections]);
+  }, [shopOpen, shopQuantities, shopSections]);
 
   function openGuideImageBySrc(src: string) {
     if (!src) return;
@@ -1984,7 +1992,7 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
                       const shortLabel = shared?.shortLabel ?? fallbackLabel?.slice(0, 1) ?? label.slice(0, 1);
                       const costFallbackLabel = costShared?.fallbackLabel ?? costShared?.label ?? item.costItemId;
                       const costShortLabel = costShared?.shortLabel ?? costFallbackLabel.slice(0, 1);
-                      const rarity = item.rarityOverride ?? shared?.rarity;
+                      const rarity = normalizeRarity(item.rarityOverride ?? shared?.rarity);
                       const showRarity = shared?.showRarity ?? false;
                       const displayLabel =
                         showRarity && rarity && baseLabel && !baseLabel.toLowerCase().startsWith(rarity.toLowerCase())
@@ -2049,7 +2057,7 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
                                       position: "absolute",
                                       left: "50%",
                                       top: "50%",
-                                      transform: "translate(-50%, -50%)",
+                                      transform: "translate(-50%, -50%) translateY(-2px)",
                                       display: "block",
                                       borderRadius: 8,
                                     }}
@@ -2060,7 +2068,7 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
                                       position: "absolute",
                                       left: "50%",
                                       top: "50%",
-                                      transform: "translate(-50%, -50%)",
+                                      transform: "translate(-50%, -50%) translateY(-2px)",
                                       width: 32,
                                       height: 32,
                                       borderRadius: 8,
@@ -2168,10 +2176,14 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
             <div style={{ display: "grid", gap: 8, paddingTop: 6 }}>
               <div style={{ fontWeight: 700 }}>Total Costs</div>
               {Object.keys(shopTotals).length ? (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, minHeight: 28 }}>
                   {Object.entries(shopTotals).map(([itemId, amount]) => {
                     const item = sharedItems[itemId];
-                    const label = item?.label ?? itemId.replace(/_/g, " ");
+                    const totalsFallbacks: Record<string, string> = {
+                      silver_tickets: "Silver Ticket",
+                      golden_tickets: "Golden Ticket",
+                    };
+                    const label = item?.label ?? totalsFallbacks[itemId] ?? itemId.replace(/_/g, " ");
                     const fallbackLabel = item?.fallbackLabel ?? label;
                     return (
                       <div
@@ -2190,7 +2202,7 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
                         {item?.icon ? (
                           <img
                             src={`${import.meta.env.BASE_URL}${item.icon}`}
-                            alt=""
+                            alt={fallbackLabel}
                             width={16}
                             height={16}
                             style={{ display: "block" }}
@@ -2204,7 +2216,9 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
                   })}
                 </div>
               ) : (
-                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Select items to see totals.</div>
+                <div style={{ fontSize: 12, color: "var(--text-muted)", minHeight: 28, display: "flex", alignItems: "center" }}>
+                  Select items to see totals.
+                </div>
               )}
             </div>
           </div>

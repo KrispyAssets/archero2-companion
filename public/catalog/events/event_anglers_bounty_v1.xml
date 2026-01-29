@@ -90,6 +90,7 @@
   <shop>
     <section section_id="silver_shop" title="Silver Ticket Shop">
       <item shop_item_id="silver_etched_rune" item_id="etched_rune" rarity_override="Epic" cost="32400" cost_item="silver_tickets" goal_group="silver" goal_key="etchedRune" description="Purchase 1 Etched Rune with Silver Tickets." />
+      <item shop_item_id="silver_etched_rune_rare" item_id="etched_rune" rarity_override="Rare" cost="9000" cost_item="silver_tickets" goal_group="silver" goal_key="etchedRune" description="Purchase 1 Rare Etched Rune with Silver Tickets." />
       <item shop_item_id="silver_blessing_rune" item_id="blessing_rune" rarity_override="Epic" cost="4050" cost_item="silver_tickets" goal_group="silver" goal_key="blessingRune" description="Purchase 1 Blessing Rune with Silver Tickets." />
       <item shop_item_id="silver_artifact" item_id="artifact" rarity_override="Mythic" cost="184000" cost_item="silver_tickets" goal_group="silver" goal_key="artifact" description="Purchase 1 Artifact with Silver Tickets." />
     </section>
