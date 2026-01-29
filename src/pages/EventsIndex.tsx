@@ -177,7 +177,6 @@ export function EventCatalogList() {
                       marginTop: 8,
                       alignItems: "flex-start",
                       justifyContent: "flex-start",
-                      minHeight: 26,
                     }}
                   >
                     {ev.taskCosts && ev.taskCosts.length ? (
