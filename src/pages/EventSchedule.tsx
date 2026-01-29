@@ -9,6 +9,11 @@ type ScheduleEntry = {
   label?: string;
   icon?: string;
   accent?: string;
+  titleColor?: string;
+  extraText?: string;
+  extraTextColor?: string;
+  dateBadgeBg?: string;
+  dateBadgeColor?: string;
 };
 
 type ScheduleFile = {
@@ -70,12 +75,39 @@ function buildInitials(label: string): string {
   return letters.join("").toUpperCase() || label.slice(0, 2).toUpperCase();
 }
 
+function toTransparent(color: string): string {
+  const trimmed = color.trim();
+  if (trimmed.startsWith("hsla(")) {
+    return trimmed.replace(/hsla\(([^)]+)\)/, "hsla($1, 0)");
+  }
+  if (trimmed.startsWith("hsl(")) {
+    return trimmed.replace(/hsl\(([^)]+)\)/, "hsla($1, 0)");
+  }
+  if (trimmed.startsWith("rgba(")) {
+    return trimmed.replace(/rgba\(([^)]+)\)/, "rgba($1, 0)");
+  }
+  if (trimmed.startsWith("rgb(")) {
+    return trimmed.replace(/rgb\(([^)]+)\)/, "rgba($1, 0)");
+  }
+  const hex = trimmed.replace("#", "");
+  if (hex.length === 3 || hex.length === 6) {
+    const full =
+      hex.length === 3
+        ? hex
+            .split("")
+            .map((c) => c + c)
+            .join("")
+        : hex;
+    const r = parseInt(full.slice(0, 2), 16);
+    const g = parseInt(full.slice(2, 4), 16);
+    const b = parseInt(full.slice(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, 0)`;
+  }
+  return "transparent";
+}
+
 function isSameUtcDay(date: Date, now: Date): boolean {
-  return (
-    date.getUTCFullYear() === now.getUTCFullYear() &&
-    date.getUTCMonth() === now.getUTCMonth() &&
-    date.getUTCDate() === now.getUTCDate()
-  );
+  return date.getUTCFullYear() === now.getUTCFullYear() && date.getUTCMonth() === now.getUTCMonth() && date.getUTCDate() === now.getUTCDate();
 }
 
 export default function EventSchedule() {
@@ -135,8 +167,11 @@ export default function EventSchedule() {
     const month = monthCursor.getUTCMonth();
     const firstDay = new Date(Date.UTC(year, month, 1));
     const lastDay = new Date(Date.UTC(year, month + 1, 0));
-    const start = new Date(Date.UTC(year, month, 1 - firstDay.getUTCDay()));
-    const end = new Date(Date.UTC(year, month, lastDay.getUTCDate() + (6 - lastDay.getUTCDay())));
+    const weekStart = 6;
+    const startOffset = (firstDay.getUTCDay() - weekStart + 7) % 7;
+    const endOffset = (weekStart - lastDay.getUTCDay() - 1 + 7) % 7;
+    const start = new Date(Date.UTC(year, month, 1 - startOffset));
+    const end = new Date(Date.UTC(year, month, lastDay.getUTCDate() + endOffset));
     const weeks: WeekRow[] = [];
     const dayMs = 24 * 60 * 60 * 1000;
 
@@ -151,11 +186,12 @@ export default function EventSchedule() {
     return { year, month, weeks };
   }, [monthCursor, scheduleEntries]);
 
+  const monthStartMs = Date.UTC(calendar.year, calendar.month, 1, 0, 0, 0, 0);
+  const monthEndMs = Date.UTC(calendar.year, calendar.month + 1, 0, 23, 59, 59, 999);
+
   const history = useMemo(() => {
     const todayUtc = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0);
-    return scheduleEntries
-      .filter((entry) => entry.endMs < todayUtc)
-      .sort((a, b) => b.endMs - a.endMs);
+    return scheduleEntries.filter((entry) => entry.endMs < todayUtc).sort((a, b) => b.endMs - a.endMs);
   }, [scheduleEntries, now]);
 
   return (
@@ -163,18 +199,10 @@ export default function EventSchedule() {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
         <div style={{ fontWeight: 800, fontSize: 18 }}>Event Calendar</div>
         <div style={{ display: "flex", gap: 8 }}>
-          <button
-            type="button"
-            className="secondary"
-            onClick={() => setMonthCursor(new Date(Date.UTC(calendar.year, calendar.month - 1, 1)))}
-          >
+          <button type="button" className="secondary" onClick={() => setMonthCursor(new Date(Date.UTC(calendar.year, calendar.month - 1, 1)))}>
             Prev
           </button>
-          <button
-            type="button"
-            className="secondary"
-            onClick={() => setMonthCursor(new Date(Date.UTC(calendar.year, calendar.month + 1, 1)))}
-          >
+          <button type="button" className="secondary" onClick={() => setMonthCursor(new Date(Date.UTC(calendar.year, calendar.month + 1, 1)))}>
             Next
           </button>
         </div>
@@ -190,7 +218,7 @@ export default function EventSchedule() {
       {scheduleState.status === "ready" ? (
         <div style={{ display: "grid", gap: 10 }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: 6 }}>
-            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+            {["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"].map((day) => (
               <div
                 key={day}
                 style={{
@@ -230,7 +258,7 @@ export default function EventSchedule() {
                           opacity: isCurrentMonth ? 1 : 0.45,
                           fontSize: 12,
                           fontWeight: 700,
-                          textAlign: "right",
+                          textAlign: "center",
                         }}
                       >
                         {date.getUTCDate()}
@@ -254,17 +282,28 @@ export default function EventSchedule() {
                       const rawEnd = Math.floor((entry.endMs - weekStartMs) / dayMs);
                       const startIndex = Math.max(0, Math.min(6, rawStart));
                       const endIndex = Math.max(0, Math.min(6, rawEnd));
-                      const continuesLeft = entry.startMs < weekStartMs;
-                      const continuesRight = entry.endMs > weekEndMs;
+                      const continuesLeft = entry.startMs < monthStartMs && weekStartMs <= monthStartMs && weekEndMs >= monthStartMs;
+                      const continuesRight = entry.endMs > monthEndMs && weekStartMs <= monthEndMs && weekEndMs >= monthEndMs;
                       const hue = hashHue(entry.eventId);
-                      const baseColor = entry.accent ?? `hsla(${hue}, 70%, 70%, 0.78)`;
-                      const edgeColor = entry.accent ? "transparent" : `hsla(${hue}, 70%, 70%, 0)`;
-                      const background = `linear-gradient(90deg, ${
-                        continuesLeft ? edgeColor : baseColor
-                      } 0%, ${baseColor} 12%, ${baseColor} 88%, ${continuesRight ? edgeColor : baseColor} 100%)`;
+                      const baseColor = entry.accent ?? `hsl(${hue}, 70%, 70%)`;
                       const borderColor = entry.accent ?? `hsla(${hue}, 55%, 45%, 0.55)`;
+                      const fadeInStop = continuesLeft ? 50 : 0;
+                      const fadeOutStart = continuesRight ? 50 : 100;
+                      const maskGradient = `linear-gradient(90deg, ${
+                        continuesLeft ? "transparent" : "black"
+                      } 0%, black ${fadeInStop}%, black ${fadeOutStart}%, ${continuesRight ? "transparent" : "black"} 100%)`;
+                      const titleColor = entry.titleColor ?? "#111";
+                      const dateBadgeBg = entry.dateBadgeBg ?? `hsla(${hue}, 55%, 35%, 0.85)`;
+                      const dateBadgeColor = entry.dateBadgeColor ?? "#ffffff";
                       const title = entry.label ?? entry.title;
                       const initials = buildInitials(title);
+                      const spanLength = endIndex - startIndex + 1;
+                      const hasIcon = Boolean(entry.icon);
+                      const layout = spanLength === 1 ? "compact" : spanLength <= 3 ? "stacked" : "inline";
+                      const showDate = layout !== "compact";
+                      const showIcon = hasIcon || layout === "compact";
+                      const innerPadLeft = continuesLeft ? "50%" : "6px";
+                      const innerPadRight = continuesRight ? "50%" : "6px";
 
                       return (
                         <Link
@@ -279,44 +318,114 @@ export default function EventSchedule() {
                             padding: "6px 8px",
                             borderRadius: 10,
                             border: `1px solid ${borderColor}`,
-                            background,
-                            color: "var(--text)",
+                            background: baseColor,
+                            color: titleColor,
                             textDecoration: "none",
                             overflow: "hidden",
                             minHeight: 30,
+                            WebkitMaskImage: continuesLeft || continuesRight ? maskGradient : undefined,
+                            maskImage: continuesLeft || continuesRight ? maskGradient : undefined,
                           }}
                         >
                           <div
                             style={{
-                              width: 24,
-                              height: 24,
-                              borderRadius: 6,
-                              background: "rgba(255,255,255,0.65)",
-                              border: "1px solid rgba(0,0,0,0.08)",
-                              display: "grid",
-                              placeItems: "center",
-                              fontSize: 11,
-                              fontWeight: 700,
-                              flexShrink: 0,
+                              display: "flex",
+                              alignItems: layout === "stacked" ? "flex-start" : "center",
+                              gap: 8,
+                              width: "100%",
+                              minWidth: 0,
+                              paddingLeft: innerPadLeft,
+                              paddingRight: innerPadRight,
                             }}
                           >
-                            {entry.icon ? (
-                              <img
-                                src={`${import.meta.env.BASE_URL}${entry.icon}`}
-                                alt=""
-                                width={18}
-                                height={18}
-                                style={{ display: "block" }}
-                              />
-                            ) : (
-                              initials
-                            )}
-                          </div>
-                          <div style={{ minWidth: 0, display: "flex", flexDirection: "column" }}>
-                            <span style={{ fontSize: 12, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                              {title}
-                            </span>
-                            <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{formatShortRange(entry.start, entry.end)}</span>
+                            {showIcon ? (
+                              <div
+                                style={{
+                                  width: 24,
+                                  height: 24,
+                                  borderRadius: 6,
+                                  background: "rgba(255,255,255,0.65)",
+                                  border: "1px solid rgba(0,0,0,0.08)",
+                                  display: "grid",
+                                  placeItems: "center",
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                  flexShrink: 0,
+                                }}
+                              >
+                                {entry.icon ? (
+                                  <img src={`${import.meta.env.BASE_URL}${entry.icon}`} alt="" width={18} height={18} style={{ display: "block" }} />
+                                ) : (
+                                  initials
+                                )}
+                              </div>
+                            ) : null}
+                            <div style={{ minWidth: 0, display: "flex", flexDirection: "column", width: "100%" }}>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 6,
+                                  width: "100%",
+                                  minWidth: 0,
+                                  justifyContent: layout === "inline" ? "space-between" : "flex-start",
+                                }}
+                              >
+                                <span
+                                  style={{
+                                    fontSize: 12,
+                                    fontWeight: 800,
+                                    whiteSpace: "nowrap",
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: 6,
+                                    color: titleColor,
+                                  }}
+                                >
+                                  {title}
+                                  {entry.extraText ? (
+                                    <span style={{ color: entry.extraTextColor ?? "#c62828", fontWeight: 800, fontSize: 11 }}>{entry.extraText}</span>
+                                  ) : null}
+                                </span>
+                                {showDate && layout === "inline" ? (
+                                  <span
+                                    style={{
+                                      fontSize: 11,
+                                      color: dateBadgeColor,
+                                      background: dateBadgeBg,
+                                      padding: "2px 6px",
+                                      borderRadius: 999,
+                                      fontWeight: 700,
+                                      textAlign: "center",
+                                      whiteSpace: "nowrap",
+                                      marginLeft: 10,
+                                    }}
+                                  >
+                                    {formatShortRange(entry.start, entry.end)}
+                                  </span>
+                                ) : null}
+                              </div>
+                              {showDate && layout === "stacked" ? (
+                                <span
+                                  style={{
+                                    fontSize: 11,
+                                    color: dateBadgeColor,
+                                    background: dateBadgeBg,
+                                    padding: "2px 6px",
+                                    borderRadius: 999,
+                                    fontWeight: 700,
+                                    textAlign: "center",
+                                    whiteSpace: "nowrap",
+                                    alignSelf: "flex-start",
+                                    marginTop: 4,
+                                  }}
+                                >
+                                  {formatShortRange(entry.start, entry.end)}
+                                </span>
+                              ) : null}
+                            </div>
                           </div>
                         </Link>
                       );

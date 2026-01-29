@@ -3,6 +3,11 @@
   "events": [
     {
       "eventId": "archero2.event.anglers_bounty.v1",
+      "start": "2025-12-25",
+      "end": "2026-01-06"
+    },
+    {
+      "eventId": "archero2.event.anglers_bounty.v1",
       "start": "2026-01-10",
       "end": "2026-01-16"
     },
