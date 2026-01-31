@@ -110,6 +110,7 @@ export function EventCatalogList() {
                               const shared = sharedItems[reward.key];
                               const label = shared?.label ?? reward.label;
                               const fallbackLabel = shared?.fallbackLabel ?? label;
+                              const optional = ev.taskRewardsOptional?.find((opt) => opt.key === reward.key);
                               return (
                                 <div key={reward.key} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}>
                                   {shared?.icon ? (
@@ -123,7 +124,10 @@ export function EventCatalogList() {
                                   ) : (
                                     <span style={{ fontWeight: 700 }}>{fallbackLabel}</span>
                                   )}
-                                  <span>{formatAmount(reward.amount)}</span>
+                                  <span>
+                                    {formatAmount(reward.amount)}
+                                    {optional ? ` (+${formatAmount(optional.amount)} optional)` : ""}
+                                  </span>
                                 </div>
                               );
                             })}

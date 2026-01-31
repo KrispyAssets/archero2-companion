@@ -367,8 +367,18 @@ function computeTaskCosts(tasks: TaskDefinition[]): TaskCostItem[] {
 }
 
 function computeTaskRewards(tasks: TaskDefinition[]): TaskRewardItem[] {
+  return computeTaskRewardsInternal(tasks, false);
+}
+
+function computeOptionalTaskRewards(tasks: TaskDefinition[]): TaskRewardItem[] {
+  return computeTaskRewardsInternal(tasks, true);
+}
+
+function computeTaskRewardsInternal(tasks: TaskDefinition[], optionalOnly: boolean): TaskRewardItem[] {
   const totals = new Map<string, number>();
   for (const task of tasks) {
+    if (optionalOnly && !task.optional) continue;
+    if (!optionalOnly && task.optional) continue;
     const key = task.rewardType;
     if (!key) continue;
     if (task.rewardAmount <= 0) continue;
@@ -394,6 +404,7 @@ function parseTaskDefinition(el: Element): TaskDefinition {
 
     rewardType: getAttr(el, "reward_type"),
     rewardAmount: getAttrInt(el, "reward_amount"),
+    optional: el.getAttribute("optional") === "true" ? true : undefined,
   };
 }
 
@@ -470,6 +481,7 @@ function parseEventDocument(doc: Document, relPath?: string): EventCatalogFull {
   const tasks: TaskDefinition[] = taskNodes.map((t) => parseTaskDefinition(t)).sort((a, b) => a.displayOrder - b.displayOrder);
   const taskCosts = computeTaskCosts(tasks);
   const taskRewards = computeTaskRewards(tasks);
+  const taskRewardsOptional = computeOptionalTaskRewards(tasks);
   const taskGroupLabels = parseTaskGroupLabels(eventEl);
   const rewardAssets = parseRewardAssets(eventEl);
   const shop = parseShop(eventEl);
@@ -509,6 +521,7 @@ function parseEventDocument(doc: Document, relPath?: string): EventCatalogFull {
     },
     taskCosts,
     taskRewards,
+    taskRewardsOptional,
     tasks,
     guideSections,
     dataSections,
@@ -628,6 +641,7 @@ export async function loadEventSummaries(eventPaths: string[]): Promise<EventCat
     const taskSummaries = taskNodes.map((node) => parseTaskDefinition(node));
     const taskCosts = taskSummaries.length ? computeTaskCosts(taskSummaries) : [];
     const taskRewards = taskSummaries.length ? computeTaskRewards(taskSummaries) : [];
+    const taskRewardsOptional = taskSummaries.length ? computeOptionalTaskRewards(taskSummaries) : [];
     const guideSectionCount = guideEl ? getDirectChildElements(guideEl, "section").length : 0;
     const dataSectionCount = dataEl ? getDirectChildElements(dataEl, "section").length : 0;
     const faqCount = faqEl ? faqEl.getElementsByTagName("item").length : 0;
@@ -645,6 +659,7 @@ export async function loadEventSummaries(eventPaths: string[]): Promise<EventCat
       sections: { taskCount, guideSectionCount, dataSectionCount, faqCount, toolCount },
       taskCosts,
       taskRewards,
+      taskRewardsOptional,
     };
     const scheduleEntriesForEvent = scheduleByEvent.get(summary.eventId) ?? [];
     const selected = selectScheduleEntry(scheduleEntriesForEvent, nowUtcMs);

@@ -25,6 +25,7 @@ export type TaskDefinition = {
 
   rewardType: string;
   rewardAmount: number;
+  optional?: boolean;
 };
 
 export type TaskGroupLabelMap = Record<string, string>;
@@ -145,6 +146,7 @@ export type EventCatalogItemFull = {
   sections: EventSectionSummary;
   taskCosts?: TaskCostItem[];
   taskRewards?: TaskRewardItem[];
+  taskRewardsOptional?: TaskRewardItem[];
 };
 
 /** Full (used for Event Detail) */

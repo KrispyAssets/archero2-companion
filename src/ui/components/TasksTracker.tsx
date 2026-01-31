@@ -48,6 +48,17 @@ export default function TasksTracker(props: {
   }
 
   const totalsByReward = groups.reduce<Record<string, { earned: number; remaining: number }>>((acc, group) => {
+    if (group.tiers.every((tier) => tier.optional)) return acc;
+    const state = progressState.tasks[group.groupId] ?? { progressValue: 0, flags: { isCompleted: false, isClaimed: false } };
+    const rewardType = group.tiers[0]?.rewardType ?? "reward";
+    const entry = acc[rewardType] ?? { earned: 0, remaining: 0 };
+    entry.earned += computeEarned(group.tiers, state.progressValue);
+    entry.remaining += computeRemaining(group.tiers, state.progressValue);
+    acc[rewardType] = entry;
+    return acc;
+  }, {});
+  const optionalTotalsByReward = groups.reduce<Record<string, { earned: number; remaining: number }>>((acc, group) => {
+    if (!group.tiers.every((tier) => tier.optional)) return acc;
     const state = progressState.tasks[group.groupId] ?? { progressValue: 0, flags: { isCompleted: false, isClaimed: false } };
     const rewardType = group.tiers[0]?.rewardType ?? "reward";
     const entry = acc[rewardType] ?? { earned: 0, remaining: 0 };
@@ -57,6 +68,7 @@ export default function TasksTracker(props: {
     return acc;
   }, {});
   const rewardTypes = Object.keys(totalsByReward);
+  const optionalRewardTypes = Object.keys(optionalTotalsByReward);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12, height: "100%", minHeight: 0 }}>
@@ -68,9 +80,17 @@ export default function TasksTracker(props: {
                 const rewardType = rewardTypes[0] ?? "reward";
                 const reward = totalsByReward[rewardType] ?? { earned: 0, remaining: 0 };
                 const asset = getRewardAsset(rewardType, rewardAssets, sharedItems);
+                const optional = optionalTotalsByReward[rewardType];
+                const optionalRemaining = optional?.remaining ?? 0;
+                const totalEarned = reward.earned + (optional?.earned ?? 0);
                 return (
                   <>
-                    {reward.earned} {asset.label} Earned | {reward.remaining} {asset.label} Remaining
+                    {totalEarned} {asset.label} Earned | {reward.remaining} {asset.label} Remaining
+                    {optionalRemaining > 0 ? (
+                      <span style={{ color: "var(--text-muted)", marginLeft: 8 }}>
+                        (+{optionalRemaining} optional {asset.label})
+                      </span>
+                    ) : null}
                   </>
                 );
               })()
@@ -81,7 +101,11 @@ export default function TasksTracker(props: {
                   .map((rewardType) => {
                     const reward = totalsByReward[rewardType];
                     const asset = getRewardAsset(rewardType, rewardAssets, sharedItems);
-                    return `${reward.earned} ${asset.label}`;
+                    const optional = optionalTotalsByReward[rewardType];
+                    const optionalRemaining = optional?.remaining ?? 0;
+                    const totalEarned = reward.earned + (optional?.earned ?? 0);
+                    const optionalSuffix = optionalRemaining > 0 ? ` (+${optionalRemaining} optional)` : "";
+                    return `${totalEarned} ${asset.label}${optionalSuffix}`;
                   })
                   .join(", ")}{" "}
                 | Remaining:{" "}
@@ -89,7 +113,10 @@ export default function TasksTracker(props: {
                   .map((rewardType) => {
                     const reward = totalsByReward[rewardType];
                     const asset = getRewardAsset(rewardType, rewardAssets, sharedItems);
-                    return `${reward.remaining} ${asset.label}`;
+                    const optional = optionalTotalsByReward[rewardType];
+                    const optionalRemaining = optional?.remaining ?? 0;
+                    const optionalSuffix = optionalRemaining > 0 ? ` (+${optionalRemaining} optional)` : "";
+                    return `${reward.remaining} ${asset.label}${optionalSuffix}`;
                   })
                   .join(", ")}
               </>
@@ -152,7 +179,12 @@ export default function TasksTracker(props: {
                   flexWrap: "wrap",
                 }}
               >
-                <div style={{ fontWeight: 800 }}>{group.title}</div>
+        <div style={{ fontWeight: 800 }}>
+          {group.title}
+          {group.tiers.every((tier) => tier.optional) ? (
+            <span style={{ marginLeft: 6, fontSize: 12, color: "var(--text-muted)" }}>(Optional)</span>
+          ) : null}
+        </div>
                 <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
                   Earned: <b>{earned}</b> | Remaining: <b>{remaining}</b> {groupRewardAsset.label}
                 </div>
