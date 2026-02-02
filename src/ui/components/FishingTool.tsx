@@ -1128,7 +1128,6 @@ export default function FishingToolView({
   const estimatedGemsSpent = estimatedGemLuresUsed !== null ? estimatedGemLuresUsed * 150 : null;
   const totalAvailableLures =
     currentLures !== null && luresRemainingFromTasks !== null ? currentLures + luresRemainingFromTasks + (purchasedLures ?? 0) : null;
-  const purchasableLuresFromGems = currentGems !== null ? Math.floor(currentGems / 150) : null;
   const silverLureShortfall = silverFishNeeded !== null && totalAvailableLures !== null ? Math.max(0, silverFishNeeded - totalAvailableLures) : null;
   const silverGemCost = silverLureShortfall !== null ? silverLureShortfall * 150 : null;
 
