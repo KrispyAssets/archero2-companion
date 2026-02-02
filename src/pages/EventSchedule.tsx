@@ -33,6 +33,19 @@ type WeekRow = {
   dates: Date[];
 };
 
+const EVENT_ACCENTS: Record<string, string> = {
+  "archero2.event.anglers_bounty.v1": "#10b981",
+  "archero2.event.island_treasure_hunt.v1": "#f97316",
+  "archero2.event.summon_event.v1": "#ec4899",
+  "archero2.event.vibrant_voyage.v1": "#8b5cf6",
+  "archero2.event.godforge_genesis.v1": "#e11d48",
+  "archero2.event.eternal_lode.v1": "#7a4a1c",
+  "archero2.event.campaign_rout.v1": "#2563eb",
+  "archero2.event.cave_rout.v1": "#f59e0b",
+  "archero2.event.divine_forging.v1": "#84cc16",
+  "archero2.event.seal_rout.v1": "#06b6d4",
+};
+
 function parseUtcDate(dateStr: string): { year: number; month: number; day: number } | null {
   const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (!match) return null;
@@ -420,14 +433,20 @@ export default function EventSchedule() {
                       const continuesLeft = entry.startMs < monthStartMs && weekStartMs <= monthStartMs && weekEndMs >= monthStartMs;
                       const continuesRight = entry.endMs > monthEndMs && weekStartMs <= monthEndMs && weekEndMs >= monthEndMs;
                       const hue = hashHue(entry.eventId);
-                      const baseColor = entry.accent ?? `hsl(${hue}, 70%, 70%)`;
-                      const borderColor = entry.accent ?? `hsla(${hue}, 55%, 45%, 0.55)`;
+                      const baseColor = entry.accent ?? EVENT_ACCENTS[entry.eventId] ?? `hsl(${hue}, 70%, 70%)`;
+                      const baseRgb = parseColorToRgb(baseColor);
+                      const borderColor =
+                        entry.accent || EVENT_ACCENTS[entry.eventId]
+                          ? baseRgb
+                            ? `rgba(${baseRgb.r}, ${baseRgb.g}, ${baseRgb.b}, 0.55)`
+                            : baseColor
+                          : `hsla(${hue}, 55%, 45%, 0.55)`;
                       const fadeInStop = continuesLeft ? 50 : 0;
                       const fadeOutStart = continuesRight ? 50 : 100;
                       const maskGradient = `linear-gradient(90deg, ${
                         continuesLeft ? "transparent" : "black"
                       } 0%, black ${fadeInStop}%, black ${fadeOutStart}%, ${continuesRight ? "transparent" : "black"} 100%)`;
-                      const rgb = parseColorToRgb(baseColor);
+                      const rgb = baseRgb ?? parseColorToRgb(baseColor);
                       const baseLum = rgb ? luminance(rgb) : 0.6;
                       const isDark = baseLum < 0.5;
                       const hsl = rgb ? rgbToHsl(rgb) : { h: hue, s: 55, l: 70 };
