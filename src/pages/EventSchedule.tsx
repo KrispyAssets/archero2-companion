@@ -75,37 +75,6 @@ function buildInitials(label: string): string {
   return letters.join("").toUpperCase() || label.slice(0, 2).toUpperCase();
 }
 
-function toTransparent(color: string): string {
-  const trimmed = color.trim();
-  if (trimmed.startsWith("hsla(")) {
-    return trimmed.replace(/hsla\(([^)]+)\)/, "hsla($1, 0)");
-  }
-  if (trimmed.startsWith("hsl(")) {
-    return trimmed.replace(/hsl\(([^)]+)\)/, "hsla($1, 0)");
-  }
-  if (trimmed.startsWith("rgba(")) {
-    return trimmed.replace(/rgba\(([^)]+)\)/, "rgba($1, 0)");
-  }
-  if (trimmed.startsWith("rgb(")) {
-    return trimmed.replace(/rgb\(([^)]+)\)/, "rgba($1, 0)");
-  }
-  const hex = trimmed.replace("#", "");
-  if (hex.length === 3 || hex.length === 6) {
-    const full =
-      hex.length === 3
-        ? hex
-            .split("")
-            .map((c) => c + c)
-            .join("")
-        : hex;
-    const r = parseInt(full.slice(0, 2), 16);
-    const g = parseInt(full.slice(2, 4), 16);
-    const b = parseInt(full.slice(4, 6), 16);
-    return `rgba(${r}, ${g}, ${b}, 0)`;
-  }
-  return "transparent";
-}
-
 function parseColorToRgb(color: string): { r: number; g: number; b: number } | null {
   const trimmed = color.trim();
   if (trimmed.startsWith("#")) {

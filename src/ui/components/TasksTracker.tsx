@@ -68,7 +68,6 @@ export default function TasksTracker(props: {
     return acc;
   }, {});
   const rewardTypes = Object.keys(totalsByReward);
-  const optionalRewardTypes = Object.keys(optionalTotalsByReward);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12, height: "100%", minHeight: 0 }}>
