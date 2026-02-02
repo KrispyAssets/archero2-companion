@@ -106,6 +106,108 @@ function toTransparent(color: string): string {
   return "transparent";
 }
 
+function parseColorToRgb(color: string): { r: number; g: number; b: number } | null {
+  const trimmed = color.trim();
+  if (trimmed.startsWith("#")) {
+    const hex = trimmed.slice(1);
+    if (hex.length === 3) {
+      const r = parseInt(hex[0] + hex[0], 16);
+      const g = parseInt(hex[1] + hex[1], 16);
+      const b = parseInt(hex[2] + hex[2], 16);
+      return { r, g, b };
+    }
+    if (hex.length === 6) {
+      const r = parseInt(hex.slice(0, 2), 16);
+      const g = parseInt(hex.slice(2, 4), 16);
+      const b = parseInt(hex.slice(4, 6), 16);
+      return { r, g, b };
+    }
+    return null;
+  }
+  const rgbMatch = trimmed.match(/^rgba?\(([^)]+)\)$/i);
+  if (rgbMatch) {
+    const parts = rgbMatch[1].split(",").map((p) => Number(p.trim()));
+    if (parts.length >= 3 && parts.every((n) => Number.isFinite(n))) {
+      return { r: parts[0], g: parts[1], b: parts[2] };
+    }
+    return null;
+  }
+  const hslMatch = trimmed.match(/^hsla?\(([^)]+)\)$/i);
+  if (hslMatch) {
+    const parts = hslMatch[1].split(",").map((p) => p.trim());
+    if (parts.length < 3) return null;
+    const h = Number(parts[0]);
+    const s = Number(parts[1].replace("%", ""));
+    const l = Number(parts[2].replace("%", ""));
+    if (!Number.isFinite(h) || !Number.isFinite(s) || !Number.isFinite(l)) return null;
+    const sNorm = s / 100;
+    const lNorm = l / 100;
+    const c = (1 - Math.abs(2 * lNorm - 1)) * sNorm;
+    const hPrime = ((h % 360) + 360) % 360 / 60;
+    const x = c * (1 - Math.abs((hPrime % 2) - 1));
+    let r1 = 0;
+    let g1 = 0;
+    let b1 = 0;
+    if (hPrime >= 0 && hPrime < 1) {
+      r1 = c;
+      g1 = x;
+    } else if (hPrime < 2) {
+      r1 = x;
+      g1 = c;
+    } else if (hPrime < 3) {
+      g1 = c;
+      b1 = x;
+    } else if (hPrime < 4) {
+      g1 = x;
+      b1 = c;
+    } else if (hPrime < 5) {
+      r1 = x;
+      b1 = c;
+    } else {
+      r1 = c;
+      b1 = x;
+    }
+    const m = lNorm - c / 2;
+    return {
+      r: Math.round((r1 + m) * 255),
+      g: Math.round((g1 + m) * 255),
+      b: Math.round((b1 + m) * 255),
+    };
+  }
+  return null;
+}
+
+function rgbToHsl(rgb: { r: number; g: number; b: number }): { h: number; s: number; l: number } {
+  const r = rgb.r / 255;
+  const g = rgb.g / 255;
+  const b = rgb.b / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const delta = max - min;
+  let h = 0;
+  if (delta !== 0) {
+    if (max === r) h = ((g - b) / delta) % 6;
+    else if (max === g) h = (b - r) / delta + 2;
+    else h = (r - g) / delta + 4;
+  }
+  h = Math.round(h * 60);
+  if (h < 0) h += 360;
+  const l = (max + min) / 2;
+  const s = delta === 0 ? 0 : delta / (1 - Math.abs(2 * l - 1));
+  return { h, s: Math.round(s * 100), l: Math.round(l * 100) };
+}
+
+function luminance(rgb: { r: number; g: number; b: number }): number {
+  const toLin = (c: number) => {
+    const v = c / 255;
+    return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  };
+  const r = toLin(rgb.r);
+  const g = toLin(rgb.g);
+  const b = toLin(rgb.b);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
 function isSameUtcDay(date: Date, now: Date): boolean {
   return date.getUTCFullYear() === now.getUTCFullYear() && date.getUTCMonth() === now.getUTCMonth() && date.getUTCDate() === now.getUTCDate();
 }
@@ -188,6 +290,44 @@ export default function EventSchedule() {
 
   const monthStartMs = Date.UTC(calendar.year, calendar.month, 1, 0, 0, 0, 0);
   const monthEndMs = Date.UTC(calendar.year, calendar.month + 1, 0, 23, 59, 59, 999);
+  const costIcons: Record<string, string> = {
+    gems: `${import.meta.env.BASE_URL}catalog/shared/items/currencies/icon_gem.png`,
+    chromatic_keys: `${import.meta.env.BASE_URL}catalog/shared/items/currencies/icon_chromatic_key.png`,
+    obsidian_keys: `${import.meta.env.BASE_URL}catalog/shared/items/currencies/icon_obsidian_key.png`,
+    wish_tokens: `${import.meta.env.BASE_URL}catalog/shared/items/currencies/icon_wish_coin.png`,
+    promised_shovels: `${import.meta.env.BASE_URL}catalog/shared/items/currencies/icon_promised_shovel.png`,
+    shovels: `${import.meta.env.BASE_URL}catalog/shared/items/currencies/icon_shovel.png`,
+  };
+  const costOrder = ["gems", "chromatic_keys", "obsidian_keys", "wish_tokens", "promised_shovels", "shovels"];
+  const formatAmount = (value: number) => value.toLocaleString();
+
+  const monthCostTotals = useMemo(() => {
+    if (catalog.status !== "ready") return [];
+    if (scheduleState.status !== "ready") return [];
+    const eventsById = new Map(catalog.events.map((ev) => [ev.eventId, ev]));
+    const totals = new Map<string, number>();
+    for (const entry of scheduleEntries) {
+      if (entry.startMs > monthEndMs || entry.endMs < monthStartMs) continue;
+      const event = eventsById.get(entry.eventId);
+      if (!event?.taskCosts?.length) continue;
+      for (const cost of event.taskCosts) {
+        totals.set(cost.key, (totals.get(cost.key) ?? 0) + cost.amount);
+      }
+    }
+    const entries = Array.from(totals.entries());
+    const indexOf = (key: string) => {
+      const idx = costOrder.indexOf(key);
+      return idx === -1 ? Number.MAX_SAFE_INTEGER : idx;
+    };
+    return entries
+      .sort(([a], [b]) => {
+        const aIdx = indexOf(a);
+        const bIdx = indexOf(b);
+        if (aIdx !== bIdx) return aIdx - bIdx;
+        return a.localeCompare(b);
+      })
+      .map(([key, amount]) => ({ key, amount }));
+  }, [catalog.status, catalog.events, scheduleEntries, monthStartMs, monthEndMs, scheduleState.status]);
 
   const history = useMemo(() => {
     const todayUtc = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0);
@@ -208,8 +348,32 @@ export default function EventSchedule() {
         </div>
       </div>
 
-      <div style={{ fontSize: 14, color: "var(--text-muted)" }}>
-        {monthCursor.toLocaleString(undefined, { month: "long", year: "numeric", timeZone: "UTC" })}
+      <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 14, color: "var(--text-muted)" }}>
+        <span>{monthCursor.toLocaleString(undefined, { month: "long", year: "numeric", timeZone: "UTC" })}</span>
+        {monthCostTotals.length ? (
+          <span style={{ display: "inline-flex", flexWrap: "wrap", gap: 6, justifyContent: "flex-start" }}>
+            {monthCostTotals.map((cost) => (
+              <span
+                key={cost.key}
+                style={{
+                  border: "1px solid var(--border)",
+                  borderRadius: 999,
+                  padding: "2px 8px",
+                  fontSize: 12,
+                  background: "var(--surface-2)",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                {costIcons[cost.key] ? (
+                  <img src={costIcons[cost.key]} alt="" width={16} height={16} style={{ display: "block" }} />
+                ) : null}
+                {formatAmount(cost.amount)}
+              </span>
+            ))}
+          </span>
+        ) : null}
       </div>
 
       {scheduleState.status === "loading" && <div>Loading schedule…</div>}
@@ -292,9 +456,14 @@ export default function EventSchedule() {
                       const maskGradient = `linear-gradient(90deg, ${
                         continuesLeft ? "transparent" : "black"
                       } 0%, black ${fadeInStop}%, black ${fadeOutStart}%, ${continuesRight ? "transparent" : "black"} 100%)`;
-                      const titleColor = entry.titleColor ?? "#111";
-                      const dateBadgeBg = entry.dateBadgeBg ?? `hsla(${hue}, 55%, 35%, 0.85)`;
-                      const dateBadgeColor = entry.dateBadgeColor ?? "#ffffff";
+                      const rgb = parseColorToRgb(baseColor);
+                      const baseLum = rgb ? luminance(rgb) : 0.6;
+                      const isDark = baseLum < 0.5;
+                      const hsl = rgb ? rgbToHsl(rgb) : { h: hue, s: 55, l: 70 };
+                      const pillLightness = isDark ? Math.min(88, hsl.l + 30) : Math.max(18, hsl.l - 30);
+                      const titleColor = entry.titleColor ?? (isDark ? "#ffffff" : "#111111");
+                      const dateBadgeBg = entry.dateBadgeBg ?? `hsl(${hsl.h}, ${Math.max(35, hsl.s)}%, ${pillLightness}%)`;
+                      const dateBadgeColor = entry.dateBadgeColor ?? (pillLightness > 55 ? "#111111" : "#ffffff");
                       const title = entry.label ?? entry.title;
                       const initials = buildInitials(title);
                       const spanLength = endIndex - startIndex + 1;

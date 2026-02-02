@@ -29,6 +29,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [historyMaxIndex, setHistoryMaxIndex] = useState(Math.max(initialIdx, historyMaxCache));
   const locationKeyRef = useRef(location.key);
   const historyCheckRef = useRef<number | null>(null);
+  const headerRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     document.documentElement.dataset.theme = themeId;
@@ -68,6 +69,22 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  useEffect(() => {
+    if (!headerRef.current) return;
+    const el = headerRef.current;
+    const update = () => {
+      document.documentElement.style.setProperty("--app-header-height", `${el.offsetHeight}px`);
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    window.addEventListener("resize", update);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", update);
+    };
+  }, []);
+
   function scheduleHistoryCheck(kind: "back" | "forward") {
     if (historyCheckRef.current !== null) {
       window.clearTimeout(historyCheckRef.current);
@@ -87,7 +104,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="app">
-      <header className="appHeader">
+      <header className="appHeader" ref={headerRef}>
         <div className="appHeaderInner">
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{ display: "flex", gap: 6 }}>

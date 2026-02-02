@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import AppShell from "../ui/AppShell";
 import { Link } from "react-router-dom";
 import { useCatalogIndex } from "../catalog/useCatalogIndex";
@@ -18,19 +19,31 @@ export function EventCatalogList() {
     wish_tokens: `${iconBase}icon_wish_coin.png`,
     shovels: `${iconBase}icon_shovel.png`,
   };
-  const [openRewardsEventId, setOpenRewardsEventId] = useState<string | null>(null);
+  const [openRewards, setOpenRewards] = useState<{ eventId: string; rect: DOMRect } | null>(null);
 
   useEffect(() => {
-    if (!openRewardsEventId) return;
+    if (!openRewards) return;
     function handleClick(event: MouseEvent) {
       const target = event.target as HTMLElement | null;
       if (!target) return;
-      if (target.closest(".eventInfoWrap")) return;
-      setOpenRewardsEventId(null);
+      if (target.closest(".eventInfoButton") || target.closest(".eventInfoPopover")) return;
+      setOpenRewards(null);
+    }
+    function handleScroll() {
+      setOpenRewards(null);
+    }
+    function handleResize() {
+      setOpenRewards(null);
     }
     document.addEventListener("click", handleClick);
-    return () => document.removeEventListener("click", handleClick);
-  }, [openRewardsEventId]);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("resize", handleResize);
+    return () => {
+      document.removeEventListener("click", handleClick);
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [openRewards]);
   const events = catalog.status === "ready" ? catalog.events : [];
   const sortedEvents = useMemo(() => {
     if (catalog.status !== "ready") return [];
@@ -59,6 +72,15 @@ export function EventCatalogList() {
     });
     return eventsCopy;
   }, [catalog.status, events]);
+
+  const openEvent = openRewards ? events.find((ev) => ev.eventId === openRewards.eventId) ?? null : null;
+  const popoverPosition =
+    openRewards && typeof window !== "undefined"
+      ? {
+          top: Math.min(window.innerHeight - 12, openRewards.rect.bottom + 6),
+          left: Math.min(window.innerWidth - 12, openRewards.rect.right),
+        }
+      : null;
 
   return (
     <>
@@ -89,51 +111,14 @@ export function EventCatalogList() {
                         onClick={(event) => {
                           event.preventDefault();
                           event.stopPropagation();
-                          setOpenRewardsEventId((prev) => (prev === ev.eventId ? null : ev.eventId));
+                          const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+                          setOpenRewards((prev) => (prev?.eventId === ev.eventId ? null : { eventId: ev.eventId, rect }));
                         }}
                         aria-label="Show task rewards"
                         className="eventInfoButton"
                       >
                         i
                       </button>
-                      {openRewardsEventId === ev.eventId ? (
-                        <div
-                          className="eventInfoPopover"
-                          onClick={(event) => {
-                            event.preventDefault();
-                            event.stopPropagation();
-                          }}
-                        >
-                          <div className="eventInfoTitle">Task Rewards</div>
-                          <div style={{ display: "grid", gap: 6 }}>
-                            {ev.taskRewards.map((reward) => {
-                              const shared = sharedItems[reward.key];
-                              const label = shared?.label ?? reward.label;
-                              const fallbackLabel = shared?.fallbackLabel ?? label;
-                              const optional = ev.taskRewardsOptional?.find((opt) => opt.key === reward.key);
-                              return (
-                                <div key={reward.key} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}>
-                                  {shared?.icon ? (
-                                    <img
-                                      src={`${import.meta.env.BASE_URL}${shared.icon}`}
-                                      alt={fallbackLabel}
-                                      width={16}
-                                      height={16}
-                                      style={{ display: "block" }}
-                                    />
-                                  ) : (
-                                    <span style={{ fontWeight: 700 }}>{fallbackLabel}</span>
-                                  )}
-                                  <span>
-                                    {formatAmount(reward.amount)}
-                                    {optional ? ` (+${formatAmount(optional.amount)} optional)` : ""}
-                                  </span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      ) : null}
                     </div>
                   ) : null}
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
@@ -228,6 +213,52 @@ export function EventCatalogList() {
           </div>
         </>
       )}
+
+      {openEvent && popoverPosition && typeof document !== "undefined"
+        ? createPortal(
+            <div
+              className="eventInfoPopover"
+              style={{
+                position: "fixed",
+                top: popoverPosition.top,
+                left: popoverPosition.left,
+                transform: "translateX(-100%)",
+                maxWidth: "min(260px, 90vw)",
+                zIndex: 30,
+              }}
+            >
+              <div className="eventInfoTitle">Task Rewards</div>
+              <div style={{ display: "grid", gap: 6 }}>
+                {openEvent.taskRewards?.map((reward) => {
+                  const shared = sharedItems[reward.key];
+                  const label = shared?.label ?? reward.label;
+                  const fallbackLabel = shared?.fallbackLabel ?? label;
+                  const optional = openEvent.taskRewardsOptional?.find((opt) => opt.key === reward.key);
+                  return (
+                    <div key={reward.key} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}>
+                      {shared?.icon ? (
+                        <img
+                          src={`${import.meta.env.BASE_URL}${shared.icon}`}
+                          alt={fallbackLabel}
+                          width={16}
+                          height={16}
+                          style={{ display: "block" }}
+                        />
+                      ) : (
+                        <span style={{ fontWeight: 700 }}>{fallbackLabel}</span>
+                      )}
+                      <span>
+                        {formatAmount(reward.amount)}
+                        {optional ? ` (+${formatAmount(optional.amount)} optional)` : ""}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>,
+            document.body
+          )
+        : null}
     </>
   );
 }

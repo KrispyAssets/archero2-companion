@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { useLocation, useNavigate, useNavigationType, useParams } from "react-router-dom";
 import AppShell from "../ui/AppShell";
@@ -816,6 +816,19 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
   const scrollRetryRef = useRef<number | null>(null);
   const lastHandledAnchorRef = useRef<string>("");
 
+  const restoreScrollLock = useCallback(() => {
+    if (!scrollLockRef.current) return;
+    const lockedScrollY = scrollLockRef.current.scrollY;
+    document.body.style.overflow = scrollLockRef.current.bodyOverflow;
+    document.body.style.paddingRight = scrollLockRef.current.bodyPaddingRight;
+    document.documentElement.style.overflow = scrollLockRef.current.htmlOverflow;
+    document.body.style.position = scrollLockRef.current.bodyPosition;
+    document.body.style.top = scrollLockRef.current.bodyTop;
+    document.body.style.width = scrollLockRef.current.bodyWidth;
+    scrollLockRef.current = null;
+    window.scrollTo(0, lockedScrollY);
+  }, []);
+
   useEffect(() => {
     const saved = getEventShopQuantities(event.eventId, event.eventVersion);
     if (Object.keys(saved).length) {
@@ -1329,17 +1342,7 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
   useEffect(() => {
     const shouldLock = tasksOpen || lightboxIndex !== null || inlinePreviewSrc !== null || shopOpen;
     if (!shouldLock) {
-      if (scrollLockRef.current) {
-        const lockedScrollY = scrollLockRef.current.scrollY;
-        document.body.style.overflow = scrollLockRef.current.bodyOverflow;
-        document.body.style.paddingRight = scrollLockRef.current.bodyPaddingRight;
-        document.documentElement.style.overflow = scrollLockRef.current.htmlOverflow;
-        document.body.style.position = scrollLockRef.current.bodyPosition;
-        document.body.style.top = scrollLockRef.current.bodyTop;
-        document.body.style.width = scrollLockRef.current.bodyWidth;
-        scrollLockRef.current = null;
-        window.scrollTo(0, lockedScrollY);
-      }
+      restoreScrollLock();
       return;
     }
 
@@ -1362,7 +1365,13 @@ function EventDetailContent({ event }: { event: EventCatalogFull }) {
     document.body.style.position = "fixed";
     document.body.style.top = `-${scrollLockRef.current.scrollY}px`;
     document.body.style.width = "100%";
-  }, [tasksOpen, lightboxIndex, inlinePreviewSrc, shopOpen]);
+  }, [inlinePreviewSrc, lightboxIndex, restoreScrollLock, shopOpen, tasksOpen]);
+
+  useEffect(() => {
+    return () => {
+      restoreScrollLock();
+    };
+  }, [restoreScrollLock]);
 
   function openTasksSheet() {
     const height = Math.round(window.innerHeight * 0.8);
